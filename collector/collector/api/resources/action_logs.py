@@ -10,9 +10,7 @@ from collector.api.common.util import handle_response
 @validate_request('action_logs', 'post_request')
 @handle_response(201, 'action_logs', 'post_response')
 def post():
-    print "### request.data", request.data
-    print "### request.headers", request.headers
-    print "### app.config.VALIDATE_RESPONSE", app.config.get('VALIDATE_RESPONSE', False)
+    app.logger.debug("action_logs post request: {}".format(request.json))
     return {'status': 'ok'}
 
 

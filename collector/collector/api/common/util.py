@@ -18,11 +18,13 @@ def handle_response(http_code, *path):
         @wraps(fn)
         def decorated(*args, **kwargs):
             response = fn(*args, **kwargs)
-            print "### handle_response", response
+            current_app.logger.debug("Processing response: {}".format(response))
             if current_app.config.get('VALIDATE_RESPONSE', False) and path:
-                print "### validating response"
-                jschema = current_app.extensions.get('jsonschema')
-                jsonschema.validate(response, jschema.get_schema(path))
+                current_app.logger.debug("Validating response: {}".format(response))
+                jsonschema_ext = current_app.extensions.get('jsonschema')
+                jsonschema.validate(response, jsonschema_ext.get_schema(path))
+                current_app.logger.debug("Response validated: {}".format(response))
+            current_app.logger.debug("Response processed: {}".format(response))
             return jsonify(response), http_code
         return decorated
     return wrapper
