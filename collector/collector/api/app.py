@@ -12,3 +12,6 @@ from collector.api import error_handling
 
 # Application resources handling
 from collector.api.resources import action_logs
+
+# DB connection
+from collector.api import db

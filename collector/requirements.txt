@@ -1,2 +1,6 @@
-flask
-flask-jsonschema
+alembic
+Flask
+Flask-JsonSchema
+Flask-Migrate
+Flask-Script
+Flask-SQLAlchemy
