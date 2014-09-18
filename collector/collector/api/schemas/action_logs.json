@@ -1,0 +1,23 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+
+    "type": "object",
+
+    "post_request": {
+        "type": "object",
+        "properties": {
+            "id": { "type": "integer" }
+        },
+        "required": ["id"]
+    },
+
+    "post_response": {
+        "type": "object",
+        "properties": {
+            "status": {"enum": ["ok", "error"]},
+            "message": {"type": "string"}
+        },
+        "required": ["status"]
+    }
+
+}
