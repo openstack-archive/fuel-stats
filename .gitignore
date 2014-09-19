@@ -53,5 +53,7 @@ docs/_build/
 # PyBuilder
 target/
 
+# Custom options
 .venv/
 .idea
+*.swp
