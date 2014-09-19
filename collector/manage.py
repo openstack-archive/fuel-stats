@@ -6,8 +6,7 @@ from flask_script import Manager
 
 from collector.api import log
 from collector.api.app import app
-from collector.api.app import db
-from collector.api.db import model
+from collector.api.db.model import *
 
 
 def configure_app(mode=None):
