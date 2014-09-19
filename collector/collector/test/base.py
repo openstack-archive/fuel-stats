@@ -1,8 +1,14 @@
 from flask import json
+from sqlalchemy import event
+from sqlalchemy.orm import sessionmaker
 from unittest2.case import TestCase
 
 from collector.api import app
+from collector.api.db import db
 from collector.api.log import init_logger
+
+
+Session = sessionmaker()
 
 
 class BaseTest(TestCase):
@@ -33,3 +39,39 @@ class BaseTest(TestCase):
         resp = self.client.get('/xxx')
         self.check_response_error(resp, 404)
 
+
+class DbTestCase(BaseTest):
+
+    def setUp(self):
+        super(DbTestCase, self).setUp()
+
+        # connect to the database
+        self.conn = db.engine.connect()
+
+        # begin a non-ORM transaction
+        self.trans = self.conn.begin()
+
+        # bind an individual Session to the connection
+        self.session = Session(bind=self.conn)
+
+        # start the session in a SAVEPOINT...
+        self.session.begin_nested()
+
+        # then each time that SAVEPOINT ends, reopen it
+        @event.listens_for(self.session, "after_transaction_end")
+        def restart_savepoint(session, transaction):
+            if transaction.nested and not transaction._parent.nested:
+                session.begin_nested()
+
+    def tearDown(self):
+        self.session.close()
+
+        # rollback - everything that happened with the
+        # Session above (including calls to commit())
+        # is rolled back.
+        self.trans.commit()
+
+        # return connection to the Engine
+        self.conn.close()
+
+        super(DbTestCase, self).tearDown()
