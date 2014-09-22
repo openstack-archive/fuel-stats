@@ -1,7 +1,7 @@
-from collector.api.db import db
+from collector.api.app import db
 
 
-class ActionLog(db.Model):
+class ActionLogs(db.Model):
     __table_args__ = (
         db.UniqueConstraint('node_aid', 'external_id'),
     )

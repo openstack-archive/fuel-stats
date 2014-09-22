@@ -3,8 +3,8 @@ from sqlalchemy import event
 from sqlalchemy.orm import sessionmaker
 from unittest2.case import TestCase
 
-from collector.api import app
-from collector.api.db import db
+from collector.api.app import app
+from collector.api.app import db
 from collector.api.log import init_logger
 
 
@@ -15,11 +15,11 @@ class BaseTest(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        app.app.config.from_object('collector.api.config.Testing')
+        app.config.from_object('collector.api.config.Testing')
         init_logger()
 
     def setUp(self):
-        self.client = app.app.test_client()
+        self.client = app.test_client()
 
     def post(self, url, data):
         return self.client.post(url, data=json.dumps(data),
