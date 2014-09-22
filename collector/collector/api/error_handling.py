@@ -17,6 +17,12 @@ def not_found(error):
     return make_response(jsonify({'status': 'error', 'message': '{}'.format(error)}), 404)
 
 
+@app.errorhandler(405)
+def not_found(error):
+    app.logger.error("Method not allowed: {}".format(error))
+    return make_response(jsonify({'status': 'error', 'message': '{}'.format(error)}), 405)
+
+
 @app.errorhandler(flask_jsonschema.ValidationError)
 def validation_error(error):
     app.logger.error("Validation error: {}".format(error))

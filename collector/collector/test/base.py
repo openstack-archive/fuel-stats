@@ -25,6 +25,21 @@ class BaseTest(TestCase):
         return self.client.post(url, data=json.dumps(data),
                                 content_type='application/json')
 
+    def patch(self, url, data):
+        return self.client.patch(url, data=json.dumps(data),
+                                 content_type='application/json')
+
+    def put(self, url, data):
+        return self.client.put(url, data=json.dumps(data),
+                               content_type='application/json')
+
+    def get(self, url, data):
+        return self.client.get(url, data=json.dumps(data),
+                               content_type='application/json')
+
+    def delete(self, url):
+        return self.client.delete(url, content_type='application/json')
+
     def check_response_ok(self, resp, code=200):
         self.assertEquals(code, resp.status_code)
         d = json.loads(resp.data)
