@@ -16,8 +16,16 @@ For working with prod settings use `python manage.py --mode` option.
 
 For creating DB migration:
 
-`python manage.py db migrate -m "Migration comment"
+`python manage.py db migrate -m "Migration comment" \
 -d collector/api/db/migrations/`
+
+For apply the latest migration:
+
+`python manage.py db upgrade -d collector/api/db/migrations/`
+
+For revert all migrations:
+
+`python manage.py db downgrade -d collector/api/db/migrations/`
 
 For starting test server:
 
