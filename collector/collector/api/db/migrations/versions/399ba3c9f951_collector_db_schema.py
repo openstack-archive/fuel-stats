@@ -1,13 +1,13 @@
-"""Initial migration
+"""Collector DB schema
 
-Revision ID: 4dc5d9c6c16e
+Revision ID: 399ba3c9f951
 Revises: None
-Create Date: 2014-09-19 18:58:38.430430
+Create Date: 2014-09-22 13:21:16.708019
 
 """
 
 # revision identifiers, used by Alembic.
-revision = '4dc5d9c6c16e'
+revision = '399ba3c9f951'
 down_revision = None
 
 from alembic import op
@@ -20,7 +20,8 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('node_aid', sa.String(), nullable=False),
     sa.Column('external_id', sa.Integer(), nullable=False),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('node_aid', 'external_id')
     )
     ### end Alembic commands ###
 
