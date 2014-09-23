@@ -1,6 +1,6 @@
 from flask import json
-from sqlalchemy import event
-from sqlalchemy.orm import sessionmaker
+import flask_migrate
+import os
 from unittest2.case import TestCase
 
 from collector.api.app import app
@@ -8,15 +8,14 @@ from collector.api.app import db
 from collector.api.log import init_logger
 
 
-Session = sessionmaker()
+flask_migrate.Migrate(app, db)
+
+# Configuring app for the test environment
+app.config.from_object('collector.api.config.Testing')
+init_logger()
 
 
 class BaseTest(TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        app.config.from_object('collector.api.config.Testing')
-        init_logger()
 
     def setUp(self):
         self.client = app.test_client()
@@ -50,43 +49,14 @@ class BaseTest(TestCase):
         d = json.loads(resp.data)
         self.assertEquals('error', d['status'])
 
-    def test_unknown_resource(self):
-        resp = self.client.get('/xxx')
-        self.check_response_error(resp, 404)
-
 
 class DbTestCase(BaseTest):
 
     def setUp(self):
         super(DbTestCase, self).setUp()
 
-        # connect to the database
-        self.conn = db.engine.connect()
-
-        # begin a non-ORM transaction
-        self.trans = self.conn.begin()
-
-        # bind an individual Session to the connection
-        self.session = Session(bind=self.conn)
-
-        # start the session in a SAVEPOINT...
-        self.session.begin_nested()
-
-        # then each time that SAVEPOINT ends, reopen it
-        @event.listens_for(self.session, "after_transaction_end")
-        def restart_savepoint(session, transaction):
-            if transaction.nested and not transaction._parent.nested:
-                session.begin_nested()
-
-    def tearDown(self):
-        self.session.close()
-
-        # rollback - everything that happened with the
-        # Session above (including calls to commit())
-        # is rolled back.
-        self.trans.commit()
-
-        # return connection to the Engine
-        self.conn.close()
-
-        super(DbTestCase, self).tearDown()
+        # Cleaning DB. It useful in case of tests failure
+        directory = os.path.join(os.path.dirname(__file__), '..', 'api', 'db', 'migrations')
+        with app.app_context():
+            flask_migrate.downgrade(directory=directory)
+            flask_migrate.upgrade(directory=directory)

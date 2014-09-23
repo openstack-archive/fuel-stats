@@ -1,12 +1,19 @@
 from flask import jsonify
 from flask import make_response
 import flask_jsonschema
+from sqlalchemy.exc import IntegrityError
 
 from collector.api.app import app
 
 
 @app.errorhandler(400)
 def bad_request(error):
+    app.logger.error("Bad request: {}".format(error))
+    return make_response(jsonify({'status': 'error', 'message': '{}'.format(error)}), 400)
+
+
+@app.errorhandler(IntegrityError)
+def integrity_error(error):
     app.logger.error("Bad request: {}".format(error))
     return make_response(jsonify({'status': 'error', 'message': '{}'.format(error)}), 400)
 

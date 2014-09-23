@@ -1,4 +1,5 @@
-from flask import current_app, jsonify
+from flask import current_app
+from flask import jsonify
 from functools import wraps
 import jsonschema
 
@@ -28,3 +29,11 @@ def handle_response(http_code, *path):
             return jsonify(response), http_code
         return decorated
     return wrapper
+
+
+def exec_time():
+    pass
+
+
+def db_transaction():
+    pass
