@@ -33,9 +33,31 @@ class TestActionLogs(DbTestCase):
         )
         self.check_response_ok(resp, code=201)
 
-        actual_logs = db.session.query(ActionLogs).filter(ActionLogs.node_aid==node_aid).all()
+        actual_logs = db.session.query(ActionLogs).filter(
+            ActionLogs.node_aid==node_aid).all()
         self.assertEquals(len(expected_logs), len(actual_logs))
         self.assertListEqual(
             sorted([l['external_id'] for l in expected_logs]),
             sorted([l.external_id for l in actual_logs])
         )
+
+    def test_post_duplication(self):
+        node_aid = 'x'
+        expected_logs = [{'node_aid': node_aid, 'external_id': 1}]
+        resp = self.post(
+            '/api/v1/action_logs/',
+            {'action_logs': expected_logs}
+        )
+        self.check_response_ok(resp, code=201)
+        count_expected = db.session.query(ActionLogs).filter(
+            ActionLogs.node_aid==node_aid).count()
+
+        resp = self.post(
+            '/api/v1/action_logs/',
+            {'action_logs': expected_logs}
+        )
+        self.check_response_ok(resp, code=201)
+        count_actual = db.session.query(ActionLogs).filter(
+            ActionLogs.node_aid==node_aid).count()
+
+        self.assertEquals(count_expected, count_actual)
