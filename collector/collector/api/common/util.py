@@ -1,3 +1,4 @@
+import datetime
 from flask import current_app
 from flask import jsonify
 from functools import wraps
@@ -33,8 +34,21 @@ def handle_response(http_code, *path):
     return wrapper
 
 
-def exec_time():
-    pass
+def exec_time(fn):
+    """Adds 'exec_time' into function result dict. Execution time is
+    in seconds with microseconds. Decorator should be applied
+    after handle_response (before response is jsonified) and before
+    db_transaction (to take account of DB transaction processing).
+    """
+    @wraps(fn)
+    def decorated(*args, **kwargs):
+        start = datetime.datetime.now()
+        resp = fn(*args, **kwargs)
+        end = datetime.datetime.now()
+        td = end - start
+        resp['exec_time'] = '%d.%06d' % (td.seconds, td.microseconds)
+        return resp
+    return decorated
 
 
 def db_transaction(fn):

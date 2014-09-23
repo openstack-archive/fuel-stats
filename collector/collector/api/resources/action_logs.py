@@ -6,12 +6,14 @@ from collector.api.app import app
 from collector.api.app import db
 from collector.api.db.model import ActionLogs
 from collector.api.common.util import db_transaction
+from collector.api.common.util import exec_time
 from collector.api.common.util import handle_response
 
 
 @app.route('/api/v1/action_logs/', methods=['POST'])
 @validate_request('action_logs', 'post_request')
 @handle_response(201, 'action_logs', 'post_response')
+@exec_time
 @db_transaction
 def post():
     app.logger.debug("Handling action_logs post request: {}".format(request.json))
