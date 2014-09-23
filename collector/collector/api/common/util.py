@@ -3,6 +3,8 @@ from flask import jsonify
 from functools import wraps
 import jsonschema
 
+from collector.api.app import db
+
 
 def handle_response(http_code, *path):
     """Checks response, if VALIDATE_RESPONSE in app.config is set to True
@@ -35,5 +37,17 @@ def exec_time():
     pass
 
 
-def db_transaction():
-    pass
+def db_transaction(fn):
+    """Wraps function call into DB transaction
+    """
+    @wraps(fn)
+    def decorated(*args, **kwargs):
+        db.session.begin()
+        try:
+            result = fn(*args, **kwargs)
+            db.session.commit()
+            return result
+        except:
+            db.session.rollback()
+            raise
+    return decorated
