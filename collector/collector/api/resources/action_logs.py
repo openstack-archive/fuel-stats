@@ -11,8 +11,8 @@ from collector.api.common.util import handle_response
 
 
 @app.route('/api/v1/action_logs/', methods=['POST'])
-@validate_request('action_logs', 'post_request')
-@handle_response(201, 'action_logs', 'post_response')
+@validate_request('action_logs', 'request')
+@handle_response(201, 'action_logs', 'response')
 @exec_time
 @db_transaction
 def post():

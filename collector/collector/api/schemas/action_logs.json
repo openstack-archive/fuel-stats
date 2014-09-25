@@ -3,7 +3,7 @@
 
     "type": "object",
 
-    "post_request": {
+    "request": {
         "type": "object",
         "properties": {
             "action_logs": {
@@ -21,7 +21,7 @@
         "additionalProperties": false
     },
 
-    "post_response": {
+    "response": {
         "type": "object",
         "properties": {
             "status": {"enum": ["ok", "error"]},
