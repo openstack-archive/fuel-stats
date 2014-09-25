@@ -1,10 +1,10 @@
-from collector.test.base import DbTestCase
+from collector.test.base import DbTest
 
 from collector.api.app import db
 from collector.api.db.model import ActionLogs
 
 
-class TestActionLogs(DbTestCase):
+class TestActionLogs(DbTest):
 
     def test_not_allowed_methods(self):
         resp = self.get('/api/v1/action_logs/', None)

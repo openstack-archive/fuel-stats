@@ -50,10 +50,10 @@ class BaseTest(TestCase):
         self.assertEquals('error', d['status'])
 
 
-class DbTestCase(BaseTest):
+class DbTest(BaseTest):
 
     def setUp(self):
-        super(DbTestCase, self).setUp()
+        super(DbTest, self).setUp()
 
         # Cleaning DB. It useful in case of tests failure
         directory = os.path.join(os.path.dirname(__file__), '..', 'api', 'db', 'migrations')

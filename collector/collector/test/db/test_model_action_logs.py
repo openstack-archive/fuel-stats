@@ -1,4 +1,4 @@
-from collector.test.base import DbTestCase
+from collector.test.base import DbTest
 
 from sqlalchemy.exc import IntegrityError
 
@@ -6,7 +6,7 @@ from collector.api.app import db
 from collector.api.db.model import ActionLogs
 
 
-class TestModelActionLog(DbTestCase):
+class TestModelActionLog(DbTest):
 
     def test_unique_constraints(self):
         db.session.add(ActionLogs(node_aid='aid', external_id=1))
