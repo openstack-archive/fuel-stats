@@ -46,7 +46,7 @@ def exec_time(fn):
         resp = fn(*args, **kwargs)
         end = datetime.datetime.now()
         td = end - start
-        resp['exec_time'] = '%d.%06d' % (td.seconds, td.microseconds)
+        resp['exec_time'] = float('%d.%06d' % (td.seconds, td.microseconds))
         return resp
     return decorated
 

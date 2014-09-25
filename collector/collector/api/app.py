@@ -15,5 +15,5 @@ db = flask_sqlalchemy.SQLAlchemy(app, session_options={'autocommit': True})
 from collector.api import error_handling
 
 # Resources handling
-from collector.api.resources import action_logs
+from collector.api.resources import *
 
