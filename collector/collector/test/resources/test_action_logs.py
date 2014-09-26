@@ -1,7 +1,10 @@
+from flask import json
+
 from collector.test.base import DbTest
 
 from collector.api.app import db
-from collector.api.db.model import ActionLogs
+from collector.api.common import consts
+from collector.api.db.model import ActionLog
 
 
 class TestActionLogs(DbTest):
@@ -32,9 +35,15 @@ class TestActionLogs(DbTest):
             {'action_logs': expected_logs}
         )
         self.check_response_ok(resp, code=201)
+        resp_data = json.loads(resp.data)
+        for d in resp_data['action_logs']:
+            self.assertEquals(
+                consts.ACTION_LOG_STATUSES.added,
+                d['status']
+            )
 
-        actual_logs = db.session.query(ActionLogs).filter(
-            ActionLogs.node_aid==node_aid).all()
+        actual_logs = db.session.query(ActionLog).filter(
+            ActionLog.node_aid == node_aid).all()
         self.assertEquals(len(expected_logs), len(actual_logs))
         self.assertListEqual(
             sorted([l['external_id'] for l in expected_logs]),
@@ -43,21 +52,53 @@ class TestActionLogs(DbTest):
 
     def test_post_duplication(self):
         node_aid = 'x'
-        expected_logs = [{'node_aid': node_aid, 'external_id': 1}]
+        action_logs = [{'node_aid': node_aid, 'external_id': i} for i in xrange(100)]
+        resp = self.post(
+            '/api/v1/action_logs/',
+            {'action_logs': action_logs}
+        )
+        self.check_response_ok(resp, code=201)
+        count_actual = db.session.query(ActionLog).filter(
+            ActionLog.node_aid == node_aid).count()
+        resp_data = json.loads(resp.data)
+        for d in resp_data['action_logs']:
+            self.assertEquals(
+                consts.ACTION_LOG_STATUSES.added,
+                d['status']
+            )
+        self.assertEquals(len(action_logs), count_actual)
+
+        # Checking duplications is not added
+        new_action_logs = [
+            {'node_aid': node_aid, 'external_id': i} for i in xrange(len(action_logs) + 50)
+        ]
+        resp = self.post(
+            '/api/v1/action_logs/',
+            {'action_logs': action_logs + new_action_logs}
+        )
+        self.check_response_ok(resp, code=201)
+        count_actual = db.session.query(ActionLog).filter(
+            ActionLog.node_aid == node_aid).count()
+        self.assertEquals(
+            len(new_action_logs),
+            count_actual
+        )
+        data = json.loads(resp.data)
+        existed = filter(
+            lambda x: x['status'] == consts.ACTION_LOG_STATUSES.existed,
+            data['action_logs']
+        )
+        added = filter(
+            lambda x: x['status'] == consts.ACTION_LOG_STATUSES.added,
+            data['action_logs']
+        )
+        self.assertEquals(len(action_logs), len(existed))
+        self.assertEquals(len(new_action_logs) - len(action_logs), len(added))
+
+    def test_validation_error(self):
+        expected_logs = [{'node_aid': 'x', 'external_id': None}]
         resp = self.post(
             '/api/v1/action_logs/',
             {'action_logs': expected_logs}
         )
-        self.check_response_ok(resp, code=201)
-        count_expected = db.session.query(ActionLogs).filter(
-            ActionLogs.node_aid==node_aid).count()
-
-        resp = self.post(
-            '/api/v1/action_logs/',
-            {'action_logs': expected_logs}
-        )
-        self.check_response_ok(resp, code=201)
-        count_actual = db.session.query(ActionLogs).filter(
-            ActionLogs.node_aid==node_aid).count()
-
-        self.assertEquals(count_expected, count_actual)
+        self.check_response_error(resp, code=400)

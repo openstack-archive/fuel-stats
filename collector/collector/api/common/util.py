@@ -3,6 +3,7 @@ from flask import current_app
 from flask import jsonify
 from functools import wraps
 import jsonschema
+import math
 
 from collector.api.app import db
 
@@ -65,3 +66,19 @@ def db_transaction(fn):
             db.session.rollback()
             raise
     return decorated
+
+
+def split_collection(collection, chunk_size=1000):
+    chunks_num = int(math.ceil(float(len(collection)) / chunk_size))
+    for i in xrange(chunks_num):
+        start = i * chunk_size
+        end = start + chunk_size
+        yield collection[start:end]
+
+
+def build_index(dicts_coll, *fields):
+    index = {}
+    for d in dicts_coll:
+        idx = tuple([d[f] for f in fields])
+        index[idx] = d
+    return index
