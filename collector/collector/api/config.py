@@ -10,6 +10,7 @@ class Production(object):
     LOG_FILE = '/var/log/fuel-stat/collector.log'
     LOG_LEVEL = logging.ERROR
     LOG_ROTATION = False
+    LOGGER_NAME = 'collector'
     SQLALCHEMY_DATABASE_URI = 'postgresql://collector:*****@localhost/collector'
 
 
