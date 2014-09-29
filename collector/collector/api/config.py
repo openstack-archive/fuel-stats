@@ -7,7 +7,7 @@ class Production(object):
     PORT = 5000
     HOST = 'localhost'
     VALIDATE_RESPONSE = False
-    LOG_FILE = '/var/log/fuel-stat/collector.log'
+    LOG_FILE = '/var/log/fuel-stats/collector.log'
     LOG_LEVEL = logging.ERROR
     LOG_ROTATION = False
     LOGGER_NAME = 'collector'
