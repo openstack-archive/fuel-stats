@@ -1,7 +1,7 @@
-alembic
-Flask
-Flask-JsonSchema
-Flask-Migrate
-Flask-Script
-Flask-SQLAlchemy
-psycopg2
+Flask==0.10.1
+Flask-JsonSchema==0.1.1
+Flask-Migrate==1.2.0
+Flask-SQLAlchemy==2.0
+Flask-Script==2.0.5
+alembic==0.6.7
+psycopg2==2.5.4
