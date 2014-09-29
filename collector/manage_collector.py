@@ -1,4 +1,4 @@
-# Migration manager
+#!/usr/bin/env python
 
 from flask_migrate import Migrate
 from flask_migrate import MigrateCommand
@@ -21,7 +21,7 @@ def configure_app(mode=None):
 
 manager = Manager(configure_app)
 manager.add_option('--mode', help="Acceptable modes. Default: 'test'",
-                   choices=('test', 'prod'), default='test', dest='mode')
+                   choices=('test', 'prod'), default='prod', dest='mode')
 
 migrate = Migrate(app, db)
 manager.add_command('db', MigrateCommand)

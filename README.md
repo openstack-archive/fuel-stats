@@ -11,12 +11,12 @@ Install requirements:
 
     pip install -r test-requirements.txt
 
-By default manage.py works with test settings.
-For working with prod settings use `python manage.py --mode` option.
+By default manage_collector.py works with prod settings.
+For working with test settings use `python manage_collector.py --mode` option.
 
 For creating DB migration:
 
-    python manage.py db migrate -m "Migration comment" \
+    python manage_collector.py --mode test db migrate -m "Migration comment" \
     -d collector/api/db/migrations/
 
 Create DB user with password 'collector':
@@ -36,12 +36,14 @@ Create DB and grant privileges to it:
 
 For apply the latest migration:
 
-    python manage.py db upgrade -d collector/api/db/migrations/
+    python manage_collector.py --mode test db upgrade -d collector/api/db/migrations/
 
 For revert all migrations:
 
-    python manage.py db downgrade -d collector/api/db/migrations/
+    python manage_collector.py --mode test db downgrade -d collector/api/db/migrations/
 
 For starting test server:
 
-    python manage.py runserver
+    python manage_collector.py --mode test runserver
+
+Example config for uWSGI is located in collector/uwsgi/collector_test.yaml

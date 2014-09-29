@@ -1,0 +1,5 @@
+uwsgi:
+    socket: :8081
+    module: collector.api.app
+    callable: app
+    protocol: http
