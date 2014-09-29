@@ -23,13 +23,21 @@ def handle_response(http_code, *path):
         @wraps(fn)
         def decorated(*args, **kwargs):
             response = fn(*args, **kwargs)
-            current_app.logger.debug("Processing response: {}".format(response))
+            current_app.logger.debug(
+                "Processing response: {}".format(response)
+            )
             if current_app.config.get('VALIDATE_RESPONSE', False) and path:
-                current_app.logger.debug("Validating response: {}".format(response))
+                current_app.logger.debug(
+                    "Validating response: {}".format(response)
+                )
                 jsonschema_ext = current_app.extensions.get('jsonschema')
                 jsonschema.validate(response, jsonschema_ext.get_schema(path))
-                current_app.logger.debug("Response validated: {}".format(response))
-            current_app.logger.debug("Response processed: {}".format(response))
+                current_app.logger.debug(
+                    "Response validated: {}".format(response)
+                )
+            current_app.logger.debug(
+                "Response processed: {}".format(response)
+            )
             return jsonify(response), http_code
         return decorated
     return wrapper
@@ -62,7 +70,7 @@ def db_transaction(fn):
             result = fn(*args, **kwargs)
             db.session.commit()
             return result
-        except:
+        except Exception:
             db.session.rollback()
             raise
     return decorated

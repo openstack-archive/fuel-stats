@@ -56,7 +56,8 @@ class DbTest(BaseTest):
         super(DbTest, self).setUp()
 
         # Cleaning DB. It useful in case of tests failure
-        directory = os.path.join(os.path.dirname(__file__), '..', 'api', 'db', 'migrations')
+        directory = os.path.join(os.path.dirname(__file__),
+                                 '..', 'api', 'db', 'migrations')
         with app.app_context():
             flask_migrate.downgrade(directory=directory)
             flask_migrate.upgrade(directory=directory)

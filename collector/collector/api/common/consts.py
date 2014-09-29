@@ -13,5 +13,3 @@ ACTION_LOG_STATUSES = make_enum(
     'existed',
     'failed'
 )
-
-

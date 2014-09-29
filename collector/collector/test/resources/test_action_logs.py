@@ -52,7 +52,8 @@ class TestActionLogs(DbTest):
 
     def test_post_duplication(self):
         node_aid = 'x'
-        action_logs = [{'node_aid': node_aid, 'external_id': i} for i in xrange(100)]
+        action_logs = [{'node_aid': node_aid, 'external_id': i}
+                       for i in xrange(100)]
         resp = self.post(
             '/api/v1/action_logs/',
             {'action_logs': action_logs}
@@ -69,9 +70,8 @@ class TestActionLogs(DbTest):
         self.assertEquals(len(action_logs), count_actual)
 
         # Checking duplications is not added
-        new_action_logs = [
-            {'node_aid': node_aid, 'external_id': i} for i in xrange(len(action_logs) + 50)
-        ]
+        new_action_logs = [{'node_aid': node_aid, 'external_id': i}
+                           for i in xrange(len(action_logs) + 50)]
         resp = self.post(
             '/api/v1/action_logs/',
             {'action_logs': action_logs + new_action_logs}

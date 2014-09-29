@@ -11,7 +11,8 @@ class Production(object):
     LOG_LEVEL = logging.ERROR
     LOG_ROTATION = False
     LOGGER_NAME = 'collector'
-    SQLALCHEMY_DATABASE_URI = 'postgresql://collector:*****@localhost/collector'
+    SQLALCHEMY_DATABASE_URI = \
+        'postgresql://collector:*****@localhost/collector'
 
 
 class Testing(Production):
@@ -24,4 +25,5 @@ class Testing(Production):
     LOG_ROTATION = True
     LOG_FILE_SIZE = 2048000
     LOG_FILES_COUNT = 5
-    SQLALCHEMY_DATABASE_URI = 'postgresql://collector:collector@localhost/collector'
+    SQLALCHEMY_DATABASE_URI = \
+        'postgresql://collector:collector@localhost/collector'
