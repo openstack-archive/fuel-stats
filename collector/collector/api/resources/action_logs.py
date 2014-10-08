@@ -1,8 +1,25 @@
+#    Copyright 2014 Mirantis, Inc.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
+
 from flask import Blueprint
 from flask import request
 from flask_jsonschema import validate as validate_request
+import six
 from sqlalchemy import and_
 from sqlalchemy import or_
+
+bp = Blueprint('action_logs', __name__, url_prefix='/api/v1/action_logs')
 
 from collector.api.app import app
 from collector.api.app import db
@@ -12,9 +29,6 @@ from collector.api.common.util import db_transaction
 from collector.api.common.util import exec_time
 from collector.api.common.util import handle_response
 from collector.api.db.model import ActionLog
-
-
-bp = Blueprint('action_logs', __name__, url_prefix='/api/v1/action_logs')
 
 
 @bp.route('/', methods=['POST'])
@@ -30,51 +44,57 @@ def post():
     objects_info = []
     for chunk in util.split_collection(action_logs, chunk_size=1000):
         existed_objs, action_logs_to_add = _separate_action_logs(chunk)
-        _handle_existed_objects(objects_info, existed_objs)
-        _save_action_logs(objects_info, action_logs_to_add)
+        objects_info.extend(_extract_objects_info(existed_objs))
+        objects_info.extend(_save_action_logs(action_logs_to_add))
     return {'status': 'ok', 'action_logs': list(objects_info)}
 
 
 @db_transaction
-def _save_action_logs(objects_info, action_logs):
+def _save_action_logs(action_logs):
+    result = []
     if not action_logs:
-        return
+        return result
     try:
         db.session.execute(ActionLog.__table__.insert(), action_logs)
         for action_log in action_logs:
-            objects_info.append({
+            result.append({
                 'node_aid': action_log['node_aid'],
                 'external_id': action_log['external_id'],
                 'status': consts.ACTION_LOG_STATUSES.added
             })
     except Exception:
         app.logger.exception("Processing of action logs chunk failed")
-        _handle_chunk_processing_error(objects_info, action_logs)
+        result = _handle_chunk_processing_error(action_logs)
+    return result
 
 
-def _handle_existed_objects(objects_info, existed_objects):
+def _extract_objects_info(existed_objects):
+    result = []
     for obj in existed_objects:
-        objects_info.append({
+        result.append({
             'node_aid': obj.node_aid,
             'external_id': obj.external_id,
             'status': consts.ACTION_LOG_STATUSES.existed
         })
+    return result
 
 
-def _handle_chunk_processing_error(objects_info, chunk):
+def _handle_chunk_processing_error(chunk):
+    result = []
     for action_log in chunk:
-        objects_info.append({
+        result.append({
             'node_aid': action_log['node_aid'],
             'external_id': action_log['external_id'],
             'status': consts.ACTION_LOG_STATUSES.failed
         })
+    return result
 
 
 def _separate_action_logs(action_logs):
     existed_objs = []
     action_logs_idx = util.build_index(action_logs, 'node_aid', 'external_id')
     clauses = []
-    for aid, ext_id in action_logs_idx.keys():
+    for aid, ext_id in six.iterkeys(action_logs_idx):
         clauses.append(and_(
             ActionLog.node_aid == aid,
             ActionLog.external_id == ext_id
@@ -85,4 +105,4 @@ def _separate_action_logs(action_logs):
         existed_objs.append(existed)
         idx = (existed.node_aid, existed.external_id)
         action_logs_idx.pop(idx)
-    return existed_objs, action_logs_idx.values()
+    return existed_objs, list(six.itervalues(action_logs_idx))
