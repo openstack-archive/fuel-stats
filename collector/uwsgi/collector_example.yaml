@@ -1,5 +1,6 @@
 uwsgi:
     socket: :8081
-    module: collector.api.app
+    # for production app use collector.api.app as module
+    module: collector.api.app_test
     callable: app
     protocol: http
