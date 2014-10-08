@@ -1,3 +1,4 @@
+from alembic.util import CommandError
 from flask import json
 import flask_migrate
 import os
@@ -59,5 +60,9 @@ class DbTest(BaseTest):
         directory = os.path.join(os.path.dirname(__file__),
                                  '..', 'api', 'db', 'migrations')
         with app.app_context():
-            flask_migrate.downgrade(directory=directory)
+            try:
+                flask_migrate.downgrade(directory=directory)
+            except CommandError:
+                # Workaround for the first migration
+                pass
             flask_migrate.upgrade(directory=directory)

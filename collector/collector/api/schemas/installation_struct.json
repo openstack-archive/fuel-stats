@@ -1,0 +1,75 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+
+    "type": "object",
+
+    "request": {
+        "type": "object",
+        "properties": {
+            "installation_struct": {
+                "type": "object",
+                "properties": {
+                    "aid": {"type": "string"},
+                    "clusters_num": {"type": "integer"},
+                    "allocated_nodes_num": {"type": "integer"},
+                    "unallocated_nodes_num": {"type": "integer"},
+                    "on_date": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "clusters": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {"type": "integer"},
+                                "nodes_num": {"type": "integer"},
+                                "nodes": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "id": {"type": "integer"},
+                                            "roles": {
+                                                "type": "array",
+                                                "items": {"type": "string"}
+                                            },
+                                            "required": ["id", "roles"]
+                                        }
+                                    }
+                                },
+                                "required": ["id", "nodes_num", "nodes"]
+                            }
+                        }
+                    }
+                },
+                "required": ["aid", "clusters_num", "allocated_nodes_num",
+                             "unallocated_nodes_num", "clusters", "on_date"]
+            }
+        }
+    },
+
+    "response": {
+        "oneOf": [
+            {
+                "type": "object",
+                "properties": {
+                    "status": {"enum": ["ok"]},
+                    "exec_time": {"type": "number"}
+                },
+                "required": ["status"],
+                "additionalProperties": false
+            },
+            {
+                "type": "object",
+                "properties": {
+                    "status": {"enum": ["error"]},
+                    "exec_time": {"type": "number"},
+                    "message": {"type": "string"}
+                },
+                "required": ["status", "message"],
+                "additionalProperties": false
+            }
+        ]
+    }
+}

@@ -18,9 +18,12 @@ db = flask_sqlalchemy.SQLAlchemy(app, session_options={'autocommit': True})
 
 
 # Registering blueprints
+from collector.api.resources.installation_struct import \
+    bp as installation_struct_bp
 from collector.api.resources.action_logs import bp as action_logs_bp
 from collector.api.resources.ping import bp as ping_bp
 
+app.register_blueprint(installation_struct_bp)
 app.register_blueprint(action_logs_bp)
 app.register_blueprint(ping_bp)
 
