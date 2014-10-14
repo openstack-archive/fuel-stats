@@ -35,6 +35,7 @@ def upgrade():
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('node_aid', sa.String(), nullable=False),
         sa.Column('external_id', sa.Integer(), nullable=False),
+        sa.Column('body', sa.Text(), nullable=False),
         sa.PrimaryKeyConstraint('id'),
         sa.UniqueConstraint('node_aid', 'external_id')
     )

@@ -13,6 +13,7 @@
 #    under the License.
 
 from flask import Blueprint
+from flask import json
 from flask import request
 from flask_jsonschema import validate as validate_request
 import six
@@ -45,6 +46,8 @@ def post():
     for chunk in util.split_collection(action_logs, chunk_size=1000):
         existed_objs, action_logs_to_add = _separate_action_logs(chunk)
         objects_info.extend(_extract_objects_info(existed_objs))
+        for obj in action_logs_to_add:
+            obj['body'] = json.dumps(obj['body'])
         objects_info.extend(_save_action_logs(action_logs_to_add))
     return {'status': 'ok', 'action_logs': list(objects_info)}
 
