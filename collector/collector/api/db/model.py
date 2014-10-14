@@ -24,6 +24,7 @@ class ActionLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     node_aid = db.Column(db.String, nullable=False)
     external_id = db.Column(db.Integer, nullable=False)
+    body = db.Column(db.Text, nullable=False)
 
 
 class InstallationStruct(db.Model):
