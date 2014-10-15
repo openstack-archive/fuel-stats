@@ -30,7 +30,7 @@ class InstallationStruct(db.Model):
     __tablename__ = 'installation_structs'
 
     id = db.Column(db.Integer, primary_key=True)
-    aid = db.Column(db.String, nullable=False, unique=True)
+    master_node_uid = db.Column(db.String, nullable=False, unique=True)
     struct = db.Column(db.Text, nullable=False)
     creation_date = db.Column(db.DateTime)
     modification_date = db.Column(db.DateTime)

@@ -9,7 +9,7 @@
             "installation_struct": {
                 "type": "object",
                 "properties": {
-                    "aid": {"type": "string"},
+                    "master_node_uid": {"type": "string"},
                     "clusters_num": {"type": "integer"},
                     "allocated_nodes_num": {"type": "integer"},
                     "unallocated_nodes_num": {"type": "integer"},
@@ -68,7 +68,7 @@
                         }
                     }
                 },
-                "required": ["aid", "clusters_num", "allocated_nodes_num",
+                "required": ["master_node_uid", "clusters_num", "allocated_nodes_num",
                              "unallocated_nodes_num", "clusters"]
             }
         },

@@ -39,12 +39,12 @@ def post():
         "Handling installation_struct post request: {}".format(request.json)
     )
     struct = request.json['installation_struct']
-    aid = struct['aid']
+    master_node_uid = struct['master_node_uid']
     obj = db.session.query(InstallationStruct).filter(
-        InstallationStruct.aid == aid).first()
+        InstallationStruct.master_node_uid == master_node_uid).first()
     if obj is None:
         app.logger.debug("Saving new struct")
-        obj = InstallationStruct(aid=aid)
+        obj = InstallationStruct(master_node_uid=master_node_uid)
         obj.creation_date = datetime.utcnow()
     else:
         app.logger.debug("Updating struct {}".format(obj.id))

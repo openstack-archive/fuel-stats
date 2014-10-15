@@ -31,17 +31,15 @@ def parse_requirements_txt():
 
 
 setup(
-    name='collector',
+    name='analytics',
     version='0.0.1',
-    description="Service of collecting anonymous statistics",
-    long_description="""Service of collecting anonymous statistics""",
+    description="Set of analytics reports",
+    long_description="""Set of analytics reports""",
     license="http://www.apache.org/licenses/LICENSE-2.0",
     classifiers=[
         "License :: OSI Approved :: Apache Software License",
         "Development Status :: 3 - Alpha",
         "Programming Language :: Python",
-        "Topic :: Internet :: WWW/HTTP",
-        "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
     ],
     author='Mirantis Inc.',
     author_email='product@mirantis.com',
@@ -51,5 +49,5 @@ setup(
     zip_safe=False,
     install_requires=parse_requirements_txt(),
     include_package_data=True,
-    scripts=['manage_collector.py']
+    scripts=[]
 )
