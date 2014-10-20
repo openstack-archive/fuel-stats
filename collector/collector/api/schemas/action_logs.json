@@ -12,9 +12,25 @@
                     "type": "object",
                     "properties": {
                         "node_aid": {"type": "string"},
-                        "external_id": {"type": "integer"}
+                        "external_id": {"type": "integer"},
+                        "body": {
+                            "type": "object",
+                            "properties": {
+                                "id": {"type": "number"},
+                                "actor_id": {"type": ["string", "null"]},
+                                "action_group": {"type": "string"},
+                                "action_name": {"type": "string"},
+                                "action_type": {"type": "string"},
+                                "start_timestamp": {"type": "string"},
+                                "end_timestamp": {"type": "string"},
+                                "additional_info": {"type": "object"},
+                                "is_sent": {"type": "boolean"},
+                                "cluster_id": {"type": ["number", "null"]},
+                                "task_uuid": {"type": ["string", "null"]}
+                            }
+                        }
                     },
-                    "required": ["node_aid", "external_id"]
+                    "required": ["node_aid", "external_id", "body"]
                 }
             }
         },

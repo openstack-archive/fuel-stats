@@ -40,10 +40,24 @@ class TestActionLogs(DbTest):
     def test_post(self):
         node_aid = 'x'
         expected_logs = [
-            {'node_aid': node_aid, 'external_id': 1},
-            {'node_aid': node_aid, 'external_id': 2},
-            {'node_aid': node_aid, 'external_id': 3}
-        ]
+            {
+                'node_aid': node_aid,
+                'external_id': i,
+                'body': {
+                    "id": i,
+                    "actor_id": "",
+                    "action_group": "",
+                    "action_name": "",
+                    "action_type": "",
+                    "start_timestamp": "",
+                    "end_timestamp": "",
+                    "additional_info": {},
+                    "is_sent": False,
+                    "cluster_id": 5,
+                    "task_uuid": None
+                }
+            }
+            for i in xrange(3)]
         resp = self.post(
             '/api/v1/action_logs/',
             {'action_logs': expected_logs}
@@ -66,8 +80,25 @@ class TestActionLogs(DbTest):
 
     def test_post_duplication(self):
         node_aid = 'x'
-        action_logs = [{'node_aid': node_aid, 'external_id': i}
-                       for i in xrange(100)]
+        action_logs = [
+            {
+                'node_aid': node_aid,
+                'external_id': i,
+                'body': {
+                    "id": i,
+                    "actor_id": "",
+                    "action_group": "",
+                    "action_name": "",
+                    "action_type": "",
+                    "start_timestamp": "",
+                    "end_timestamp": "",
+                    "additional_info": {},
+                    "is_sent": False,
+                    "cluster_id": 5,
+                    "task_uuid": None
+                }
+            }
+            for i in xrange(100)]
         resp = self.post(
             '/api/v1/action_logs/',
             {'action_logs': action_logs}
@@ -84,8 +115,25 @@ class TestActionLogs(DbTest):
         self.assertEquals(len(action_logs), count_actual)
 
         # Checking duplications is not added
-        new_action_logs = [{'node_aid': node_aid, 'external_id': i}
-                           for i in xrange(len(action_logs) + 50)]
+        new_action_logs = [
+            {
+                'node_aid': node_aid,
+                'external_id': i,
+                'body': {
+                    "id": i,
+                    "actor_id": "",
+                    "action_group": "",
+                    "action_name": "",
+                    "action_type": "",
+                    "start_timestamp": "",
+                    "end_timestamp": "",
+                    "additional_info": {},
+                    "is_sent": False,
+                    "cluster_id": 5,
+                    "task_uuid": None
+                }
+            }
+            for i in xrange(len(action_logs) + 50)]
         resp = self.post(
             '/api/v1/action_logs/',
             {'action_logs': action_logs + new_action_logs}
