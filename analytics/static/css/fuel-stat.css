@@ -1,0 +1,22 @@
+html, body {font-family: 'open sans'; background-color: #2f4050; height: 100%;}
+        
+.logo {width: auto; height: 65px; color: #dadada; margin: 0; padding: 0; text-align:center; background: url(../img/fuel-statistic-logo.svg) top center no-repeat;}
+.base-box {height: auto; padding-bottom: 50px;}
+.base-box-fixer {margin: 0; padding: 0;}
+.base-box-content {background-color: #f3f3f4;}
+        
+.nav-pills > li > a {border-radius: 0; padding: 14px 20px; font-size: 13px; font-weight: 600; border-left: 4px solid #2f4050; color: #a7b1c2;}
+.nav-pills > li > a:hover {border-left: 4px solid #293846; background-color: #293846; color: #ffffff;}
+
+.nav-pills > li.active > a,
+.nav-pills > li.active > a:hover,
+.nav-pills > li.active > a:focus {color: #fff; background-color: #293846; border-left: 4px solid #19aa8d; }
+
+.graph-item-box {background-color: #ffffff; -webkit-box-sizing: border-box; -moz-box-sizing: border-box; box-sizing: border-box;}
+.graph-item-box > .header {height: 49px; border-top: 4px solid #e7eaec; border-bottom: 1px solid #e7eaec; overflow: hidden;}
+.graph-item-box > .header > .title {font-size: 14px; font-weight: 600; color: #676a6c; margin: 12px 12px; width: 70%; float: left; height: 24px; overflow:hidden;}
+.graph-item-box > .header > .icon {width: 12px; height: 12px; float: right; margin: 16px 16px 0px 0px; background: url(../img/expand-icon.png) no-repeat top left;}
+.graph-item-box > .header > .icon > a {width: 12px; height: 12px; display: block; cursor: pointer;}
+.graph-item-box > .content {padding: 14px; font-weight: 300; font-size: 14px; -webkit-box-sizing: border-box; -moz-box-sizing: border-box; box-sizing: border-box;}
+.graph-item-box > .content > .image {display: block; height: 300px; text-align: center;}
+.graph-item-box > .content > .image > img {width: 100%;}

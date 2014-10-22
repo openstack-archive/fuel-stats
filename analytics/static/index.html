@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="favicon.ico">
+    <title>Fuel Statistics</title>
+    <!-- Bootstrap core CSS -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom styles for this template -->
+    <link href="css/fuel-stat.css" rel="stylesheet">
+    <link href="css/nv.d3.css" rel="stylesheet">
+    <!-- Just for debugging purposes. Don't actually copy these 2 lines! -->
+    <!--[if lt IE 9]><script src="../../assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    <script data-main="js/main" src="js/require.js"></script>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,300,600,700' rel='stylesheet' type='text/css'>
+  </head>
+  <body>
+
+      <!-- start base grid -->
+      <div class="container-fluid base-box base-box-fixer">
+        <div class="row base-box base-box-fixer">
+            <div class="col-sm-2 base-box-fixer">
+                <!-- Start Fuel Stat Logo -->
+                <div class="logo"></div>
+                <!-- End Fuel Stat Logo -->
+                <!-- Start Navigation -->
+                <div>
+                    <ul class="nav nav-pills nav-stacked">
+                        <li class="active"><a href="#">Graphics</a></li>
+                        <li><a href="#">Statistics</a></li>
+                        <li><a href="#">Reports</a></li>
+                    </ul>
+                </div>
+                <!-- End Navigation -->
+            </div>
+            <div class="col-sm-10 base-box base-box-fixer">
+                <!-- Start Content -->
+                <div class="base-box base-box-content">
+                    <!-- Start Header Content -->
+                    <div class="container-fluid" style="height: 60px;">
+                        <div class="row">
+                            <div class="col-xs-16 col-md-10"> <h3 style="font-weight: 300; color: #666666; margin-left: 20px;">Welcome to Fuel Statistics</h3></div>
+                            <div class="col-xs-4 col-md-2" style="text-align: right; margin-top: 20px;"><a href="#">Log out</a></div>
+                        </div>
+                    </div>
+                    <!-- End Header Content -->
+                    <!-- Start Article Block -->
+                        <div class="container-fluid" style="border-top: 4px solid #e7eaec; border-bottom: 1px solid #e7eaec; background-color: #ffffff; height: 340px; margin-bottom: 15px;">
+                            <div class="row">
+                                <div class="col-xs-6 col-md-4">
+                                    <div style="padding: 12px 0px 0px 20px;">
+                                        <p style="font-weight: 300; color: #999999;">Dynamic of changing active users count</p>
+                                    </div>
+                                </div>
+                                <div class="col-xs-12 col-md-8">
+                                    <div id="activity-chart"><svg style="height: 350px;"></svg></div>
+                                </div>
+                            </div>
+                        </div>
+                    <!-- End Article Block -->
+                    <!-- Start Graphics Items -->
+                    <div class="container-fluid">
+                        <div class="row">
+                            <!-- Start Item 1 -->
+                            <div class="col-md-4">
+                                <div class="graph-item-box">
+                                    <!-- Start Item Header -->
+                                    <div class="header">
+                                        <div class="title">Nodes distribution</div>
+                                        <div class="icon"><a href="#"></a></div>
+                                    </div>
+                                    <!-- End Item Header -->
+                                    <!-- Start Item Content -->
+                                    <div class="content">
+                                    <div class="image"><div id="nodes-distribution"></div></div>
+                                    </div>
+                                    <!-- End Item Content -->
+                                </div>
+                            </div>
+                            <!-- End Item 1 -->
+                            <!-- Start Item 2 -->
+                            <div class="col-md-4">
+                                <div class="graph-item-box">
+                                    <!-- Start Item Header -->
+                                    <div class="header">
+                                        <div class="title">Virtualization distribution</div>
+                                        <div class="icon"><a href="#"></a></div>
+                                    </div>
+                                    <!-- End Item Header -->
+                                    <!-- Start Item Content -->
+                                    <div class="content">
+                                    <div class="image"><div id="releases-distribution"><svg style="height: 250px;"></svg></div>
+                                    </div>
+                                    </div>
+                                    <!-- End Item Content -->
+                                </div>
+                            </div>
+                            <!-- End Item 2 -->
+                            <!-- Start Item 3 -->
+                            <div class="col-md-4">
+                                <div class="graph-item-box">
+                                    <!-- Start Item Header -->
+                                    <div class="header">
+                                        <div class="title">OSes distribution</div>
+                                        <div class="icon"><a href="#"></a></div>
+                                    </div>
+                                    <!-- End Item Header -->
+                                    <!-- Start Item Content -->
+                                    <div class="content">
+                                    <div class="image"><div id="distribution-of-oses"></div>
+                                    </div>
+                                    <!-- End Item Content -->
+                                </div>
+                            </div>
+                            <!-- End Item 3 -->
+                        </div>
+                    </div>
+                <!-- End Graphics Items -->
+                </div>
+                <!-- End Content -->
+            </div>
+        </div>
+      </div>
+      <!-- end base grid -->
+  </body>
+</html>
+
