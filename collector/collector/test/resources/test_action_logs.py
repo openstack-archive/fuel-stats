@@ -38,10 +38,10 @@ class TestActionLogs(DbTest):
         self.check_response_ok(resp, code=201)
 
     def test_post(self):
-        node_aid = 'x'
+        master_node_uid = 'x'
         expected_logs = [
             {
-                'node_aid': node_aid,
+                'master_node_uid': master_node_uid,
                 'external_id': i,
                 'body': {
                     "id": i,
@@ -71,7 +71,7 @@ class TestActionLogs(DbTest):
             )
 
         actual_logs = db.session.query(ActionLog).filter(
-            ActionLog.node_aid == node_aid).all()
+            ActionLog.master_node_uid == master_node_uid).all()
         self.assertEquals(len(expected_logs), len(actual_logs))
         self.assertListEqual(
             sorted([l['external_id'] for l in expected_logs]),
@@ -79,10 +79,10 @@ class TestActionLogs(DbTest):
         )
 
     def test_post_duplication(self):
-        node_aid = 'x'
+        master_node_uid = 'x'
         action_logs = [
             {
-                'node_aid': node_aid,
+                'master_node_uid': master_node_uid,
                 'external_id': i,
                 'body': {
                     "id": i,
@@ -105,7 +105,7 @@ class TestActionLogs(DbTest):
         )
         self.check_response_ok(resp, code=201)
         count_actual = db.session.query(ActionLog).filter(
-            ActionLog.node_aid == node_aid).count()
+            ActionLog.master_node_uid == master_node_uid).count()
         resp_data = json.loads(resp.data)
         for d in resp_data['action_logs']:
             self.assertEquals(
@@ -117,7 +117,7 @@ class TestActionLogs(DbTest):
         # Checking duplications is not added
         new_action_logs = [
             {
-                'node_aid': node_aid,
+                'master_node_uid': master_node_uid,
                 'external_id': i,
                 'body': {
                     "id": i,
@@ -140,7 +140,7 @@ class TestActionLogs(DbTest):
         )
         self.check_response_ok(resp, code=201)
         count_actual = db.session.query(ActionLog).filter(
-            ActionLog.node_aid == node_aid).count()
+            ActionLog.master_node_uid == master_node_uid).count()
         self.assertEquals(
             len(new_action_logs),
             count_actual
@@ -158,7 +158,7 @@ class TestActionLogs(DbTest):
         self.assertEquals(len(new_action_logs) - len(action_logs), len(added))
 
     def test_validation_error(self):
-        expected_logs = [{'node_aid': 'x', 'external_id': None}]
+        expected_logs = [{'master_node_uid': 'x', 'external_id': None}]
         resp = self.post(
             '/api/v1/action_logs/',
             {'action_logs': expected_logs}

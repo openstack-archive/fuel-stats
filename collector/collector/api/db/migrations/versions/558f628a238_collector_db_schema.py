@@ -33,21 +33,21 @@ def upgrade():
     op.create_table(
         'action_logs',
         sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('node_aid', sa.String(), nullable=False),
+        sa.Column('master_node_uid', sa.String(), nullable=False),
         sa.Column('external_id', sa.Integer(), nullable=False),
         sa.Column('body', sa.Text(), nullable=False),
         sa.PrimaryKeyConstraint('id'),
-        sa.UniqueConstraint('node_aid', 'external_id')
+        sa.UniqueConstraint('master_node_uid', 'external_id')
     )
     op.create_table(
         'installation_structs',
         sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('aid', sa.String(), nullable=False),
+        sa.Column('master_node_uid', sa.String(), nullable=False),
         sa.Column('struct', sa.Text(), nullable=False),
         sa.Column('creation_date', sa.DateTime(), nullable=True),
         sa.Column('modification_date', sa.DateTime(), nullable=True),
         sa.PrimaryKeyConstraint('id'),
-        sa.UniqueConstraint('aid')
+        sa.UniqueConstraint('master_node_uid')
     )
     ### end Alembic commands ###
 

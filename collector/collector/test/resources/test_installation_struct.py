@@ -34,7 +34,7 @@ class TestInstallationStruct(DbTest):
 
     def test_validation_error(self):
         wrong_data_sets = [
-            {'installation_struct': {'aid': 'x'}},
+            {'installation_struct': {'master_node_uid': 'x'}},
             None,
             {}
         ]
@@ -46,9 +46,9 @@ class TestInstallationStruct(DbTest):
             self.check_response_error(resp, code=400)
 
     def test_post(self):
-        aid = 'x'
+        master_node_uid = 'x'
         struct = {
-            'aid': aid,
+            'master_node_uid': master_node_uid,
             'fuel_release': {
                 'release': 'r',
                 'ostf_sha': 'o_sha',
@@ -98,15 +98,15 @@ class TestInstallationStruct(DbTest):
         )
         self.check_response_ok(resp, code=201)
         obj = db.session.query(InstallationStruct).filter(
-            InstallationStruct.aid == aid).one()
+            InstallationStruct.master_node_uid == master_node_uid).one()
         self.assertEquals(json.dumps(struct), obj.struct)
         self.assertIsNotNone(obj.creation_date)
         self.assertIsNone(obj.modification_date)
 
     def test_post_update(self):
-        aid = 'xx'
+        master_node_uid = 'xx'
         struct = {
-            'aid': aid,
+            'master_node_uid': master_node_uid,
             'allocated_nodes_num': 0,
             'unallocated_nodes_num': 0,
             'clusters_num': 0,
@@ -118,7 +118,7 @@ class TestInstallationStruct(DbTest):
         )
         self.check_response_ok(resp, code=201)
         obj_new = db.session.query(InstallationStruct).filter(
-            InstallationStruct.aid == aid).one()
+            InstallationStruct.master_node_uid == master_node_uid).one()
         self.assertEquals(json.dumps(struct), obj_new.struct)
         self.assertIsNotNone(obj_new.creation_date)
         self.assertIsNone(obj_new.modification_date)
@@ -130,7 +130,7 @@ class TestInstallationStruct(DbTest):
         )
         self.check_response_ok(resp, code=201)
         obj_upd = db.session.query(InstallationStruct).filter(
-            InstallationStruct.aid == aid).one()
+            InstallationStruct.master_node_uid == master_node_uid).one()
         self.assertEquals(json.dumps(struct), obj_upd.struct)
         self.assertIsNotNone(obj_upd.creation_date)
         self.assertIsNotNone(obj_upd.modification_date)
