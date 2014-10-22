@@ -61,7 +61,7 @@ def _save_action_logs(action_logs):
         db.session.execute(ActionLog.__table__.insert(), action_logs)
         for action_log in action_logs:
             result.append({
-                'node_aid': action_log['node_aid'],
+                'master_node_uid': action_log['master_node_uid'],
                 'external_id': action_log['external_id'],
                 'status': consts.ACTION_LOG_STATUSES.added
             })
@@ -75,7 +75,7 @@ def _extract_objects_info(existed_objects):
     result = []
     for obj in existed_objects:
         result.append({
-            'node_aid': obj.node_aid,
+            'master_node_uid': obj.master_node_uid,
             'external_id': obj.external_id,
             'status': consts.ACTION_LOG_STATUSES.existed
         })
@@ -86,7 +86,7 @@ def _handle_chunk_processing_error(chunk):
     result = []
     for action_log in chunk:
         result.append({
-            'node_aid': action_log['node_aid'],
+            'master_node_uid': action_log['master_node_uid'],
             'external_id': action_log['external_id'],
             'status': consts.ACTION_LOG_STATUSES.failed
         })
@@ -95,17 +95,18 @@ def _handle_chunk_processing_error(chunk):
 
 def _separate_action_logs(action_logs):
     existed_objs = []
-    action_logs_idx = util.build_index(action_logs, 'node_aid', 'external_id')
+    action_logs_idx = \
+        util.build_index(action_logs, 'master_node_uid', 'external_id')
     clauses = []
-    for aid, ext_id in six.iterkeys(action_logs_idx):
+    for master_node_uid, ext_id in six.iterkeys(action_logs_idx):
         clauses.append(and_(
-            ActionLog.node_aid == aid,
+            ActionLog.master_node_uid == master_node_uid,
             ActionLog.external_id == ext_id
         ))
     found_objs = db.session.query(ActionLog).filter(or_(*clauses)).all()
 
     for existed in found_objs:
         existed_objs.append(existed)
-        idx = (existed.node_aid, existed.external_id)
+        idx = (existed.master_node_uid, existed.external_id)
         action_logs_idx.pop(idx)
     return existed_objs, list(six.itervalues(action_logs_idx))

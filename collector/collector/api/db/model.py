@@ -18,11 +18,11 @@ from collector.api.app import db
 class ActionLog(db.Model):
     __tablename__ = 'action_logs'
     __table_args__ = (
-        db.UniqueConstraint('node_aid', 'external_id'),
+        db.UniqueConstraint('master_node_uid', 'external_id'),
     )
 
     id = db.Column(db.Integer, primary_key=True)
-    node_aid = db.Column(db.String, nullable=False)
+    master_node_uid = db.Column(db.String, nullable=False)
     external_id = db.Column(db.Integer, nullable=False)
     body = db.Column(db.Text, nullable=False)
 
@@ -31,7 +31,7 @@ class InstallationStruct(db.Model):
     __tablename__ = 'installation_structs'
 
     id = db.Column(db.Integer, primary_key=True)
-    aid = db.Column(db.String, nullable=False, unique=True)
+    master_node_uid = db.Column(db.String, nullable=False, unique=True)
     struct = db.Column(db.Text, nullable=False)
     creation_date = db.Column(db.DateTime)
     modification_date = db.Column(db.DateTime)
