@@ -26,7 +26,7 @@ Create DB user with password 'collector':
 or:
 
     sudo -u postgres psql
-    CREATE ROLE collector WITH NOSUPERUSER NOCREATEDB NOCREATEROLE ENCRYPTED PASSWORD 'colector';
+    CREATE ROLE collector WITH NOSUPERUSER NOCREATEDB NOCREATEROLE LOGIN ENCRYPTED PASSWORD 'collector';
 
 Create DB and grant privileges to it:
 
