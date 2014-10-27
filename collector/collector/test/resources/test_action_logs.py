@@ -48,10 +48,13 @@ class TestActionLogs(DbTest):
                     "actor_id": "",
                     "action_group": "",
                     "action_name": "",
-                    "action_type": "",
+                    "action_type": "http_request",
                     "start_timestamp": "",
                     "end_timestamp": "",
-                    "additional_info": {},
+                    "additional_info": {
+                        "request_data": {},
+                        "response_data": {}
+                    },
                     "is_sent": False,
                     "cluster_id": 5,
                     "task_uuid": None
@@ -89,10 +92,16 @@ class TestActionLogs(DbTest):
                     "actor_id": "",
                     "action_group": "",
                     "action_name": "",
-                    "action_type": "",
+                    "action_type": "nailgun_task",
                     "start_timestamp": "",
                     "end_timestamp": "",
-                    "additional_info": {},
+                    "additional_info": {
+                        "parent_task_id": 0,
+                        "subtasks_ids": [],
+                        "operation": "",
+                        "nodes_from_resp": [],
+                        "ended_with_status": ""
+                    },
                     "is_sent": False,
                     "cluster_id": 5,
                     "task_uuid": None
@@ -124,10 +133,16 @@ class TestActionLogs(DbTest):
                     "actor_id": "",
                     "action_group": "",
                     "action_name": "",
-                    "action_type": "",
+                    "action_type": "nailgun_task",
                     "start_timestamp": "",
                     "end_timestamp": "",
-                    "additional_info": {},
+                    "additional_info": {
+                        "parent_task_id": 0,
+                        "subtasks_ids": [],
+                        "operation": "",
+                        "nodes_from_resp": [],
+                        "ended_with_status": ""
+                    },
                     "is_sent": False,
                     "cluster_id": 5,
                     "task_uuid": None
