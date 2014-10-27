@@ -22,13 +22,11 @@ import math
 from collector.api.app import db
 
 
-def handle_response(http_code, *path):
+def handle_response(*path):
     """Checks response, if VALIDATE_RESPONSE in app.config is set to True
     and path is not empty.
     Jsonifies response, adds http_code to returning values.
 
-    :param http_code:
-    :type http_code: integer
     :param path: path to response json schema
     :type path: collection of strings
     :return: tuple of jsonifyed response and http_code
@@ -36,7 +34,7 @@ def handle_response(http_code, *path):
     def wrapper(fn):
         @wraps(fn)
         def decorated(*args, **kwargs):
-            response = fn(*args, **kwargs)
+            http_code, response = fn(*args, **kwargs)
             current_app.logger.debug(
                 "Processing response: {}".format(response)
             )
@@ -66,11 +64,11 @@ def exec_time(fn):
     @wraps(fn)
     def decorated(*args, **kwargs):
         start = datetime.datetime.now()
-        resp = fn(*args, **kwargs)
+        status_code, resp = fn(*args, **kwargs)
         end = datetime.datetime.now()
         td = end - start
         resp['exec_time'] = float('%d.%06d' % (td.seconds, td.microseconds))
-        return resp
+        return status_code, resp
     return decorated
 
 

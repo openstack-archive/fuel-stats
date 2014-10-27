@@ -12,14 +12,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from analytics import config
-from analytics.test.base import ElasticTest
+from migration import config
+from migration.test.base import ElasticTest
 
 
-class Mapping(ElasticTest):
+class ElasticsearchMapping(ElasticTest):
 
     def setUp(self):
-        super(Mapping, self).setUp()
+        super(ElasticsearchMapping, self).setUp()
 
     def test_master_node_uid_not_analyzed(self):
         docs = [

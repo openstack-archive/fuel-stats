@@ -18,37 +18,39 @@ from flask import json
 from flask import request
 from flask_jsonschema import validate as validate_request
 
-bp = Blueprint('installation_struct', __name__,
-               url_prefix='/api/v1/installation_struct')
+bp = Blueprint('installation_structure', __name__,
+               url_prefix='/api/v1/installation_structure')
 
 from collector.api.app import app
 from collector.api.app import db
 from collector.api.common.util import db_transaction
 from collector.api.common.util import exec_time
 from collector.api.common.util import handle_response
-from collector.api.db.model import InstallationStruct
+from collector.api.db.model import InstallationStructure
 
 
 @bp.route('/', methods=['POST'])
-@validate_request('installation_struct', 'request')
-@handle_response(201, 'installation_struct', 'response')
+@validate_request('installation_structure', 'request')
+@handle_response('installation_structure', 'response')
 @db_transaction
 @exec_time
 def post():
     app.logger.debug(
-        "Handling installation_struct post request: {}".format(request.json)
+        "Handling installation_structure post request: {}".format(request.json)
     )
-    struct = request.json['installation_struct']
-    master_node_uid = struct['master_node_uid']
-    obj = db.session.query(InstallationStruct).filter(
-        InstallationStruct.master_node_uid == master_node_uid).first()
+    structure = request.json['installation_structure']
+    master_node_uid = structure['master_node_uid']
+    obj = db.session.query(InstallationStructure).filter(
+        InstallationStructure.master_node_uid == master_node_uid).first()
     if obj is None:
-        app.logger.debug("Saving new struct")
-        obj = InstallationStruct(master_node_uid=master_node_uid)
+        app.logger.debug("Saving new structure")
+        obj = InstallationStructure(master_node_uid=master_node_uid)
         obj.creation_date = datetime.utcnow()
+        status_code = 201
     else:
-        app.logger.debug("Updating struct {}".format(obj.id))
+        app.logger.debug("Updating structure {}".format(obj.id))
         obj.modification_date = datetime.utcnow()
-    obj.struct = json.dumps(struct)
+        status_code = 200
+    obj.structure = json.dumps(structure)
     db.session.add(obj)
-    return {'status': 'ok'}
+    return status_code, {'status': 'ok'}

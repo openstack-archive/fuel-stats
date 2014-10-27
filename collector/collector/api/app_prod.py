@@ -12,21 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from collector.test.base import BaseTest
+from collector.api.app import app
+from collector.api import log
 
 
-class TestPing(BaseTest):
-
-    def test_not_allowed_methods(self):
-        resp = self.post('/api/v1/ping/', None)
-        self.check_response_error(resp, 405)
-        resp = self.delete('/api/v1/ping/')
-        self.check_response_error(resp, 405)
-        resp = self.patch('/api/v1/ping/', None)
-        self.check_response_error(resp, 405)
-        resp = self.put('/api/v1/ping/', None)
-        self.check_response_error(resp, 405)
-
-    def test_get(self):
-        resp = self.get('/api/v1/ping/', None)
-        self.check_response_ok(resp)
+app.config.from_object('collector.api.config.Production')
+log.init_logger()

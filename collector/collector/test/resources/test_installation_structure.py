@@ -12,38 +12,36 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from flask import json
-
 from collector.test.base import DbTest
 
 from collector.api.app import db
-from collector.api.db.model import InstallationStruct
+from collector.api.db.model import InstallationStructure
 
 
-class TestInstallationStruct(DbTest):
+class TestInstallationStructure(DbTest):
 
     def test_not_allowed_methods(self):
-        resp = self.get('/api/v1/installation_struct/', None)
+        resp = self.get('/api/v1/installation_structure/', None)
         self.check_response_error(resp, 405)
-        resp = self.delete('/api/v1/installation_struct/')
+        resp = self.delete('/api/v1/installation_structure/')
         self.check_response_error(resp, 405)
-        resp = self.patch('/api/v1/installation_struct/', None)
+        resp = self.patch('/api/v1/installation_structure/', None)
         self.check_response_error(resp, 405)
-        resp = self.put('/api/v1/installation_struct/', None)
+        resp = self.put('/api/v1/installation_structure/', None)
         self.check_response_error(resp, 405)
 
     def test_validation_error(self):
         wrong_data_sets = [
-            {'installation_struct': {'master_node_uid': 'x'}},
+            {'installation_structure': {'master_node_uid': 'x'}},
             None,
             {}
         ]
         for data in wrong_data_sets:
             resp = self.post(
-                '/api/v1/installation_struct/',
+                '/api/v1/installation_structure/',
                 data
             )
-            self.check_response_error(resp, code=400)
+            self.check_response_error(resp, 400)
 
     def test_post(self):
         master_node_uid = 'x'
@@ -93,13 +91,13 @@ class TestInstallationStruct(DbTest):
             ]
         }
         resp = self.post(
-            '/api/v1/installation_struct/',
-            {'installation_struct': struct}
+            '/api/v1/installation_structure/',
+            {'installation_structure': struct}
         )
-        self.check_response_ok(resp, code=201)
-        obj = db.session.query(InstallationStruct).filter(
-            InstallationStruct.master_node_uid == master_node_uid).one()
-        self.assertEquals(json.dumps(struct), obj.struct)
+        self.check_response_ok(resp, codes=(201,))
+        obj = db.session.query(InstallationStructure).filter(
+            InstallationStructure.master_node_uid == master_node_uid).one()
+        self.assertDictEqual(struct, obj.structure)
         self.assertIsNotNone(obj.creation_date)
         self.assertIsNone(obj.modification_date)
 
@@ -113,24 +111,24 @@ class TestInstallationStruct(DbTest):
             'clusters': []
         }
         resp = self.post(
-            '/api/v1/installation_struct/',
-            {'installation_struct': struct}
+            '/api/v1/installation_structure/',
+            {'installation_structure': struct}
         )
-        self.check_response_ok(resp, code=201)
-        obj_new = db.session.query(InstallationStruct).filter(
-            InstallationStruct.master_node_uid == master_node_uid).one()
-        self.assertEquals(json.dumps(struct), obj_new.struct)
+        self.check_response_ok(resp, codes=(201,))
+        obj_new = db.session.query(InstallationStructure).filter(
+            InstallationStructure.master_node_uid == master_node_uid).one()
+        self.assertDictEqual(struct, obj_new.structure)
         self.assertIsNotNone(obj_new.creation_date)
         self.assertIsNone(obj_new.modification_date)
 
         struct['unallocated_nodes_num'] = 5
         resp = self.post(
-            '/api/v1/installation_struct/',
-            {'installation_struct': struct}
+            '/api/v1/installation_structure/',
+            {'installation_structure': struct}
         )
-        self.check_response_ok(resp, code=201)
-        obj_upd = db.session.query(InstallationStruct).filter(
-            InstallationStruct.master_node_uid == master_node_uid).one()
-        self.assertEquals(json.dumps(struct), obj_upd.struct)
+        self.check_response_ok(resp, codes=(200,))
+        obj_upd = db.session.query(InstallationStructure).filter(
+            InstallationStructure.master_node_uid == master_node_uid).one()
+        self.assertDictEqual(struct, obj_upd.structure)
         self.assertIsNotNone(obj_upd.creation_date)
         self.assertIsNotNone(obj_upd.modification_date)

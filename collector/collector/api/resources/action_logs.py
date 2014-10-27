@@ -34,7 +34,7 @@ from collector.api.db.model import ActionLog
 
 @bp.route('/', methods=['POST'])
 @validate_request('action_logs', 'request')
-@handle_response(201, 'action_logs', 'response')
+@handle_response('action_logs', 'response')
 @exec_time
 def post():
     app.logger.debug(
@@ -49,7 +49,7 @@ def post():
         for obj in action_logs_to_add:
             obj['body'] = json.dumps(obj['body'])
         objects_info.extend(_save_action_logs(action_logs_to_add))
-    return {'status': 'ok', 'action_logs': list(objects_info)}
+    return 200, {'status': 'ok', 'action_logs': list(objects_info)}
 
 
 @db_transaction

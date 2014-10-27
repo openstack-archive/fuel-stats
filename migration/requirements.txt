@@ -1,0 +1,4 @@
+elasticsearch==1.2.0
+psycopg2==2.5.4
+six>=1.8.0
+SQLAlchemy==0.9.8

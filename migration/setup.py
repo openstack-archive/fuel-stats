@@ -31,23 +31,29 @@ def parse_requirements_txt():
 
 
 setup(
-    name='analytics',
+    name='migration',
     version='0.0.1',
-    description="Set of analytics reports",
-    long_description="""Set of analytics reports""",
+    description="Statistics data migration tool",
+    long_description="""Statistics data migration tool""",
     license="http://www.apache.org/licenses/LICENSE-2.0",
     classifiers=[
         "License :: OSI Approved :: Apache Software License",
         "Development Status :: 3 - Alpha",
         "Programming Language :: Python",
+        "Environment :: Console"
     ],
     author='Mirantis Inc.',
     author_email='product@mirantis.com',
     url='https://mirantis.com',
-    keywords='fuel statistics collector mirantis',
+    keywords='fuel statistics dataflow etl mirantis',
     packages=find_packages(),
     zip_safe=False,
     install_requires=parse_requirements_txt(),
     include_package_data=True,
-    scripts=[]
+    scripts=['manage_migration.py'],
+    entry_points={
+        'console_scripts': [
+            'migration-runner = migration.runner:main'
+        ]
+    }
 )

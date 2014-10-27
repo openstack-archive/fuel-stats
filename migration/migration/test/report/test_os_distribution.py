@@ -12,9 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from analytics import config
-from analytics.test.base import AggsCheck
-from analytics.test.base import ElasticTest
+from migration import config
+from migration.test.base import AggsCheck
+from migration.test.base import ElasticTest
 
 
 class OsDistribution(ElasticTest):

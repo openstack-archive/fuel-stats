@@ -25,8 +25,8 @@ from collector.api.common.util import handle_response
 
 @bp.route('/', methods=['GET'])
 @validate_request('ping', 'request')
-@handle_response(200, 'ping', 'response')
+@handle_response('ping', 'response')
 @exec_time
 def ping():
     app.logger.debug("Handling ping get request: {}".format(request.json))
-    return {'status': 'ok'}
+    return 200, {'status': 'ok'}
