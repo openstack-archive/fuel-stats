@@ -54,8 +54,8 @@ class BaseTest(TestCase):
     def delete(self, url):
         return self.client.delete(url, content_type='application/json')
 
-    def check_response_ok(self, resp, code=200):
-        self.assertEquals(code, resp.status_code)
+    def check_response_ok(self, resp, codes=(200, 201)):
+        self.assertIn(resp.status_code, codes)
         d = json.loads(resp.data)
         self.assertEquals('ok', d['status'])
 

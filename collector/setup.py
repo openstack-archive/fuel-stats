@@ -46,7 +46,7 @@ setup(
     author='Mirantis Inc.',
     author_email='product@mirantis.com',
     url='https://mirantis.com',
-    keywords='fuel anonymous statistics collector mirantis',
+    keywords='fuel statistics collector mirantis',
     packages=find_packages(),
     zip_safe=False,
     install_requires=parse_requirements_txt(),

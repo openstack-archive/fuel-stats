@@ -6,7 +6,7 @@
     "request": {
         "type": "object",
         "properties": {
-            "installation_struct": {
+            "installation_structure": {
                 "type": "object",
                 "properties": {
                     "master_node_uid": {"type": "string"},
@@ -73,7 +73,7 @@
             }
         },
         "additionalProperties": false,
-        "required": ["installation_struct"]
+        "required": ["installation_structure"]
     },
 
     "response": {

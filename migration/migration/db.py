@@ -12,21 +12,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from collector.test.base import BaseTest
 
+from sqlalchemy.orm import sessionmaker, scoped_session
+from sqlalchemy import create_engine
 
-class TestPing(BaseTest):
+from migration import config
 
-    def test_not_allowed_methods(self):
-        resp = self.post('/api/v1/ping/', None)
-        self.check_response_error(resp, 405)
-        resp = self.delete('/api/v1/ping/')
-        self.check_response_error(resp, 405)
-        resp = self.patch('/api/v1/ping/', None)
-        self.check_response_error(resp, 405)
-        resp = self.put('/api/v1/ping/', None)
-        self.check_response_error(resp, 405)
-
-    def test_get(self):
-        resp = self.get('/api/v1/ping/', None)
-        self.check_response_ok(resp)
+Session = sessionmaker()
+engine = create_engine(config.DB_CONNECTION_STRING)
+db_session = scoped_session(sessionmaker(bind=engine))

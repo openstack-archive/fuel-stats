@@ -27,11 +27,14 @@ class ActionLog(db.Model):
     body = db.Column(db.Text, nullable=False)
 
 
-class InstallationStruct(db.Model):
-    __tablename__ = 'installation_structs'
+class InstallationStructure(db.Model):
+    __tablename__ = 'installation_structures'
 
     id = db.Column(db.Integer, primary_key=True)
     master_node_uid = db.Column(db.String, nullable=False, unique=True)
-    struct = db.Column(db.Text, nullable=False)
+    # When we use JSON type in the model definition field value
+    # is not deserialized
+    # TODO(akislitsky): found how to use JSON instead db.Text here
+    structure = db.Column(db.Text)
     creation_date = db.Column(db.DateTime)
     modification_date = db.Column(db.DateTime)

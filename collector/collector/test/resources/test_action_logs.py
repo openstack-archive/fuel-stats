@@ -35,7 +35,7 @@ class TestActionLogs(DbTest):
 
     def test_empty_action_logs_post(self):
         resp = self.post('/api/v1/action_logs/', {'action_logs': []})
-        self.check_response_ok(resp, code=201)
+        self.check_response_ok(resp)
 
     def test_post(self):
         master_node_uid = 'x'
@@ -62,7 +62,7 @@ class TestActionLogs(DbTest):
             '/api/v1/action_logs/',
             {'action_logs': expected_logs}
         )
-        self.check_response_ok(resp, code=201)
+        self.check_response_ok(resp)
         resp_data = json.loads(resp.data)
         for d in resp_data['action_logs']:
             self.assertEquals(
@@ -103,7 +103,7 @@ class TestActionLogs(DbTest):
             '/api/v1/action_logs/',
             {'action_logs': action_logs}
         )
-        self.check_response_ok(resp, code=201)
+        self.check_response_ok(resp)
         count_actual = db.session.query(ActionLog).filter(
             ActionLog.master_node_uid == master_node_uid).count()
         resp_data = json.loads(resp.data)
@@ -138,7 +138,7 @@ class TestActionLogs(DbTest):
             '/api/v1/action_logs/',
             {'action_logs': action_logs + new_action_logs}
         )
-        self.check_response_ok(resp, code=201)
+        self.check_response_ok(resp)
         count_actual = db.session.query(ActionLog).filter(
             ActionLog.master_node_uid == master_node_uid).count()
         self.assertEquals(

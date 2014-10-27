@@ -12,34 +12,32 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from logging import FileHandler
+import logging
 from logging import Formatter
 from logging.handlers import RotatingFileHandler
 
-from collector.api.app import app
-
-
-def get_file_handler():
-    if app.config.get('LOG_ROTATION'):
-        file_handler = RotatingFileHandler(
-            app.config.get('LOG_FILE'),
-            maxBytes=app.config.get('LOG_FILE_SIZE'),
-            backupCount=app.config.get('LOG_FILES_COUNT')
-        )
-    else:
-        file_handler = FileHandler(app.config.get('LOG_FILE'))
-    file_handler.setLevel(app.config.get('LOG_LEVEL'))
-    formatter = get_formatter()
-    file_handler.setFormatter(formatter)
-    return file_handler
+from migration import config
 
 
 def get_formatter():
     DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
     LOG_FORMAT = "%(asctime)s.%(msecs)03d %(levelname)s " \
-                 "[%(thread)x] (%(module)s) %(message)s"
+                 "(%(module)s) %(message)s"
     return Formatter(fmt=LOG_FORMAT, datefmt=DATE_FORMAT)
 
 
-def init_logger():
-    app.logger.addHandler(get_file_handler())
+def get_file_handler():
+    file_handler = RotatingFileHandler(
+        config.LOG_FILE,
+        maxBytes=config.LOG_FILE_SIZE,
+        backupCount=config.LOG_FILES_COUNT
+    )
+    file_handler.setLevel(config.LOG_LEVEL)
+    formatter = get_formatter()
+    file_handler.setFormatter(formatter)
+    return file_handler
+
+
+logger = logging.getLogger('migration')
+logger.setLevel(config.LOG_LEVEL)
+logger.addHandler(get_file_handler())

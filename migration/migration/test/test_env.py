@@ -12,21 +12,18 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from collector.test.base import BaseTest
+import logging
+import os
+
+from migration import config
 
 
-class TestPing(BaseTest):
-
-    def test_not_allowed_methods(self):
-        resp = self.post('/api/v1/ping/', None)
-        self.check_response_error(resp, 405)
-        resp = self.delete('/api/v1/ping/')
-        self.check_response_error(resp, 405)
-        resp = self.patch('/api/v1/ping/', None)
-        self.check_response_error(resp, 405)
-        resp = self.put('/api/v1/ping/', None)
-        self.check_response_error(resp, 405)
-
-    def test_get(self):
-        resp = self.get('/api/v1/ping/', None)
-        self.check_response_ok(resp)
+def configure_test_env():
+    # config parameters substitution for test environment
+    config.ELASTIC_HOST = 'localhost'
+    config.ELASTIC_PORT = 9200
+    config.DB_CONNECTION_STRING = \
+        'postgresql://collector:collector@localhost:5432/collector'
+    config.LOG_FILE = os.path.realpath(os.path.join(
+        os.path.dirname(__file__), 'logs', 'migration.log'))
+    config.LOG_LEVEL = logging.DEBUG
