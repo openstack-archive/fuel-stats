@@ -3,19 +3,87 @@
 
 define(
 [
+    'jquery',
     'd3',
     'd3pie',
     'd3tip',
-    'nv'
+    'nv',
+    'elasticsearch'
 ],
-function(d3, d3pie, d3tip, nv) {
+function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
     'use strict';
 
     var statsPage = function() {
         activityChart();
         nodesDistributionChart();
         virtualizationDistributionChart();
-        pieChart();
+        osesDistributionChart();
+    }
+
+    var nodesDistributionChart = function() {
+        var client = new elasticsearch.Client();
+        client.search({
+            size: 0,
+            body: {
+                "aggs": {
+                    "nodes_ranges": {
+                        "range": {
+                            "field": "allocated_nodes_num",
+                            "ranges": [
+                                {"to": 5},
+                                {"from": 5, "to": 10},
+                                {"from": 10}
+                            ]
+                        }
+                    }
+                }
+            }
+            }).then(function (resp) {
+                var rawData = resp.aggregations.nodes_ranges.buckets,
+                    chartData = [];
+                console.log('nodes-distribution', rawData);
+                $.each(rawData, function(key, value) {
+                    chartData.push({label: value.key, value: value.doc_count})
+                });
+                var pie = new d3pie("nodes-distribution", {
+                    size: {
+                        "canvasWidth": 400,
+                        "canvasHeight": 300,
+                        "pieInnerRadius": "40%",
+                        "pieOuterRadius": "60%"
+                    },
+                    labels: {
+                        "outer": {
+                            "pieDistance": 10
+                        },
+                        "mainLabel": {
+                            "fontSize": 14
+                        },
+                        "percentage": {
+                            "color": "#ffffff",
+                            "decimalPlaces": 2
+                        }
+                    },
+                    data: {
+                        content: chartData
+                    }
+                });
+            });
+        // BAR CHART Request for Nodes distribution
+        // body: {
+        //     "aggs": {
+        //         "nodes_distribution": {
+        //             "histogram": {
+        //                 "field": "allocated_nodes_num",
+        //                 "interval": 1
+        //             }
+        //         }
+        //     }
+        // }
+        // }).then(function (resp) {
+        //     var data = resp.aggregations.nodes_distribution.buckets;
+        //     console.log(data);
+        // });
     }
 
     var activityChart = function() {
@@ -129,46 +197,6 @@ function(d3, d3pie, d3tip, nv) {
         });
     }
 
-    var nodesDistributionChart = function() {
-         var pie = new d3pie("nodes-distribution", {
-            size: {
-                "canvasWidth": 400,
-                "canvasHeight": 300,
-                "pieInnerRadius": "43%",
-                "pieOuterRadius": "70%"
-            },
-            labels: {
-                "outer": {
-                    "pieDistance": 10
-                },
-                "inner": {
-                    "hideWhenLessThanPercentage": 3
-                },
-                "mainLabel": {
-                    "fontSize": 11
-                },
-                "percentage": {
-                    "color": "#ffffff",
-                    "decimalPlaces": 2
-                },
-                "value": {
-                    "color": "#adadad",
-                    "fontSize": 11
-                },
-                "lines": {
-                    "enabled": true
-                }
-            },
-            data: {
-                content: [
-                    { label: "1-10 nodes", value: 264131 },
-                    { label: "10-50 nodes", value: 218812 },
-                    { label: "> 50 nodes", value: 157618 },
-                ]
-            }
-        });
-    }
-
     var virtualizationDistributionChart = function() {
         var data = [{
             "key": "Number of Installations",
@@ -207,117 +235,66 @@ function(d3, d3pie, d3tip, nv) {
           });
     }
 
-    var pieChart = function() {
-        var pie = new d3pie("distribution-of-oses", {
-            size: {
-                "canvasWidth": 400,
-                "canvasHeight": 300,
-                "pieInnerRadius": "43%",
-                "pieOuterRadius": "70%"
-            },
-            data: {
-                content: [
-                    { label: "Ubuntu", value: 264131 },
-                    { label: "Centos", value: 218812 }
-                ]
-            }
-        });
-    };
-
-    // Nodes distribution elasticsearch requiest
-    /*
-    var client = new elasticsearch.Client();
-    client.search({
-        size: 0,
-        body: {
-            "aggs": {
-                     "nodes_distribution": {
-                        "histogram": {
-                            "field": "allocated_nodes_num",
-                            "interval": 1
+    var osesDistributionChart = function() {
+        var client = new elasticsearch.Client();
+        client.search({
+            size: 0,
+            body: {
+                "aggs": {
+                    "clusters": {
+                        "nested": {
+                            "path": "clusters"
+                        },
+                        "aggs": {
+                            "release": {
+                                "nested": {
+                                    "path": "clusters.release"
+                                },
+                                "aggs": {
+                                    "oses": {
+                                        "terms": {
+                                            "field": "os"
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
+                }
             }
-        }
-    }).then(function (resp) {
-        var data = resp.aggregations.nodes_distribution.buckets,
-            margin = {top: 40, right: 20, bottom: 50, left: 30},
-            width = 300 - margin.left - margin.right,
-            height = 240 - margin.top - margin.bottom,
-            paddingBottom = 3,
-            x = d3.scale.ordinal()
-                .rangeRoundBands([0, width], .3),
-            y = d3.scale.linear()
-                .range([height, 0]),
-            xAxis = function() {
-                return d3.svg.axis()
-                    .scale(x)
-                    .orient("bottom")
-            },
-            yAxis  = function() {
-                return d3.svg.axis()
-                    .scale(y)
-                    .orient("left")
-                    .ticks(2)
-            },
-            tip = d3.tip()
-                .attr('class', 'd3-tip')
-                .html(function(d) {
-                    return "<strong>Number of Installation:</strong> <span>" + d.doc_count + "</span>";
-                }),
-            svg = d3.select("#nodes-distribution").append("svg")
-                .attr("width", width + margin.left + margin.right)
-                .attr("height", height + margin.top + margin.bottom)
-                .append("g")
-                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-        svg.call(tip);
-
-        x.domain(data.map(function(d) { return d.key; }));
-        y.domain([0, d3.max(data, function(d) { return d.doc_count; })]);
-
-        svg.append("g")
-            .attr("class", "x axis")
-            .attr("transform", "translate(0," + height + ")")
-            .call(xAxis())
-            .append("text")
-            .attr("x", 150 )
-            .attr("y", 30 )
-            .style("text-anchor", "middle")
-            .text("Number of Nodes in the Environment");
-
-        svg.append("g")
-            .attr("class", "y axis")
-            .call(yAxis())
-            .append("text")
-            .attr("y", -15)
-            .attr("x", 100)
-            .style("text-anchor", "end")
-            .text("Number of Installation");
-
-        svg.append("g")
-            .attr("class", "grid")
-            .attr("transform", "translate(0," + height + ")")
-            .call(xAxis()
-                .tickSize(-height, 0, 0)
-                .tickFormat(""));
-
-        svg.append("g")
-            .attr("class", "grid")
-            .call(yAxis()
-                .tickSize(-width, 0, 0)
-                .tickFormat(""));
-
-        svg.selectAll(".bar")
-            .data(data)
-            .enter().append("rect")
-            .attr("class", "bar")
-            .attr("x", function(d) { return x(d.key); })
-            .attr("width", x.rangeBand())
-            .attr("y", function(d) { return y(d.doc_count); })
-            .attr("height", function(d) { return height - y(d.doc_count) - paddingBottom; })
-            .on('mouseover', tip.show)
-            .on('mouseout', tip.hide);
-    */
+            }).then(function (resp) {
+                var rawData = resp.aggregations.clusters.release.oses.buckets,
+                    chartData = [];
+                console.log('oses-distribution', rawData);
+                $.each(rawData, function(key, value) {
+                    chartData.push({label: value.key, value: value.doc_count})
+                });
+                var pie = new d3pie("distribution-of-oses", {
+                    size: {
+                        "canvasWidth": 400,
+                        "canvasHeight": 300,
+                        "pieInnerRadius": "40%",
+                        "pieOuterRadius": "60%"
+                    },
+                    labels: {
+                        "outer": {
+                            "pieDistance": 10
+                        },
+                        "mainLabel": {
+                            "fontSize": 14
+                        },
+                        "percentage": {
+                            "color": "#ffffff",
+                            "decimalPlaces": 2
+                        }
+                    },
+                    data: {
+                        "sortOrder": "random",
+                        content: chartData
+                    }
+                });
+            });
+    };
 
     return statsPage();
 
