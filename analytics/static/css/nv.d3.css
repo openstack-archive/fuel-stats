@@ -69,6 +69,7 @@
 
 .nvtooltip h3 {
   margin: 0;
+  font-size: 13px;
   padding: 4px 14px;
   line-height: 18px;
   font-weight: normal;
@@ -316,7 +317,7 @@ svg .title {
 
 .nvd3 .nv-discretebar .nv-groups text,
 .nvd3 .nv-multibarHorizontal .nv-groups text {
-  font-weight: bold;
+  font-weight: normal;
   fill: rgba(0,0,0,1);
   stroke: rgba(0,0,0,0);
 }
