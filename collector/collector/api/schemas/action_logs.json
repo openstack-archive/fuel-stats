@@ -14,20 +14,55 @@
                         "master_node_uid": {"type": "string"},
                         "external_id": {"type": "integer"},
                         "body": {
-                            "type": "object",
-                            "properties": {
-                                "id": {"type": "number"},
-                                "actor_id": {"type": ["string", "null"]},
-                                "action_group": {"type": "string"},
-                                "action_name": {"type": "string"},
-                                "action_type": {"type": "string"},
-                                "start_timestamp": {"type": "string"},
-                                "end_timestamp": {"type": "string"},
-                                "additional_info": {"type": "object"},
-                                "is_sent": {"type": "boolean"},
-                                "cluster_id": {"type": ["number", "null"]},
-                                "task_uuid": {"type": ["string", "null"]}
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {"type": "number"},
+                                        "actor_id": {"type": ["string", "null"]},
+                                        "action_group": {"type": "string"},
+                                        "action_name": {"type": "string"},
+                                        "action_type": {"enum": ["http_request"]},
+                                        "start_timestamp": {"type": "string"},
+                                        "end_timestamp": {"type": "string"},
+                                        "additional_info": {
+                                            "type": "object",
+                                            "properties": {
+                                                "request_data": {"type": "object"},
+                                                "response_data": {"type": "object"}
+                                            }
+                                        },
+                                        "is_sent": {"type": "boolean"},
+                                        "cluster_id": {"type": ["number", "null"]},
+                                        "task_uuid": {"type": ["string", "null"]}
+                                    }
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {"type": "number"},
+                                        "actor_id": {"type": ["string", "null"]},
+                                        "action_group": {"type": "string"},
+                                        "action_name": {"type": "string"},
+                                        "action_type": {"enum": ["nailgun_task"]},
+                                        "start_timestamp": {"type": "string"},
+                                        "end_timestamp": {"type": "string"},
+                                        "additional_info": {
+                                            "type": "object",
+                                            "properties": {
+                                                "parent_task_id": {"type": "number"},
+                                                "subtasks_ids": {"type": "array"},
+                                                "operation": {"type": "string"},
+                                                "nodes_from_resp": {"type": "array"},
+                                                "ended_with_status": {"type": "string"}
+                                            }
+                                        },
+                                        "is_sent": {"type": "boolean"},
+                                        "cluster_id": {"type": ["number", "null"]},
+                                        "task_uuid": {"type": ["string", "null"]}
+                                    }
+                                }
+                            ]
                         }
                     },
                     "required": ["master_node_uid", "external_id", "body"]
