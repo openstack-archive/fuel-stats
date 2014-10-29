@@ -73,7 +73,9 @@ class TestInstallationStructure(DbTest):
                         {'id': 33, 'roles': ['a', 'b', 'c'], 'status': 's'},
                         {'id': 34, 'roles': ['b', 'c'], 'status': 's'},
                         {'id': 35, 'roles': ['c'], 'status': 's'}
-                    ]
+                    ],
+                    "status": "new",
+                    "attributes": {}
                 },
                 {
                     'id': 32,
@@ -86,7 +88,9 @@ class TestInstallationStructure(DbTest):
                     'nodes_num': 1,
                     'nodes': [
                         {'id': 42, 'roles': ['s'], 'status': 's'}
-                    ]
+                    ],
+                    "status": "operational",
+                    "attributes": {}
                 },
             ]
         }
