@@ -62,9 +62,11 @@
                                         },
                                         "required": ["id", "roles"]
                                     }
-                                }
+                                },
+                                "status": {"type": "string"},
+                                "attributes": {"type": "array"}
                             },
-                            "required": ["id", "nodes_num", "nodes", "mode", "release"]
+                            "required": ["id", "nodes_num", "nodes", "mode", "release", "status", "attributes"]
                         }
                     }
                 },
