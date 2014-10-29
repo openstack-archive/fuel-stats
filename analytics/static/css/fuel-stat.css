@@ -143,6 +143,7 @@ html, body {
 	-moz-box-sizing: border-box;
 	box-sizing: border-box;
 }
+.small-graphs-box {margin-top: 15px;}
 .graph-item-box {
 	background-color: #ffffff;
 	-webkit-box-sizing: border-box;
