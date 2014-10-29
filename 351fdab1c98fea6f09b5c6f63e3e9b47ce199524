@@ -1,0 +1,9 @@
+Verified+2: Jenkins
+Code-Review+2: Aleksey Kasatkin <akasatkin@mirantis.com>
+Workflow+1: Aleksey Kasatkin <akasatkin@mirantis.com>
+Code-Review+1: Alexander Kislitsky <akislitsky@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Wed, 29 Oct 2014 15:10:20 +0000
+Reviewed-on: https://review.openstack.org/131488
+Project: stackforge/fuel-stats
+Branch: refs/heads/master
