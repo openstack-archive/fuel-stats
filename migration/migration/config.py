@@ -101,13 +101,22 @@ MAPPING_FUEL = {
                             }
                         }
                     },
+                    'attributes': {
+                        'type': 'nested',
+                        'properties': {
+                            'libvirt_type': {
+                                'type': 'string',
+                                'index': 'not_analyzed'
+                            }
+                        }
+                    },
                     'nodes_num': {'type': 'long'},
                     'nodes': {
                         'type': 'nested',
                         'properties': {
                             'id': {'type': 'long'}
                         }
-                    }
+                    },
                 }
             }
         }
