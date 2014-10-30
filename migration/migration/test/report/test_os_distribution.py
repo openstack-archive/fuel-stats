@@ -22,13 +22,13 @@ class OsDistribution(ElasticTest):
     def test_report(self):
         docs = [
             {
-                'aid': 'x0',
+                'master_node_uid': 'x0',
                 'clusters': [
                     {'release': {'os': 'CentOs'}}
                 ]
             },
             {
-                'aid': 'x1',
+                'master_node_uid': 'x1',
                 'clusters': [
                     {'release': {'os': 'CentOs Custom Version'}},
                     {'release': {'os': 'ubuntu'}},
@@ -37,17 +37,17 @@ class OsDistribution(ElasticTest):
                 ]
             },
             {
-                'aid': 'x11',
+                'master_node_uid': 'x11',
                 'clusters': [
                     {'release': {'os': 'Ubuntu'}}
                 ]
             },
             {
-                'aid': 'x12',
+                'master_node_uid': 'x12',
                 'clusters': []
             },
             {
-                'aid': 'x5',
+                'master_node_uid': 'x5',
                 'clusters': [
                     {'release': {'os': 'Solaris'}}
                 ]
@@ -56,7 +56,7 @@ class OsDistribution(ElasticTest):
 
         for doc in docs:
             self.es.index(config.INDEX_FUEL, config.DOC_TYPE_STRUCTURE,
-                          doc, id=doc['aid'])
+                          doc, id=doc['master_node_uid'])
 
         self.es.indices.refresh(config.INDEX_FUEL)
 
