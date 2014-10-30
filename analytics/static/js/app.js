@@ -263,6 +263,10 @@ function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
                     chart.yAxis
                         .tickFormat(d3.format(',.2f'));
 
+                    chart.tooltipContent( function(key, x, y){
+                        return '<h3>' + key + ' - ' + x + '</h3>' +'<p>' + parseInt(y) + '</p>';
+                    });
+
                     nv.utils.windowResize(chart.update);
 
                     d3.select('#releases-distribution svg')
