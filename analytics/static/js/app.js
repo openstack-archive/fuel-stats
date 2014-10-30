@@ -15,8 +15,7 @@ function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
         return {
             host: {
                 protocol: $(location).attr('protocol'),
-                host: $(location).attr('hostname'),
-                port: 9200
+                host: $(location).attr('hostname')
             }
         };
     }
@@ -40,7 +39,8 @@ function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
                             "ranges": [
                                 {"to": 5},
                                 {"from": 5, "to": 10},
-                                {"from": 10}
+                                {"from": 10, "to": 30},
+                                {"from": 30}
                             ]
                         }
                     }
@@ -205,41 +205,65 @@ function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
     }
 
     var virtualizationDistributionChart = function() {
-        var data = [{
-            "key": "Number of Installations",
-            "color": "#1DA489",
-            "values": [{
-                        'label': "KVM",
-                        'value': 56
-                    }, {
-                        'label': "QEMU",
-                        'value': 68
-                    }, {
-                        'label': "vCenter",
-                        'value': 42
-                    }]
-            }];
-        nv.addGraph(function() {
-            var chart = nv.models.multiBarHorizontalChart()
-                .x(function(d) { return d.label })
-                .y(function(d) { return d.value })
-                .valueFormat(d3.format('d'))
-                .margin({top: 40, right: 20, bottom: 0, left: 50})
-                .showValues(true)           //Show bar value next to each bar.
-                .tooltips(true)             //Show tooltips on hover.
-                .transitionDuration(350)
-                .showControls(false);        //Allow user to switch between "Grouped" and "Stacked" mode.
+        var client = new elasticsearch.Client(elasticSearchHost());
+        client.search({
+            size: 0,
+            body: {
+                "aggs": {
+                    "clusters": {
+                        "nested": {
+                            "path": "clusters"
+                        },
+                        "aggs": {
+                            "attributes": {
+                                "nested": {
+                                    "path": "clusters.attributes"
+                                },
+                                "aggs": {
+                                    "libvirt_types": {
+                                        "terms": {
+                                            "field": "libvirt_type"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            }).then(function (resp) {
+                var rawData = resp.aggregations.clusters.attributes.libvirt_types.buckets,
+                    chartData = [];
+                $.each(rawData, function(key, value) {
+                    chartData.push({label: value.key, value: value.doc_count})
+                });
+                var data = [{
+                    "key": "Number of Environments",
+                    "color": "#1DA489",
+                    "values": chartData
+                    }];
+                nv.addGraph(function() {
+                    var chart = nv.models.multiBarHorizontalChart()
+                        .x(function(d) { return d.label })
+                        .y(function(d) { return d.value })
+                        .valueFormat(d3.format('d'))
+                        .margin({top: 40, right: 20, bottom: 0, left: 50})
+                        .showValues(true)           //Show bar value next to each bar.
+                        .tooltips(true)             //Show tooltips on hover.
+                        .transitionDuration(350)
+                        .showControls(false);        //Allow user to switch between "Grouped" and "Stacked" mode.
 
-            chart.yAxis
-                .tickFormat(d3.format(',.2f'));
+                    chart.yAxis
+                        .tickFormat(d3.format(',.2f'));
 
-            nv.utils.windowResize(chart.update);
+                    nv.utils.windowResize(chart.update);
 
-            d3.select('#releases-distribution svg')
-                .datum(data)
-                .call(chart);
-            return chart;
-          });
+                    d3.select('#releases-distribution svg')
+                        .datum(data)
+                        .call(chart);
+                    return chart;
+                  });
+            });
     }
 
     var osesDistributionChart = function() {
