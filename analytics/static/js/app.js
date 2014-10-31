@@ -12,26 +12,51 @@ function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
     'use strict';
 
     var elasticSearchHost = function() {
-        return {
-            host: {
-                protocol: $(location).attr('protocol'),
-                host: $(location).attr('hostname')
+            return {
+                host: {
+                    protocol: $(location).attr('protocol'),
+                    host: $(location).attr('hostname')
+                }
+            };
+        },
+        filterQuery = {
+            "nested": {
+                "path": "clusters",
+                "filter": {
+                    "terms": {"status": ["operational", "error"]}
+                }
             }
         };
-    }
 
     var statsPage = function() {
+        installationCount();
         activityChart();
         nodesDistributionChart();
         virtualizationDistributionChart();
         osesDistributionChart();
     }
 
+    var installationCount = function() {
+        var client = new elasticsearch.Client(elasticSearchHost());
+         client.count({
+            index: 'fuel',
+            type: 'structure',
+            body: {
+               "query": {"match_all": {}}
+            }
+            }).then(function (resp) {
+                $('#installation-count').html(resp.count);
+            });
+    }
+
     var nodesDistributionChart = function() {
         var client = new elasticsearch.Client(elasticSearchHost());
         client.search({
+            index: 'fuel',
+            type: 'structure',
             size: 0,
             body: {
+                "query": filterQuery,
                 "aggs": {
                     "nodes_ranges": {
                         "range": {
@@ -215,7 +240,10 @@ function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
         var client = new elasticsearch.Client(elasticSearchHost());
         client.search({
             size: 0,
+            index: 'fuel',
+            type: 'structure',
             body: {
+                "query": filterQuery,
                 "aggs": {
                     "clusters": {
                         "nested": {
@@ -281,7 +309,10 @@ function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
         var client = new elasticsearch.Client(elasticSearchHost());
         client.search({
             size: 0,
+            index: 'fuel',
+            type: 'structure',
             body: {
+                "query": filterQuery,
                 "aggs": {
                     "clusters": {
                         "nested": {
