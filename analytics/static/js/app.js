@@ -11,6 +11,7 @@ define(
 function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
     'use strict';
 
+    var numberOfInstallations = 0;
     var elasticSearchHost = function() {
             return {
                 host: {
@@ -46,11 +47,13 @@ function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
             }
             }).then(function (resp) {
                 $('#installation-count').html(resp.count);
+                numberOfInstallations = resp.count;
             });
     }
 
     var nodesDistributionChart = function() {
         var client = new elasticsearch.Client(elasticSearchHost());
+        
         client.search({
             index: 'fuel',
             type: 'structure',
@@ -62,9 +65,12 @@ function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
                         "range": {
                             "field": "allocated_nodes_num",
                             "ranges": [
-                                {"from": 1, "to": 11},
-                                {"from": 11, "to": 31},
-                                {"from": 31}
+                                {"from": 1, "to": 5},
+                                {"from": 5, "to": 10},
+                                {"from": 10, "to": 20},
+                                {"from": 20, "to": 50},
+                                {"from": 50, "to": 100},
+                                {"from": 100}
                             ]
                         }
                     }
@@ -84,7 +90,55 @@ function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
                     chartData.push({label: labelText, value: value.doc_count})
                 });
 
+                var data = [{
+                    "key": "Environment size distribution by number of nodes",
+                    "color": "#1DA489",
+                    "values": chartData
+                    }];
+
+                nv.addGraph(function() {
+                    var chart = nv.models.multiBarChart()
+                        .x(function(d) { return d.label })
+                        .y(function(d) { return d.value })
+                        .margin({top: 30})
+                        .transitionDuration(350)
+                        .reduceXTicks(false)   //If 'false', every single x-axis tick label will be rendered.
+                        .rotateLabels(0)      //Angle to rotate x-axis labels.
+                        .showControls(false)   //Allow user to switch between 'Grouped' and 'Stacked' mode.
+                        .groupSpacing(0.2)    //Distance between each group of bars.
+                    ;
+
+                    chart.yAxis
+                        .tickFormat(d3.format('d'));
+
+                    chart.tooltipContent( function(key, x, y){
+                        return '<h3>' + x + ' nodes</h3>' +'<p>' + parseInt(y) + '</p>';
+                    });
+
+                    d3.select('#nodes-distribution svg')
+                        .datum(data)
+                        .call(chart);
+
+                    nv.utils.windowResize(chart.update);
+
+                    return chart;
+                });
+
+                /*
                 var pie = new d3pie("nodes-distribution", {
+                    "header": {
+                        "title": {
+                            "text": "Environment size distribution by number of nodes",
+                            "fontSize": 15
+                        },
+                        "subtitle": {
+                            "text": "Number of environments: " + numberOfInstallations,
+                            "color": "#999999",
+                            "fontSize": 12
+                        },
+                        "location": "top-left",
+                        "titleSubtitlePadding": 9
+                    },
                     size: {
                         "canvasWidth": 400,
                         "canvasHeight": 300,
@@ -107,22 +161,8 @@ function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
                         content: chartData
                     }
                 });
+                */
             });
-        // BAR CHART Request for Nodes distribution
-        // body: {
-        //     "aggs": {
-        //         "nodes_distribution": {
-        //             "histogram": {
-        //                 "field": "allocated_nodes_num",
-        //                 "interval": 1
-        //             }
-        //         }
-        //     }
-        // }
-        // }).then(function (resp) {
-        //     var data = resp.aggregations.nodes_distribution.buckets;
-        //     console.log(data);
-        // });
     }
 
     var activityChart = function() {
@@ -273,7 +313,7 @@ function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
                     chartData.push({label: value.key, value: value.doc_count})
                 });
                 var data = [{
-                    "key": "Number of Environments",
+                    "key": "Distribution of deployed hypervisor",
                     "color": "#1DA489",
                     "values": chartData
                     }];
@@ -292,7 +332,7 @@ function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
                         .tickFormat(d3.format(',.2f'));
 
                     chart.tooltipContent( function(key, x, y){
-                        return '<h3>' + key + ' - ' + x + '</h3>' +'<p>' + parseInt(y) + '</p>';
+                        return '<h3>' + x + '</h3>' +'<p>' + parseInt(y) + '</p>';
                     });
 
                     nv.utils.windowResize(chart.update);
@@ -342,6 +382,19 @@ function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
                     chartData.push({label: value.key, value: value.doc_count})
                 });
                 var pie = new d3pie("distribution-of-oses", {
+                    "header": {
+                        "title": {
+                            "text": "Distribution of deployed operating system",
+                            "fontSize": 15
+                        },
+                        "subtitle": {
+                            "text": "Number of environments: " + numberOfInstallations,
+                            "color": "#999999",
+                            "fontSize": 12
+                        },
+                        "location": "top-left",
+                        "titleSubtitlePadding": 9
+                    },
                     size: {
                         "canvasWidth": 400,
                         "canvasHeight": 300,
@@ -350,6 +403,7 @@ function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
                     },
                     labels: {
                         "outer": {
+                            "format": "label-value2",
                             "pieDistance": 10
                         },
                         "mainLabel": {
@@ -358,6 +412,13 @@ function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
                         "percentage": {
                             "color": "#ffffff",
                             "decimalPlaces": 2
+                        },
+                        "value": {
+                            "color": "#adadad",
+                            "fontSize": 11
+                        },
+                        "lines": {
+                            "enabled": true
                         }
                     },
                     data: {

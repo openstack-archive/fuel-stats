@@ -11,8 +11,8 @@
     <!-- Bootstrap core CSS -->
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <!-- Custom styles for this template -->
-    <link href="css/fuel-stat.css" rel="stylesheet">
     <link href="css/nv.d3.css" rel="stylesheet">
+    <link href="css/fuel-stat.css" rel="stylesheet">
     <!-- Just for debugging purposes. Don't actually copy these 2 lines! -->
     <!--[if lt IE 9]><script src="../../assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
     <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
@@ -49,15 +49,20 @@
 
 <!-- Start Base Layout -->
 <div class="base-box"> 
+
+  <!-- TOP INFO-->
+  <div class="container-fluid titul-graph-box">
+    <div class="row">
+        <div class="info-ticket">
+            <div class="installation-counts">Total number of environments: <b><span id="installation-count"></span></b></div>
+        </div>
+    </div>
+  </div>
   
   <!-- TOP BIG GRAPH -->
-  <div class="container-fluid titul-graph-box">
+  <!--<div class="container-fluid titul-graph-box">
      <div class="row">
-
-      <div class="col-xs-6 col-md-4">
-        <h4>Installations count: <span id="installation-count"></span></h4>
-      </div>
-      <!--
+      
       <div class="col-xs-6 col-md-4">
             <h4>Dynamic of changing active users count</h4>
             <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis a orci in lorem luctus ullamcorper. Nulla faucibus molestie enim a hendrerit. Etiam ac elit nisl. Mauris sit amet euismod massa. Nulla facilisi. Nullam commodo cursus elit, sit amet pellentesque risus dictum et. Sed luctus scelerisque ex, vitae egestas nisi. Suspendisse eleifend, mi vel venenatis pharetra, nibh erat mattis libero, vel faucibus augue turpis at nisl. Donec non nisi hendrerit, aliquam nunc vel, aliquam magna. Quisque eu tincidunt felis. Ut non tellus sodales, sodales metus at, porttitor magna. Sed at cursus est. Integer vitae congue ante.</p>
@@ -65,10 +70,9 @@
       <div class="col-xs-12 col-md-8">
         <div id="activity-chart"><svg style="height: 350px;"></svg></div>
       </div>
-      -->
+      
     </div> 
-  </div>
-  <!-- TOP BIG GRAPH --> 
+  </div>-->
   
   <!-- Start Block with small graphics -->
   <div class="container-fluid small-graphs-box">
@@ -83,13 +87,13 @@
             <div class="graph-item-box"> 
               <!-- Start Item Header -->
               <div class="header">
-                <div class="title">Nodes Distribution</div>
+                <div class="title">Environment Size</div>
                 <!-- <div class="icon"><a href="#"></a></div> -->
               </div>
               <!-- End Item Header --> 
               <!-- Start Item Content -->
               <div class="content">
-                <div class="image"><div id="nodes-distribution"></div></div>
+                <div class="image"><div id="nodes-distribution"><svg style="height: 280px;"></svg></div></div>
               </div>
               <!-- End Item Content --> 
             </div>
@@ -101,7 +105,7 @@
             <div class="graph-item-box"> 
               <!-- Start Item Header -->
               <div class="header">
-                <div class="title"> Hypervisors distribution</div>
+                <div class="title">Hypervisor</div>
                 <!-- <div class="icon"><a href="#"></a></div> -->
               </div>
               <!-- End Item Header --> 
@@ -119,7 +123,7 @@
             <div class="graph-item-box"> 
               <!-- Start Item Header -->
               <div class="header">
-                <div class="title">OSes distribution</div>
+                <div class="title">Operating System</div>
                 <!-- <div class="icon"><a href="#"></a></div> -->
               </div>
               <!-- End Item Header --> 
