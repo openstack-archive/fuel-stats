@@ -210,3 +210,32 @@ html, body {
 .standard-graph-box {
     margin-bottom: 15px;
 }
+.info-ticket {
+    display: inline-block;
+    padding: 12px 20px;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}
+.installation-counts {
+    font-size: 14px;
+    /* margin: 12px 0px 10px 6px; */
+    font-family: "open sans semibold";
+    color: #666666;
+}
+.installation-counts > b {
+    color: #6fb6b9;
+    font-weight: inherit;
+    font-family: "open sans semibold";
+}
+
+/* nvd3 styles customization*/
+svg text {
+    font-family: 'open sans';
+    font-size: 12px;
+    font-weight: normal;
+}
+
+.nv-series text {
+    font-size: 13spx;
+}
