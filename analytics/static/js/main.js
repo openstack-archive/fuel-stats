@@ -1,5 +1,6 @@
 requirejs.config({
     baseUrl: "js",
+    urlArgs: '_=' + (new Date()).getTime(),
     paths: {
         jquery: 'jquery-2.1.1.min',
         elasticsearch: 'elasticsearch.min',

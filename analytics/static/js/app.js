@@ -32,7 +32,7 @@ function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
         };
 
     var statsPage = function() {
-        installationsCount();
+        //installationsCount();
         environmentsCount();
         nodesDistributionChart();
         virtualizationDistributionChart();
@@ -74,7 +74,7 @@ function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
             }).then(function (resp) {
                 var rawData = resp.aggregations.clusters.statuses.buckets,
                     total = resp.aggregations.clusters.doc_count,
-                    chartData = [];;
+                    chartData = [];
 
                 $.each(rawData, function(key, value) {
                     if (value.key == 'operational' || value.key == 'error') numberOfCountedEnvironments += value.doc_count;
@@ -163,8 +163,9 @@ function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
             }
             }).then(function (resp) {
                 var rawData = resp.aggregations.clusters.statuses.structure.nodes_ranges.buckets,
+                    total = resp.aggregations.clusters.statuses.structure.doc_count,
                     chartData = [];
-
+                $('#count-nodes-distribution').html(total);
                 $.each(rawData, function(key, value) {
                     var labelText = '',
                         labelData = value.key.split("-");
@@ -400,7 +401,9 @@ function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
             }
             }).then(function (resp) {
                 var rawData = resp.aggregations.clusters.statuses.attributes.libvirt_types.buckets,
+                    total = resp.aggregations.clusters.statuses.attributes.doc_count,
                     chartData = [];
+                $('#count-releases-distribution').html(total);
                 $.each(rawData, function(key, value) {
                     chartData.push({label: value.key, value: value.doc_count})
                 });
@@ -519,7 +522,9 @@ function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
             }
             }).then(function (resp) {
                 var rawData = resp.aggregations.clusters.statuses.release.oses.buckets,
+                    total =  resp.aggregations.clusters.statuses.doc_count,
                     chartData = [];
+                $('#count-distribution-of-oses').html(total);
                 $.each(rawData, function(key, value) {
                     chartData.push({label: value.key, value: value.doc_count})
                 });
