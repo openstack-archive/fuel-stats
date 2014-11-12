@@ -58,7 +58,9 @@
                                                 "type": "array",
                                                 "items": {"type": "string"}
                                             },
-                                            "status": {"type": "string"}
+                                            "status": {"type": "string"},
+                                            "os": {"type": "string"},
+                                            "manufacturer": {"type": "string"}
                                         },
                                         "required": ["id", "roles"]
                                     }

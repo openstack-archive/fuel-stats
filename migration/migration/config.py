@@ -114,7 +114,8 @@ MAPPING_FUEL = {
                     'nodes': {
                         'type': 'nested',
                         'properties': {
-                            'id': {'type': 'long'}
+                            'id': {'type': 'long'},
+                            'manufacturer': {'type': 'string'}
                         }
                     },
                 }
