@@ -11,7 +11,9 @@ define(
 function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
     'use strict';
 
-    var numberOfInstallations = 0;
+    var numberOfTotalInstallations = 0,
+        numberOfCountedInstallations = 0,
+        statuses = ["operational", "error"];
     var elasticSearchHost = function() {
             return {
                 host: {
@@ -31,7 +33,6 @@ function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
 
     var statsPage = function() {
         installationCount();
-        activityChart();
         nodesDistributionChart();
         virtualizationDistributionChart();
         osesDistributionChart();
@@ -39,15 +40,67 @@ function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
 
     var installationCount = function() {
         var client = new elasticsearch.Client(elasticSearchHost());
-         client.count({
+         client.search({
             index: 'fuel',
             type: 'structure',
             body: {
-               "query": {"match_all": {}}
+               "aggs": {
+                    "clusters": {
+                        "nested": {
+                            "path": "clusters"
+                        },
+                        "aggs": {
+                            "statuses": {
+                                "terms": {"field": "status"}
+                            }
+                        }
+                    }
+                }
             }
             }).then(function (resp) {
-                $('#installation-count').html(resp.count);
-                numberOfInstallations = resp.count;
+                var rawData = resp.aggregations.clusters.statuses.buckets,
+                    total = resp.aggregations.clusters.doc_count,
+                    chartData = [];;
+                
+                $.each(rawData, function(key, value) {
+                    if (value.key == 'operational' || value.key == 'error') numberOfCountedInstallations += value.doc_count;
+                    chartData.push({label: value.key, value: value.doc_count})
+                });
+                $('#installation-count').html(total);
+                $('.numberOfCountedInstallations').html(numberOfCountedInstallations);
+                var data = [{
+                    "key": "Environments distribution by statuses",
+                    "color": "#1DA489",
+                    "values": chartData
+                    }];
+
+                nv.addGraph(function() {
+                    var chart = nv.models.multiBarChart()
+                        .x(function(d) { return d.label })
+                        .y(function(d) { return d.value })
+                        .margin({top: 30})
+                        .transitionDuration(350)
+                        .reduceXTicks(false)   //If 'false', every single x-axis tick label will be rendered.
+                        .rotateLabels(0)      //Angle to rotate x-axis labels.
+                        .showControls(false)   //Allow user to switch between 'Grouped' and 'Stacked' mode.
+                        .groupSpacing(0.5);    //Distance between each group of bars.
+
+                    chart.yAxis
+                        .tickFormat(d3.format('d'));
+
+                    chart.tooltipContent( function(key, x, y){
+                        return '<h3>Status: "' + x + '"</h3>' +'<p>' + parseInt(y) + ' environments</p>';
+                    });
+
+                    d3.select('#clusters-distribution svg')
+                        .datum(data)
+                        .call(chart);
+
+                    nv.utils.windowResize(chart.update);
+
+                    return chart;
+                });
+
             });
     }
 
@@ -60,24 +113,44 @@ function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
             body: {
                 "query": filterQuery,
                 "aggs": {
-                    "nodes_ranges": {
-                        "range": {
-                            "field": "allocated_nodes_num",
-                            "ranges": [
-                                {"from": 1, "to": 5},
-                                {"from": 5, "to": 10},
-                                {"from": 10, "to": 20},
-                                {"from": 20, "to": 50},
-                                {"from": 50, "to": 100},
-                                {"from": 100}
-                            ]
+                    "clusters": {
+                        "nested": {
+                            "path": "clusters"
+                        },
+                        "aggs": {
+                            "statuses": {
+                                "filter": {
+                                    "terms": {"status": statuses}
+                                },
+                                "aggs": {
+                                    "structure": {
+                                        "reverse_nested": {},
+                                        "aggs": {
+                                            "nodes_ranges": {
+                                                "range": {
+                                                    "field": "allocated_nodes_num",
+                                                    "ranges": [
+                                                        {"from": 1, "to": 5},
+                                                        {"from": 5, "to": 10},
+                                                        {"from": 10, "to": 20},
+                                                        {"from": 20, "to": 50},
+                                                        {"from": 50, "to": 100},
+                                                        {"from": 100}
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
             }).then(function (resp) {
-                var rawData = resp.aggregations.nodes_ranges.buckets,
+                var rawData = resp.aggregations.clusters.statuses.structure.nodes_ranges.buckets,
                     chartData = [];
+
                 $.each(rawData, function(key, value) {
                     var labelText = '',
                         labelData = value.key.split("-");
@@ -104,8 +177,7 @@ function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
                         .reduceXTicks(false)   //If 'false', every single x-axis tick label will be rendered.
                         .rotateLabels(0)      //Angle to rotate x-axis labels.
                         .showControls(false)   //Allow user to switch between 'Grouped' and 'Stacked' mode.
-                        .groupSpacing(0.2)    //Distance between each group of bars.
-                    ;
+                        .groupSpacing(0.2);    //Distance between each group of bars.
 
                     chart.yAxis
                         .tickFormat(d3.format('d'));
@@ -289,14 +361,21 @@ function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
                             "path": "clusters"
                         },
                         "aggs": {
-                            "attributes": {
-                                "nested": {
-                                    "path": "clusters.attributes"
+                            "statuses": {
+                                "filter": {
+                                    "terms": {"status": statuses}
                                 },
                                 "aggs": {
-                                    "libvirt_types": {
-                                        "terms": {
-                                            "field": "libvirt_type"
+                                    "attributes": {
+                                        "nested": {
+                                            "path": "clusters.attributes"
+                                        },
+                                        "aggs": {
+                                            "libvirt_types": {
+                                                "terms": {
+                                                    "field": "libvirt_type"
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -306,11 +385,52 @@ function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
                 }
             }
             }).then(function (resp) {
-                var rawData = resp.aggregations.clusters.attributes.libvirt_types.buckets,
+                var rawData = resp.aggregations.clusters.statuses.attributes.libvirt_types.buckets,
                     chartData = [];
                 $.each(rawData, function(key, value) {
                     chartData.push({label: value.key, value: value.doc_count})
                 });
+                var pie = new d3pie("releases-distribution", {
+                    "header": {
+                        "title": {
+                            "text": "Distribution of deployed hypervisor",
+                            "fontSize": 15
+                        },
+                        "location": "top-left",
+                        "titleSubtitlePadding": 9
+                    },
+                    size: {
+                        "canvasWidth": 400,
+                        "canvasHeight": 300,
+                        "pieInnerRadius": "40%",
+                        "pieOuterRadius": "60%"
+                    },
+                    labels: {
+                        "outer": {
+                            "format": "label-value2",
+                            "pieDistance": 10
+                        },
+                        "mainLabel": {
+                            "fontSize": 14
+                        },
+                        "percentage": {
+                            "color": "#ffffff",
+                            "decimalPlaces": 2
+                        },
+                        "value": {
+                            "color": "#adadad",
+                            "fontSize": 11
+                        },
+                        "lines": {
+                            "enabled": true
+                        }
+                    },
+                    data: {
+                        "sortOrder": "random",
+                        content: chartData
+                    }
+                });
+                /*
                 var data = [{
                     "key": "Distribution of deployed hypervisor",
                     "color": "#1DA489",
@@ -340,7 +460,8 @@ function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
                         .datum(data)
                         .call(chart);
                     return chart;
-                  });
+                });
+                */
             });
     }
 
@@ -358,14 +479,22 @@ function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
                             "path": "clusters"
                         },
                         "aggs": {
-                            "release": {
-                                "nested": {
-                                    "path": "clusters.release"
+                            "statuses": {
+                                "filter": {
+                                    "terms": {"status": statuses}
                                 },
                                 "aggs": {
-                                    "oses": {
-                                        "terms": {
-                                            "field": "os"
+                                    "release": {
+                                        "nested": {
+                                            "path": "clusters.release"
+                                        },
+
+                                        "aggs": {
+                                            "oses": {
+                                                "terms": {
+                                                    "field": "os"
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -375,7 +504,7 @@ function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
                 }
             }
             }).then(function (resp) {
-                var rawData = resp.aggregations.clusters.release.oses.buckets,
+                var rawData = resp.aggregations.clusters.statuses.release.oses.buckets,
                     chartData = [];
                 $.each(rawData, function(key, value) {
                     chartData.push({label: value.key, value: value.doc_count})
@@ -385,11 +514,6 @@ function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
                         "title": {
                             "text": "Distribution of deployed operating system",
                             "fontSize": 15
-                        },
-                        "subtitle": {
-                            "text": "Number of environments: " + numberOfInstallations,
-                            "color": "#999999",
-                            "fontSize": 12
                         },
                         "location": "top-left",
                         "titleSubtitlePadding": 9
