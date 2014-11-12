@@ -13,8 +13,9 @@
 #    under the License.
 
 from collections import namedtuple
+import datetime
 from elasticsearch import Elasticsearch
-from random import randint
+import random
 from unittest2.case import TestCase
 import uuid
 
@@ -63,6 +64,104 @@ class ElasticTest(TestCase):
         migrator.create_indices()
         self.es.cluster.health(wait_for_status='yellow', request_timeout=1)
 
+    def load_data(self):
+        pass
+
+    def gen_id(self, id_range=(0, 1000000)):
+        return random.randint(*id_range)
+
+    def generate_node(
+            self,
+            roles_range=(0, 5),
+            node_roles=('compute', 'controller', 'cinder', 'ceph-osd',
+                        'zabbix', 'mongo'),
+            oses=('Ubuntu', 'CentOs', 'Ubuntu LTS XX'),
+            node_statuses = ('ready', 'discover', 'provisioning',
+                             'provisioned', 'deploying', 'error')
+    ):
+        roles = []
+        for _ in xrange(random.randint(*roles_range)):
+            roles.append(random.choice(node_roles))
+        node = {
+            'id': self.gen_id(),
+            'roles': roles,
+            'os': random.choice(oses),
+            'status': random.choice(node_statuses)
+        }
+        return node
+
+    def generate_cluster(
+            self,
+            nodes_range=(0, 100),
+            oses=('Ubuntu', 'CentOs', 'Ubuntu LTS XX'),
+            release_names=('Juno on CentOS 6.5', 'Juno on Ubuntu 12.04.4'),
+            release_versions=('6.0 TechPreview', '6.0 GA', '6.1'),
+            cluster_statuses=('new', 'deployment', 'stopped', 'operational',
+                              'error', 'remove', 'update', 'update_error'),
+            libvirt_names=('qemu', 'kvm', 'vCenter')
+    ):
+        nodes_num = random.randint(*nodes_range)
+        cluster = {
+            'id': self.gen_id(),
+            'nodes_num': nodes_num,
+            'release': {
+                'os': random.choice(oses),
+                'name': random.choice(release_names),
+                'version': random.choice(release_versions),
+            },
+            'status': random.choice(cluster_statuses),
+            'nodes': [],
+            'attributes': {
+                'libvirt_type': random.choice(libvirt_names)
+            }
+        }
+        for _ in xrange(nodes_num):
+            cluster['nodes'].append(self.generate_node())
+        return cluster
+
+    def generate_structure(
+            self,
+            clusters_num_range=(0, 10),
+            unallocated_nodes_num_range=(0, 20)
+    ):
+        mn_uid = '{}'.format(uuid.uuid4())
+        clusters_num = random.randint(*clusters_num_range)
+        fuel_release = {
+            'release': "XX",
+            'api': 1,
+            'nailgun_sha': "Unknown build",
+            'astute_sha': "Unknown build",
+            'fuellib_sha': "Unknown build",
+            'ostf_sha': "Unknown build",
+            'feature_groups': ['experimental', 'mirantis']
+        }
+
+        structure = {
+            'master_node_uid': mn_uid,
+            'fuel_release': fuel_release,
+            'clusters_num': clusters_num,
+            'clusters': [],
+            'unallocated_nodes_num_range': random.randint(
+                *unallocated_nodes_num_range),
+            'allocated_nodes_num': 0
+        }
+
+        for _ in xrange(clusters_num):
+            cluster = self.generate_cluster()
+            structure['clusters'].append(cluster)
+            structure['allocated_nodes_num'] += cluster['nodes_num']
+        return structure
+
+    def generate_data(self, installations_num=100):
+        structures = []
+        for _ in xrange(installations_num):
+            structure = self.generate_structure()
+            self.es.index(config.INDEX_FUEL, config.DOC_TYPE_STRUCTURE,
+                          body=structure, id=structure['master_node_uid'])
+            structures.append(structure)
+        self.es.indices.refresh(config.INDEX_FUEL)
+        return structures
+
 
 class MigrationTest(ElasticTest, DbTest):
 
@@ -88,13 +187,15 @@ class MigrationTest(ElasticTest, DbTest):
             'clusters': []
         }
         db_session.add(InstallationStructure(master_node_uid=mn_uid,
-                                             structure=structure))
+                                             structure=structure,
+                                             creation_date=datetime.datetime.utcnow(),
+                                             modification_date=datetime.datetime.utcnow()))
         db_session.commit()
         return mn_uid
 
     def create_dumb_action_log(self):
         mn_uid = '{}'.format(uuid.uuid4())
-        external_id = randint(1, 10000)
+        external_id = random.randint(1, 10000)
         db_session.add(ActionLog(master_node_uid=mn_uid,
                                  external_id=external_id))
         db_session.commit()

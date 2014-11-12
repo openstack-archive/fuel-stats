@@ -109,8 +109,12 @@ class MigratorTest(MigrationTest):
 
         # checking new docs are indexed
         for mn_uid in mn_uids:
-            self.es.get(sync_info.index_name, mn_uid,
-                        doc_type=sync_info.doc_type_name)
+            doc = self.es.get(sync_info.index_name, mn_uid,
+                              doc_type=sync_info.doc_type_name)
+            # checking dates are migrated
+            source = doc['_source']
+            self.assertIsNotNone(source['creation_date'])
+            self.assertIsNotNone(source['modification_date'])
 
     def test_empty_action_logs_migration(self):
         migrator = Migrator()
