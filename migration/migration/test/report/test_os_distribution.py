@@ -12,6 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from collections import defaultdict
+import six
+
 from migration import config
 from migration.test.base import AggsCheck
 from migration.test.base import ElasticTest
@@ -19,7 +22,7 @@ from migration.test.base import ElasticTest
 
 class OsDistribution(ElasticTest):
 
-    def test_report(self):
+    def test_os_analyzer(self):
         docs = [
             {
                 'master_node_uid': 'x0',
@@ -100,3 +103,62 @@ class OsDistribution(ElasticTest):
             sorted(checks),
             sorted(AggsCheck(**d) for d in result)
         )
+
+    def test_report(self):
+        structures = self.generate_data()
+        statuses = ["operational", "error"]
+        # nodes oses distribution request
+        oses_list = {
+            "size": 0,
+            "aggs": {
+                "clusters": {
+                    "nested": {
+                        "path": "clusters"
+                    },
+                    "aggs": {
+                        "statuses": {
+                            "filter": {
+                                "terms": {"status": statuses}
+                            },
+                            "aggs": {
+                                "release": {
+                                    "nested": {
+                                        "path": "clusters.release"
+                                    },
+
+                                    "aggs": {
+                                        "oses": {
+                                            "terms": {
+                                                "field": "os"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        resp = self.es.search(index=config.INDEX_FUEL,
+                              doc_type=config.DOC_TYPE_STRUCTURE,
+                              body=oses_list)
+        filtered_clusters = resp['aggregations']['clusters']['statuses']
+        result = filtered_clusters['release']['oses']['buckets']
+        actual_oses = dict([(d['key'], d['doc_count']) for d in result])
+
+        expected_oses = defaultdict(int)
+        expected_clusters_num = 0
+        for structure in structures:
+            clusters_in_statuses = filter(lambda c: c['status'] in statuses, structure['clusters'])
+            expected_clusters_num += len(clusters_in_statuses)
+            for cluster in clusters_in_statuses:
+                os = str.lower(cluster['release']['os'])
+                expected_oses[os] += 1
+
+        # checking aggregation result
+        self.assertDictEqual(expected_oses, actual_oses)
+
+        # checking clusters are filtered
+        self.assertEquals(expected_clusters_num, sum(six.itervalues(actual_oses)))
