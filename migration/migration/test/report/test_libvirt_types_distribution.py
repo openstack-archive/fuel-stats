@@ -16,17 +16,13 @@ from migration import config
 from migration.test.base import ElasticTest
 
 
-class NodesDistribution(ElasticTest):
+class LibvirtTypesDistribution(ElasticTest):
 
     def test_report(self):
-        structures = self.generate_data()
+        installations_num = 100
+        structures = self.generate_data(installations_num=installations_num)
         statuses = ["operational", "error"]
-        ranges = [
-            {"to": 75},
-            {"from": 75, "to": 85},
-            {"from": 85}
-        ]
-        nodes_distribution = {
+        query = {
             "size": 0,
             "aggs": {
                 "clusters": {
@@ -39,13 +35,14 @@ class NodesDistribution(ElasticTest):
                                 "terms": {"status": statuses}
                             },
                             "aggs": {
-                                "structure": {
-                                    "reverse_nested": {},
+                                "attributes": {
+                                    "nested": {
+                                        "path": "clusters.attributes"
+                                    },
                                     "aggs": {
-                                        "nodes_ranges": {
-                                            "range": {
-                                                "field": "allocated_nodes_num",
-                                                "ranges": ranges
+                                        "libvirt_types": {
+                                            "terms": {
+                                                "field": "libvirt_type"
                                             }
                                         }
                                     }
@@ -56,29 +53,25 @@ class NodesDistribution(ElasticTest):
                 }
             }
         }
-
         resp = self.es.search(index=config.INDEX_FUEL,
                               doc_type=config.DOC_TYPE_STRUCTURE,
-                              body=nodes_distribution)
-        filtered_structures = resp['aggregations']['clusters']['statuses']['structure']
-        nodes_ranges = filtered_structures['nodes_ranges']['buckets']
-        actual_ranges = [d['doc_count'] for d in nodes_ranges]
+                              body=query)
 
-        expected_structures_num = 0
-        total_structures_num = 0
-        expected_ranges = [0] * len(ranges)
+        # checking filtered clusters num
+        actual_clusters_num = resp['aggregations']['clusters']['statuses']['doc_count']
+        expected_clusters_num = 0
+        total_clusters_num = 0
         for structure in structures:
             clusters_in_statuses = filter(lambda c: c['status'] in statuses, structure['clusters'])
-            if clusters_in_statuses:
-                expected_structures_num += 1
-            else:
-                continue
-            for idx, r in enumerate(ranges):
-                f = r.get('from', 0)
-                t = r.get('to')
-                nodes_num = structure['allocated_nodes_num']
-                if nodes_num >= f and (t is None or nodes_num < t):
-                    expected_ranges[idx] += 1
-                    continue
-            total_structures_num += structure['clusters_num']
-        self.assertListEqual(expected_ranges, actual_ranges)
+            expected_clusters_num += len(clusters_in_statuses)
+            total_clusters_num += structure['clusters_num']
+        self.assertGreater(total_clusters_num, actual_clusters_num)
+        self.assertEquals(expected_clusters_num, actual_clusters_num)
+
+        # checking number of filtered libvirt types and clusters
+        libvirt_types = resp['aggregations']['clusters']['statuses']['attributes']['libvirt_types']['buckets']
+        self.assertEquals(
+            expected_clusters_num,
+            sum(d['doc_count'] for d in libvirt_types)
+        )
+
