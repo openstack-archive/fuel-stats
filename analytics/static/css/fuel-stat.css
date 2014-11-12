@@ -201,6 +201,15 @@ html, body {
 .graph-item-box > .content > .image > img {
 	width: 100%;
 }
+.graph-item-box > .content > .description {
+	margin-left: auto;
+	margin-right: auto;
+	margin-bottom: 10px;
+	padding: 0;
+	width: 400px;
+	color: #6E6E6E;
+	font-size: 12px;
+}
 .titul-graph-box {
     border-top: 4px solid #e7eaec;
     border-bottom: 1px solid #e7eaec;
@@ -231,11 +240,11 @@ html, body {
 
 /* nvd3 styles customization*/
 svg text {
-    font-family: 'open sans';
+    font-family: 'open sans' !important;
     font-size: 12px;
     font-weight: normal;
 }
 
-.nv-series text {
-    font-size: 13spx;
+.nv-series text, .p0_title, .p1_title {
+    font-size: 13px !important;
 }
