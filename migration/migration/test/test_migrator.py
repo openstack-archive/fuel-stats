@@ -21,7 +21,6 @@ from migration.test.base import MigrationTest
 
 from migration.migrator import Migrator
 from migration.model import ActionLog
-from migration.model import InstallationStructure
 
 
 class MigratorTest(MigrationTest):
@@ -64,12 +63,14 @@ class MigratorTest(MigrationTest):
     def test_empty_installation_structure_migration(self):
         migrator = Migrator()
         time_before = datetime.datetime.utcnow()
+        info_before = migrator.get_sync_info(config.STRUCTURES_DB_TABLE_NAME)
         migrator.migrate_installation_structure()
-        info = migrator.get_sync_info(config.STRUCTURES_DB_TABLE_NAME)
-        time_of_sync = parser.parse(info.last_sync_time)
+        info_after = migrator.get_sync_info(config.STRUCTURES_DB_TABLE_NAME)
+        time_of_sync = parser.parse(info_after.last_sync_time)
         self.assertLessEqual(time_before, time_of_sync)
         self.assertGreaterEqual(datetime.datetime.utcnow(), time_of_sync)
-        self.assertEquals(0, info.last_sync_id)
+        self.assertEquals(info_before.last_sync_value,
+                          info_after.last_sync_value)
 
     def get_indexed_docs_num(self, sync_info):
         resp = self.es.count(index=sync_info.index_name,
@@ -78,9 +79,38 @@ class MigratorTest(MigrationTest):
         return resp['count']
 
     @patch('migration.config.DB_SYNC_CHUNK_SIZE', 2)
-    def test_installation_structure_migration(self):
+    def test_migrations_chain(self):
+        migrator = Migrator()
+        migrator.migrate_installation_structure()
+        migrator.migrate_action_logs()
+
         docs_num = 3
-        mn_uids = [self.create_dumb_structure() for _ in xrange(docs_num)]
+        for _ in xrange(docs_num):
+            self.create_dumb_structure()
+            self.create_dumb_action_log()
+        is_sync_info = migrator.get_sync_info(config.STRUCTURES_DB_TABLE_NAME)
+        is_indexed_docs_before = self.get_indexed_docs_num(is_sync_info)
+        al_sync_info = migrator.get_sync_info(config.ACTION_LOGS_DB_TABLE_NAME)
+        al_indexed_docs_before = self.get_indexed_docs_num(al_sync_info)
+
+        migrator.migrate_installation_structure()
+        migrator.migrate_action_logs()
+        self.es.indices.refresh(index=config.INDEX_FUEL)
+
+        is_indexed_docs_after = self.get_indexed_docs_num(is_sync_info)
+        self.assertEquals(is_indexed_docs_before + docs_num,
+                          is_indexed_docs_after)
+        al_indexed_docs_after = self.get_indexed_docs_num(al_sync_info)
+        self.assertEquals(al_indexed_docs_before + docs_num,
+                          al_indexed_docs_after)
+
+    @patch('migration.config.DB_SYNC_CHUNK_SIZE', 2)
+    def test_installation_structure_migration(self):
+        mn_uids = set([self.create_dumb_structure() for _ in xrange(3)])
+        null_md_uids = set([self.create_dumb_structure(set_md=False)
+                            for _ in xrange(3)])
+        mn_uids.update(null_md_uids)
+        mn_uids.update(set([self.create_dumb_structure() for _ in xrange(3)]))
 
         migrator = Migrator()
         sync_info = migrator.get_sync_info(config.STRUCTURES_DB_TABLE_NAME)
@@ -92,25 +122,65 @@ class MigratorTest(MigrationTest):
         self.es.indices.refresh(index=config.INDEX_MIGRATION)
         new_sync_info = migrator.get_sync_info(config.STRUCTURES_DB_TABLE_NAME)
         time_of_sync = parser.parse(new_sync_info.last_sync_time)
-        last_obj = migrator.db_session.query(InstallationStructure).order_by(
-            InstallationStructure.id.desc()).first()
 
         # checking sync time is updated
         self.assertLessEqual(time_before, time_of_sync)
         self.assertGreaterEqual(datetime.datetime.utcnow(), time_of_sync)
 
         # checking last sync id is updated
-        self.assertEquals(last_obj.id, new_sync_info.last_sync_id)
+        last_md = parser.parse(new_sync_info.last_sync_value)
+        initial_md = parser.parse(sync_info.last_sync_value)
+        self.assertGreater(last_md, initial_md)
 
         # checking all docs are migrated
         self.es.indices.refresh(index=sync_info.index_name)
-        self.assertEquals(indexed_docs_before + docs_num,
+        self.assertEquals(indexed_docs_before + len(mn_uids),
                           self.get_indexed_docs_num(sync_info))
 
         # checking new docs are indexed
-        for mn_uid in mn_uids:
-            self.es.get(sync_info.index_name, mn_uid,
-                        doc_type=sync_info.doc_type_name)
+        for mn_uid in mn_uids - null_md_uids:
+            doc = self.es.get(sync_info.index_name, mn_uid,
+                              doc_type=sync_info.doc_type_name)
+            # checking datetimes are migrated
+            source = doc['_source']
+            self.assertIsNotNone(source['creation_date'])
+            self.assertIsNotNone(source['modification_date'])
+
+        # checking new docs are indexed
+        for mn_uid in null_md_uids:
+            doc = self.es.get(sync_info.index_name, mn_uid,
+                              doc_type=sync_info.doc_type_name)
+            # checking datetimes are migrated
+            source = doc['_source']
+            self.assertIsNotNone(source['creation_date'])
+            self.assertIsNone(source['modification_date'])
+
+    @patch('migration.config.DB_SYNC_CHUNK_SIZE', 2)
+    def test_null_modification_date_migration(self):
+        docs_num = 5
+        for _ in xrange(docs_num):
+            self.create_dumb_structure(set_md=False)
+
+        migrator = Migrator()
+        sync_info_before = migrator.get_sync_info(
+            config.STRUCTURES_DB_TABLE_NAME)
+        # checking sync info before migrations
+        self.assertIsNotNone(sync_info_before.last_sync_value)
+        self.assertIsNone(sync_info_before.last_sync_time)
+        indexed_docs_before = self.get_indexed_docs_num(sync_info_before)
+
+        # migrating data
+        migrator.migrate_installation_structure()
+        self.es.indices.refresh(config.INDEX_FUEL)
+        self.es.indices.refresh(config.INDEX_MIGRATION)
+
+        # checking sync info after migrations
+        sync_info_after = migrator.get_sync_info(
+            config.STRUCTURES_DB_TABLE_NAME)
+        self.assertIsNotNone(sync_info_after.last_sync_value)
+        self.assertIsNotNone(sync_info_after.last_sync_time)
+        indexed_docs_after = self.get_indexed_docs_num(sync_info_after)
+        self.assertEquals(indexed_docs_before + docs_num, indexed_docs_after)
 
     def test_empty_action_logs_migration(self):
         migrator = Migrator()
@@ -120,7 +190,7 @@ class MigratorTest(MigrationTest):
         time_of_sync = parser.parse(info.last_sync_time)
         self.assertLessEqual(time_before, time_of_sync)
         self.assertGreaterEqual(datetime.datetime.utcnow(), time_of_sync)
-        self.assertEquals(0, info.last_sync_id)
+        self.assertEquals(0, info.last_sync_value)
 
     @patch('migration.config.DB_SYNC_CHUNK_SIZE', 2)
     def test_action_logs_migration(self):
@@ -147,7 +217,7 @@ class MigratorTest(MigrationTest):
         self.assertGreaterEqual(datetime.datetime.utcnow(), time_of_sync)
 
         # checking last sync id is updated
-        self.assertEquals(last_obj.id, new_sync_info.last_sync_id)
+        self.assertEquals(last_obj.id, new_sync_info.last_sync_value)
 
         # checking all docs are migrated
         self.es.indices.refresh(index=sync_info.index_name)
