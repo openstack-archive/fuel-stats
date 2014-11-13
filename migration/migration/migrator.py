@@ -29,9 +29,10 @@ class SyncInfo(dict):
     # explicit properties definition
     db_table_name = None
     db_id_name = None
+    db_sync_field_name = None
     index_name = None
     doc_type_name = None
-    last_sync_id = None
+    last_sync_value = None
     last_sync_time = None
 
     def __init__(self, *args, **kwargs):
@@ -140,7 +141,7 @@ class Migrator(object):
         logger.info("Migration of installation structures is finished")
 
     def migrate_action_logs(self):
-        logger.info('Migration of action logs is started')
+        logger.info("Migration of action logs is started")
         mapping_rule = MappingRule(
             'master_node_uid',
             json_fields=(),
@@ -148,40 +149,74 @@ class Migrator(object):
                 NameMapping(source='master_node_uid', dest='master_node_uid'),
             ))
         info = self.get_sync_info(config.ACTION_LOGS_DB_TABLE_NAME)
-        self.make_migration(ActionLog, info, mapping_rule)
-        logger.info('Migration of action logs is finished')
+        try:
+            self.make_migration(ActionLog, info, mapping_rule)
+            logger.info("Migration of action logs is finished")
+        except Exception:
+            logger.exception("Migration of action logs is failed")
 
-    def make_migration(self, model, sync_info, mapping_rule):
+    def _migrate_objs(self, objs, sync_info, mapping_rule):
+        if len(objs) == 0:
+            logger.info("Nothing to be migrated for %s",
+                        sync_info.db_table_name)
+            self.put_sync_info(sync_info)
+            return False
+        logger.info("%d %s to be migrated", len(objs),
+                    sync_info.db_table_name)
+        docs = []
+        for obj in objs:
+            doc = mapping_rule.make_doc(sync_info.index_name,
+                                        sync_info.doc_type_name, obj)
+            docs.append(doc)
+            last_sync_value = getattr(obj, sync_info.db_sync_field_name)
+        processed, errors = helpers.bulk(self.es, docs)
+        if errors:
+            logger.error("Migration of %s failed: %s",
+                         sync_info.db_table_name, errors)
+            return False
+        else:
+            if last_sync_value is not None:
+                sync_info.last_sync_value = last_sync_value
+            logger.info("Chunk of %s of size %d is migrated",
+                        sync_info.db_table_name, len(objs))
+            self.put_sync_info(sync_info)
+            return True
+
+    def migrate_with_null_sync_field(self, model, sync_info, mapping_rule):
+        logger.debug("Migrating %s with NULL %s", sync_info.db_table_name,
+                     sync_info.db_sync_field_name)
+        sync_field = getattr(model, sync_info.db_sync_field_name)
+        id_field = getattr(model, sync_info.db_id_name)
+        offset = 0
+        while True:
+            sync_info.last_sync_time = datetime.datetime.utcnow()
+            objs = self.db_session.query(model). \
+                filter(sync_field.is_(None)). \
+                order_by(id_field.asc()). \
+                limit(config.DB_SYNC_CHUNK_SIZE).offset(offset).all()
+            offset += len(objs)
+            if not self._migrate_objs(objs, sync_info, mapping_rule):
+                break
+        logger.debug("%s with NULL %s migrated", sync_info.db_table_name,
+                     sync_info.db_sync_field_name)
+
+    def migrate_by_sync_field(self, model, sync_info, mapping_rule):
+        logger.debug("Migrating %s with %s > %s", sync_info.db_table_name,
+                     sync_info.db_sync_field_name, sync_info.last_sync_value)
+        sync_field = getattr(model, sync_info.db_sync_field_name)
         id_field = getattr(model, sync_info.db_id_name)
         while True:
             sync_info.last_sync_time = datetime.datetime.utcnow()
-            objs = self.db_session.query(model).\
-                filter(id_field > sync_info.last_sync_id).\
-                order_by(id_field.asc()).\
+            objs = self.db_session.query(model). \
+                filter(sync_field > sync_info.last_sync_value). \
+                order_by(id_field.asc()). \
                 limit(config.DB_SYNC_CHUNK_SIZE).all()
 
-            if len(objs) == 0:
-                logger.info("Nothing to be migrated for %s",
-                            model.__tablename__)
-                self.put_sync_info(sync_info)
+            if not self._migrate_objs(objs, sync_info, mapping_rule):
                 break
+        logger.debug("%s with %s > %s migrated", sync_info.db_table_name,
+                     sync_info.db_sync_field_name, sync_info.last_sync_value)
 
-            logger.info("%d %s to be migrated", len(objs),
-                        model.__tablename__)
-            docs = []
-            for obj in objs:
-                doc = mapping_rule.make_doc(sync_info.index_name,
-                                            sync_info.doc_type_name, obj)
-                docs.append(doc)
-                from_id = obj.id
-            processed, errors = helpers.bulk(self.es, docs)
-            if errors:
-                logger.error("Migration of %s failed: %s",
-                             model.__tablename__, errors)
-                break
-            else:
-                last_sync_id = from_id
-                sync_info.last_sync_id = last_sync_id
-                logger.info("Chunk of %s of size %d is migrated",
-                            model.__tablename__, len(objs))
-                self.put_sync_info(sync_info)
+    def make_migration(self, model, sync_info, mapping_rule):
+        self.migrate_with_null_sync_field(model, sync_info, mapping_rule)
+        self.migrate_by_sync_field(model, sync_info, mapping_rule)

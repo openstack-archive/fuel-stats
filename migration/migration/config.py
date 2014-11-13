@@ -43,6 +43,10 @@ MAPPING_MIGRATION = {
                 'type': 'string',
                 'index': 'not_analyzed'
             },
+            'db_sync_field_name': {
+                'type': 'string',
+                'index': 'not_analyzed'
+            },
             # to
             'index_name': {
                 'type': 'string',
@@ -53,8 +57,8 @@ MAPPING_MIGRATION = {
                 'index': 'not_analyzed'
             },
             # status
-            'last_sync_id': {
-                'type': 'long'
+            'last_sync_value': {
+                'type': 'null'
             },
             'last_sync_time': {
                 'type': 'date'
@@ -149,7 +153,8 @@ INFO_TEMPLATES = {
     STRUCTURES_DB_TABLE_NAME: {
         'db_table_name': STRUCTURES_DB_TABLE_NAME,
         'db_id_name': 'id',
-        'last_sync_id': 0,
+        'db_sync_field_name': 'modification_date',
+        'last_sync_value': '1970-01-01T00:00:00',
         'index_name': 'fuel',
         'doc_type_name': 'structure',
         'last_sync_time': None
@@ -157,7 +162,8 @@ INFO_TEMPLATES = {
     ACTION_LOGS_DB_TABLE_NAME: {
         'db_table_name': ACTION_LOGS_DB_TABLE_NAME,
         'db_id_name': 'id',
-        'last_sync_id': 0,
+        'db_sync_field_name': 'id',
+        'last_sync_value': 0,
         'index_name': 'fuel',
         'doc_type_name': 'action_logs',
         'last_sync_time': None
