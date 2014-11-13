@@ -13,6 +13,7 @@
 #    under the License.
 
 import logging
+import datetime
 
 LOG_FILE = '/var/log/migration.log'
 LOG_LEVEL = logging.INFO
@@ -54,7 +55,7 @@ MAPPING_MIGRATION = {
             },
             # status
             'last_sync_id': {
-                'type': 'long'
+                'type': 'null'
             },
             'last_sync_time': {
                 'type': 'date'
@@ -148,8 +149,8 @@ ACTION_LOGS_DB_TABLE_NAME = 'action_logs'
 INFO_TEMPLATES = {
     STRUCTURES_DB_TABLE_NAME: {
         'db_table_name': STRUCTURES_DB_TABLE_NAME,
-        'db_id_name': 'id',
-        'last_sync_id': 0,
+        'db_id_name': 'modification_date',
+        'last_sync_id': '1970-01-01T00:00:00',
         'index_name': 'fuel',
         'doc_type_name': 'structure',
         'last_sync_time': None

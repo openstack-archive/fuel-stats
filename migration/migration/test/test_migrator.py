@@ -78,6 +78,30 @@ class MigratorTest(MigrationTest):
         return resp['count']
 
     @patch('migration.config.DB_SYNC_CHUNK_SIZE', 2)
+    def test_migrations_chain(self):
+        migrator = Migrator()
+        migrator.migrate_installation_structure()
+        migrator.migrate_action_logs()
+
+        docs_num = 3
+        for _ in xrange(docs_num):
+            self.create_dumb_structure()
+            self.create_dumb_action_log()
+        is_sync_info = migrator.get_sync_info(config.STRUCTURES_DB_TABLE_NAME)
+        is_indexed_docs_before = self.get_indexed_docs_num(is_sync_info)
+        al_sync_info = migrator.get_sync_info(config.ACTION_LOGS_DB_TABLE_NAME)
+        al_indexed_docs_before = self.get_indexed_docs_num(al_sync_info)
+
+        migrator.migrate_installation_structure()
+        migrator.migrate_action_logs()
+        self.es.indices.refresh(index=config.INDEX_FUEL)
+
+        is_indexed_docs_after = self.get_indexed_docs_num(is_sync_info)
+        self.assertEquals(is_indexed_docs_before + docs_num, is_indexed_docs_after)
+        al_indexed_docs_after = self.get_indexed_docs_num(al_sync_info)
+        self.assertEquals(al_indexed_docs_before + docs_num, al_indexed_docs_after)
+
+    @patch('migration.config.DB_SYNC_CHUNK_SIZE', 2)
     def test_installation_structure_migration(self):
         docs_num = 3
         mn_uids = [self.create_dumb_structure() for _ in xrange(docs_num)]
@@ -100,7 +124,8 @@ class MigratorTest(MigrationTest):
         self.assertGreaterEqual(datetime.datetime.utcnow(), time_of_sync)
 
         # checking last sync id is updated
-        self.assertEquals(last_obj.id, new_sync_info.last_sync_id)
+        last_md = parser.parse(new_sync_info.last_sync_id)
+        self.assertGreater(datetime.timedelta(seconds=1), last_obj.modification_date - last_md)
 
         # checking all docs are migrated
         self.es.indices.refresh(index=sync_info.index_name)
@@ -109,8 +134,17 @@ class MigratorTest(MigrationTest):
 
         # checking new docs are indexed
         for mn_uid in mn_uids:
-            self.es.get(sync_info.index_name, mn_uid,
-                        doc_type=sync_info.doc_type_name)
+            doc = self.es.get(sync_info.index_name, mn_uid,
+                              doc_type=sync_info.doc_type_name)
+            # checking datetimes are migrated
+            source = doc['_source']
+            self.assertIsNotNone(source['creation_date'])
+            self.assertIsNotNone(source['modification_date'])
+
+    @patch('migration.config.DB_SYNC_CHUNK_SIZE', 2)
+    def test_updated_installation_structure_migration(self):
+        pass
+        # TODO(akislitky): to be implemented
 
     def test_empty_action_logs_migration(self):
         migrator = Migrator()

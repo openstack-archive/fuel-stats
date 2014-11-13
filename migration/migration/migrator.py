@@ -16,6 +16,7 @@ from collections import namedtuple
 import datetime
 from elasticsearch import Elasticsearch
 from elasticsearch import helpers
+from sqlalchemy import or_
 
 from migration import config
 from migration.db import db_session
@@ -140,7 +141,7 @@ class Migrator(object):
         logger.info("Migration of installation structures is finished")
 
     def migrate_action_logs(self):
-        logger.info('Migration of action logs is started')
+        logger.info("Migration of action logs is started")
         mapping_rule = MappingRule(
             'master_node_uid',
             json_fields=(),
@@ -149,17 +150,16 @@ class Migrator(object):
             ))
         info = self.get_sync_info(config.ACTION_LOGS_DB_TABLE_NAME)
         self.make_migration(ActionLog, info, mapping_rule)
-        logger.info('Migration of action logs is finished')
+        logger.info("Migration of action logs is finished")
 
     def make_migration(self, model, sync_info, mapping_rule):
         id_field = getattr(model, sync_info.db_id_name)
         while True:
             sync_info.last_sync_time = datetime.datetime.utcnow()
             objs = self.db_session.query(model).\
-                filter(id_field > sync_info.last_sync_id).\
+                filter(or_(id_field > sync_info.last_sync_id, id_field.is_(None))).\
                 order_by(id_field.asc()).\
                 limit(config.DB_SYNC_CHUNK_SIZE).all()
-
             if len(objs) == 0:
                 logger.info("Nothing to be migrated for %s",
                             model.__tablename__)
@@ -173,7 +173,7 @@ class Migrator(object):
                 doc = mapping_rule.make_doc(sync_info.index_name,
                                             sync_info.doc_type_name, obj)
                 docs.append(doc)
-                from_id = obj.id
+                from_id = getattr(obj, sync_info.db_id_name)
             processed, errors = helpers.bulk(self.es, docs)
             if errors:
                 logger.error("Migration of %s failed: %s",
