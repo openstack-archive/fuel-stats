@@ -93,8 +93,8 @@ class TestActionLogs(DbTest):
                     "action_group": "",
                     "action_name": "",
                     "action_type": "nailgun_task",
-                    "start_timestamp": "",
-                    "end_timestamp": "",
+                    "start_timestamp": "1",
+                    "end_timestamp": "2",
                     "additional_info": {
                         "parent_task_id": 0,
                         "subtasks_ids": [],
@@ -134,8 +134,8 @@ class TestActionLogs(DbTest):
                     "action_group": "",
                     "action_name": "",
                     "action_type": "nailgun_task",
-                    "start_timestamp": "",
-                    "end_timestamp": "",
+                    "start_timestamp": "3",
+                    "end_timestamp": "4",
                     "additional_info": {
                         "parent_task_id": 0,
                         "subtasks_ids": [],
@@ -179,3 +179,49 @@ class TestActionLogs(DbTest):
             {'action_logs': expected_logs}
         )
         self.check_response_error(resp, code=400)
+
+    def test_incomplete_tasks(self):
+        master_node_uid = 'x'
+        action_logs = [
+            {
+                'master_node_uid': master_node_uid,
+                'external_id': i,
+                'body': {
+                    "id": i,
+                    "actor_id": "",
+                    "action_group": "",
+                    "action_name": "",
+                    "action_type": "nailgun_task",
+                    "start_timestamp": "1",
+                    "end_timestamp": None,
+                    "additional_info": {
+                        "parent_task_id": 0,
+                        "subtasks_ids": [],
+                        "operation": "deployment"
+                    },
+                    "is_sent": False,
+                    "cluster_id": 5
+                }
+            }
+            for i in xrange(10)]
+        resp = self.post(
+            '/api/v1/action_logs/',
+            {'action_logs': action_logs}
+        )
+        self.check_response_ok(resp)
+        self.assertEqual(
+            db.session.query(ActionLog).filter(
+                ActionLog.master_node_uid == master_node_uid).count(),
+            0
+        )
+
+        resp_data = json.loads(resp.data)
+        self.assertEqual(
+            len(resp_data['action_logs']),
+            len(action_logs)
+        )
+        for d in resp_data['action_logs']:
+            self.assertEquals(
+                consts.ACTION_LOG_STATUSES.failed,
+                d['status']
+            )

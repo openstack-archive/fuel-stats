@@ -46,8 +46,17 @@ def post():
     for chunk in util.split_collection(action_logs, chunk_size=1000):
         existed_objs, action_logs_to_add = _separate_action_logs(chunk)
         objects_info.extend(_extract_objects_info(existed_objs))
+        skipped_objs = []
         for obj in action_logs_to_add:
-            obj['body'] = json.dumps(obj['body'])
+            if obj['body']['action_type'] == 'nailgun_task' and \
+                    not obj['body']['end_timestamp']:
+                skipped_objs.append(obj)
+            else:
+                obj['body'] = json.dumps(obj['body'])
+        for obj in skipped_objs:
+            action_logs_to_add.remove(obj)
+        objects_info.extend(_extract_dicts_info(
+            skipped_objs, consts.ACTION_LOG_STATUSES.failed))
         objects_info.extend(_save_action_logs(action_logs_to_add))
     return 200, {'status': 'ok', 'action_logs': list(objects_info)}
 
@@ -59,21 +68,18 @@ def _save_action_logs(action_logs):
         return result
     try:
         db.session.execute(ActionLog.__table__.insert(), action_logs)
-        for action_log in action_logs:
-            result.append({
-                'master_node_uid': action_log['master_node_uid'],
-                'external_id': action_log['external_id'],
-                'status': consts.ACTION_LOG_STATUSES.added
-            })
+        result = _extract_dicts_info(
+            action_logs, consts.ACTION_LOG_STATUSES.added)
     except Exception:
         app.logger.exception("Processing of action logs chunk failed")
-        result = _handle_chunk_processing_error(action_logs)
+        result = _extract_dicts_info(
+            action_logs, consts.ACTION_LOG_STATUSES.failed)
     return result
 
 
-def _extract_objects_info(existed_objects):
+def _extract_objects_info(objects):
     result = []
-    for obj in existed_objects:
+    for obj in objects:
         result.append({
             'master_node_uid': obj.master_node_uid,
             'external_id': obj.external_id,
@@ -82,13 +88,13 @@ def _extract_objects_info(existed_objects):
     return result
 
 
-def _handle_chunk_processing_error(chunk):
+def _extract_dicts_info(dicts, status):
     result = []
-    for action_log in chunk:
+    for action_log in dicts:
         result.append({
             'master_node_uid': action_log['master_node_uid'],
             'external_id': action_log['external_id'],
-            'status': consts.ACTION_LOG_STATUSES.failed
+            'status': status
         })
     return result
 
