@@ -93,8 +93,8 @@ class TestActionLogs(DbTest):
                     "action_group": "",
                     "action_name": "",
                     "action_type": "nailgun_task",
-                    "start_timestamp": "",
-                    "end_timestamp": "",
+                    "start_timestamp": "1",
+                    "end_timestamp": "2",
                     "additional_info": {
                         "parent_task_id": 0,
                         "subtasks_ids": [],
@@ -134,8 +134,8 @@ class TestActionLogs(DbTest):
                     "action_group": "",
                     "action_name": "",
                     "action_type": "nailgun_task",
-                    "start_timestamp": "",
-                    "end_timestamp": "",
+                    "start_timestamp": "3",
+                    "end_timestamp": "4",
                     "additional_info": {
                         "parent_task_id": 0,
                         "subtasks_ids": [],
@@ -179,3 +179,63 @@ class TestActionLogs(DbTest):
             {'action_logs': expected_logs}
         )
         self.check_response_error(resp, code=400)
+
+    def test_incomplete_tasks(self):
+        master_node_uid = 'x'
+        action_logs = [
+            {
+                'master_node_uid': master_node_uid,
+                'external_id': i,
+                'body': {
+                    "id": i,
+                    "actor_id": "",
+                    "action_group": "",
+                    "action_name": "",
+                    "action_type": "nailgun_task",
+                    "start_timestamp": "1",
+                    # about 1/3 is incomplete
+                    "end_timestamp": 2 if i % 3 else None,
+                    "additional_info": {
+                        "parent_task_id": 0,
+                        "subtasks_ids": [],
+                        "operation": "deployment"
+                    },
+                    "is_sent": False,
+                    "cluster_id": 5
+                }
+            }
+            for i in xrange(100)]
+        completed_count = sum(rec["body"]["end_timestamp"] is not None
+                              for rec in action_logs)
+        resp = self.post(
+            '/api/v1/action_logs/',
+            {'action_logs': action_logs}
+        )
+        self.check_response_ok(resp)
+
+        log_recs = db.session.query(ActionLog).filter(
+            ActionLog.master_node_uid == master_node_uid)
+        self.assertEqual(
+            log_recs.count(),
+            completed_count
+        )
+        for rec in log_recs:
+            self.assertNotNone(rec.body["end_timestamp"])
+
+        resp_logs = json.loads(resp.data)['action_logs']
+        self.assertEqual(
+            len(resp_logs),
+            len(action_logs)
+        )
+        passed = sum(r['status'] == consts.ACTION_LOG_STATUSES.added
+                     for r in resp_logs)
+        failed = sum(r['status'] == consts.ACTION_LOG_STATUSES.failed
+                     for r in resp_logs)
+        self.assertEqual(
+            passed + failed,
+            len(action_logs)
+        )
+        self.assertEqual(
+            passed,
+            completed_count
+        )
