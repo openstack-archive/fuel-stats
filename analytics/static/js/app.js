@@ -11,9 +11,8 @@ define(
 function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
     'use strict';
 
-    var numberOfTotalEnvironments = 0,
-        numberOfCountedEnvironments = 0,
-        statuses = ["operational", "error"];
+    var statuses = ["operational", "error"];
+
     var elasticSearchHost = function() {
             return {
                 host: {
@@ -21,21 +20,14 @@ function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
                     host: $(location).attr('hostname')
                 }
             };
-        },
-        filterQuery = {
-            "nested": {
-                "path": "clusters",
-                "filter": {
-                    "terms": {"status": ["operational", "error"]}
-                }
-            }
         };
 
     var statsPage = function() {
-        //installationsCount();
+        installationsCount();
         environmentsCount();
+        distributionOfInstallations()
         nodesDistributionChart();
-        virtualizationDistributionChart();
+        hypervisorDistributionChart();
         osesDistributionChart();
     }
 
@@ -77,29 +69,28 @@ function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
                     chartData = [];
 
                 $.each(rawData, function(key, value) {
-                    if (value.key == 'operational' || value.key == 'error') numberOfCountedEnvironments += value.doc_count;
                     chartData.push({label: value.key, value: value.doc_count})
                 });
                 $('#environments-count').html(total);
-                $('.numberOfCountedEnvironments').html(numberOfCountedEnvironments);
                 var data = [{
-                    "key": "Environments distribution by statuses",
-                    "color": "#1DA489",
+                    "key": "Distribution of environments by statuses",
                     "values": chartData
                     }];
 
                 nv.addGraph(function() {
-                    var chart = nv.models.multiBarChart()
+                    var chart = nv.models.discreteBarChart()
                         .x(function(d) { return d.label })
                         .y(function(d) { return d.value })
                         .margin({top: 30})
-                        .transitionDuration(350)
-                        .reduceXTicks(false)   //If 'false', every single x-axis tick label will be rendered.
-                        .rotateLabels(0)      //Angle to rotate x-axis labels.
-                        .showControls(false)   //Allow user to switch between 'Grouped' and 'Stacked' mode.
-                        .groupSpacing(0.5);    //Distance between each group of bars.
+                        .color(['#2783C0', '#999999', '#51851A', '#FF7372'])
+                        .transitionDuration(350);
+
+                    chart.xAxis
+                        .axisLabel("Statuses");
 
                     chart.yAxis
+                        .axisLabel('Environments')
+                        .axisLabelDistance(50)
                         .tickFormat(d3.format('d'));
 
                     chart.tooltipContent( function(key, x, y){
@@ -118,14 +109,84 @@ function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
             });
     }
 
-    var nodesDistributionChart = function() {
+    var distributionOfInstallations = function() {
         var client = new elasticsearch.Client(elasticSearchHost());
+         client.search({
+            index: 'fuel',
+            size: 0,
+            body: {
+                 "aggs": {
+                    "envs_distribution": {
+                        "histogram": {
+                            "field": "clusters_num",
+                            "interval": 1
+                        }
+                    }
+                }
+            }
+            }).then(function (resp) {
+                var rawData = resp.aggregations.envs_distribution.buckets,
+                    chartData = [];
+                $.each(rawData, function(key, value) {
+                    chartData.push({label: value.key, value: value.doc_count})
+                });
+                var data = [{
+                    "key": "Distribution of installations by number of environments",
+                    "color": "#1DA489",
+                    "values": chartData
+                    }];
+
+                nv.addGraph(function() {
+                    var chart = nv.models.multiBarChart()
+                        .x(function(d) { return d.label })
+                        .y(function(d) { return d.value })
+                        .margin({top: 30})
+                        .transitionDuration(350)
+                        .reduceXTicks(false)   //If 'false', every single x-axis tick label will be rendered.
+                        .rotateLabels(0)      //Angle to rotate x-axis labels.
+                        .showControls(false)   //Allow user to switch between 'Grouped' and 'Stacked' mode.
+                        .groupSpacing(0.5);    //Distance between each group of bars.
+
+                    chart.xAxis
+                        .axisLabel("Environments count");
+
+                    chart.yAxis
+                        .axisLabel('Installations')
+                        .axisLabelDistance(50)
+                        .tickFormat(d3.format('d'));
+
+                    chart.tooltipContent( function(key, x, y){
+                        return '<h3>' + parseInt(y) + ' installations</h3>' +'<p>with ' + x + ' environments</p>';
+                    });
+
+                    d3.select('#env-distribution svg')
+                        .datum(data)
+                        .call(chart);
+
+                    nv.utils.windowResize(chart.update);
+
+                    return chart;
+                });
+
+            });
+    }
+
+    var nodesDistributionChart = function() {
+        var client = new elasticsearch.Client(elasticSearchHost()),
+            ranges = [
+                {"from": 1, "to": 5},
+                {"from": 5, "to": 10},
+                {"from": 10, "to": 20},
+                {"from": 20, "to": 50},
+                {"from": 50, "to": 100},
+                {"from": 100}
+            ];
+
         client.search({
             index: 'fuel',
             type: 'structure',
             size: 0,
             body: {
-                "query": filterQuery,
                 "aggs": {
                     "clusters": {
                         "nested": {
@@ -143,14 +204,7 @@ function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
                                             "nodes_ranges": {
                                                 "range": {
                                                     "field": "allocated_nodes_num",
-                                                    "ranges": [
-                                                        {"from": 1, "to": 5},
-                                                        {"from": 5, "to": 10},
-                                                        {"from": 10, "to": 20},
-                                                        {"from": 20, "to": 50},
-                                                        {"from": 50, "to": 100},
-                                                        {"from": 100}
-                                                    ]
+                                                    "ranges": ranges
                                                 }
                                             }
                                         }
@@ -194,7 +248,12 @@ function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
                         .showControls(false)   //Allow user to switch between 'Grouped' and 'Stacked' mode.
                         .groupSpacing(0.2);    //Distance between each group of bars.
 
+                    chart.xAxis
+                        .axisLabel("Number of nodes");
+
                     chart.yAxis
+                        .axisLabel('Environments')
+                        .axisLabelDistance(50)
                         .tickFormat(d3.format('d'));
 
                     chart.tooltipContent( function(key, x, y){
@@ -362,14 +421,13 @@ function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
         });
     }
 
-    var virtualizationDistributionChart = function() {
+    var hypervisorDistributionChart = function() {
         var client = new elasticsearch.Client(elasticSearchHost());
         client.search({
             size: 0,
             index: 'fuel',
             type: 'structure',
             body: {
-                "query": filterQuery,
                 "aggs": {
                     "clusters": {
                         "nested": {
@@ -443,7 +501,6 @@ function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
                         }
                     },
                     data: {
-                        "sortOrder": "random",
                         content: chartData
                     }
                 });
@@ -489,7 +546,6 @@ function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
             index: 'fuel',
             type: 'structure',
             body: {
-                "query": filterQuery,
                 "aggs": {
                     "clusters": {
                         "nested": {
@@ -564,7 +620,6 @@ function(jquery, d3, d3pie, d3tip, nv, elasticsearch) {
                         }
                     },
                     data: {
-                        "sortOrder": "random",
                         content: chartData
                     }
                 });

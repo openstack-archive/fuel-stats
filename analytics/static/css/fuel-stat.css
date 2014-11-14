@@ -133,6 +133,9 @@ html, body {
 	-moz-box-sizing: border-box;
 	box-sizing: border-box;
 }
+.top-graph {
+	margin: 20px 0;
+}
 .base-box {
 	width: 100%;
 	height: 100%;
