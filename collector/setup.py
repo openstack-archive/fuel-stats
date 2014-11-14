@@ -51,5 +51,6 @@ setup(
     zip_safe=False,
     install_requires=parse_requirements_txt(),
     include_package_data=True,
+    package_data={'collector': ['api/schemas/*.json']},
     scripts=['manage_collector.py']
 )
