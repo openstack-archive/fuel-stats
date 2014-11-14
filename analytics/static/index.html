@@ -62,16 +62,22 @@
 
   <!-- TOP BIG GRAPH -->
   <div class="container-fluid titul-graph-box">
-     <div class="row">
-     <div class="col-xs-6 col-md-3">
+     <div class="row top-graph">
+     <div class="col-md-4">
         <div class="header">
-            <!-- <p><div class="title">Number of installations: <b><span id="installations-count"></span></b></div></p> -->
+            <p><div class="title">Number of installations: <b><span id="installations-count"></span></b></div></p>
             <p><div class="title">Total number of environments: <b><span id="environments-count"></span></b></div></p>
         </div>
       </div>
-      <div class="col-xs-12 col-md-7">
+      <div class="col-md-4">
+        <div class="title">Distribution of installations by number of environments</div>
+        <div id="env-distribution"><svg style="height: 250px;"></svg></div>
+      </div>
+      <div class="col-md-4">
+        <div class="title">Environments statuses distribution</div>
         <div id="clusters-distribution"><svg style="height: 250px;"></svg></div>
       </div>
+
     <!--
       <div class="col-xs-6 col-md-4">
             <h4>Dynamic of changing active users count</h4>
