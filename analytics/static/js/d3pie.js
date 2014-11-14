@@ -1,15 +1,28 @@
 /*!
  * d3pie
  * @author Ben Keen
- * @version 0.1.3
- * @date June 2014
+ * @version 0.1.4
+ * @date Oct 2014 - [still in dev!]
  * @repo http://github.com/benkeen/d3pie
  */
-;(function() {
-	"use strict";
+
+// UMD pattern from https://github.com/umdjs/umd/blob/master/returnExports.js
+(function(root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    // AMD. Register as an anonymous module
+    define([], factory);
+  } else if (typeof exports === 'object') {
+    // Node. Does not work with strict CommonJS, but only CommonJS-like environments that support module.exports,
+    // like Node
+    module.exports = factory(require());
+  } else {
+    // browser globals (root is window)
+    root.d3pie = factory(root);
+  }
+}(this, function() {
 
 	var _scriptName = "d3pie";
-	var _version = "0.1.3";
+	var _version = "0.1.4";
 
 	// used to uniquely generate IDs and classes, ensuring no conflict between multiple pies on the same page
 	var _uniqueIDCounter = 0;
@@ -55,6 +68,11 @@ var defaultSettings = {
 	},
 	data: {
 		sortOrder: "none",
+		ignoreSmallSegments: {
+			enabled: false,
+			valueType: "percentage",
+			value: null
+		},
 		smallSegmentGrouping: {
 			enabled: false,
 			value: 1,
@@ -112,6 +130,21 @@ var defaultSettings = {
 		},
 		highlightSegmentOnMouseover: true,
 		highlightLuminosity: -0.2
+	},
+	tooltips: {
+		enabled: false,
+		type: "placeholder", // caption|placeholder
+    string: "",
+		styles: {
+      fadeInSpeed: 250,
+			backgroundColor: "#000000",
+      backgroundOpacity: 0.5,
+			color: "#efefef",
+      borderRadius: 2,
+      font: "arial",
+      fontSize: 10,
+      padding: 4
+		}
 	},
 	misc: {
 		colors: {
@@ -284,11 +317,12 @@ var helpers = {
 	},
 
 	processObj: function(obj, is, value) {
-		if (typeof is == 'string') {
+		if (typeof is === 'string') {
 			return helpers.processObj(obj, is.split('.'), value);
-		} else if (is.length == 1 && value !== undefined) {
-			return obj[is[0]] = value;
-		} else if (is.length == 0) {
+		} else if (is.length === 1 && value !== undefined) {
+            obj[is[0]] = value;
+			return obj[is[0]];
+		} else if (is.length === 0) {
 			return obj;
 		} else {
 			return helpers.processObj(obj[is[0]], is.slice(1), value);
@@ -468,35 +502,35 @@ var extend = function() {
 
 		jQuery = {
 			isFunction: function (obj) {
-				return jQuery.type(obj) === "function"
+				return jQuery.type(obj) === "function";
 			},
 			isArray: Array.isArray ||
 				function (obj) {
-					return jQuery.type(obj) === "array"
+					return jQuery.type(obj) === "array";
 				},
 			isWindow: function (obj) {
-				return obj != null && obj == obj.window
+				return obj !== null && obj === obj.window;
 			},
 			isNumeric: function (obj) {
-				return !isNaN(parseFloat(obj)) && isFinite(obj)
+				return !isNaN(parseFloat(obj)) && isFinite(obj);
 			},
 			type: function (obj) {
-				return obj == null ? String(obj) : class2type[toString.call(obj)] || "object"
+				return obj === null ? String(obj) : class2type[toString.call(obj)] || "object";
 			},
 			isPlainObject: function (obj) {
 				if (!obj || jQuery.type(obj) !== "object" || obj.nodeType) {
-					return false
+					return false;
 				}
 				try {
 					if (obj.constructor && !hasOwn.call(obj, "constructor") && !hasOwn.call(obj.constructor.prototype, "isPrototypeOf")) {
-						return false
+						return false;
 					}
 				} catch (e) {
-					return false
+					return false;
 				}
 				var key;
 				for (key in obj) {}
-				return key === undefined || hasOwn.call(obj, key)
+				return key === undefined || hasOwn.call(obj, key);
 			}
 		};
 	if (typeof target === "boolean") {
@@ -505,24 +539,24 @@ var extend = function() {
 		i = 2;
 	}
 	if (typeof target !== "object" && !jQuery.isFunction(target)) {
-		target = {}
+		target = {};
 	}
 	if (length === i) {
 		target = this;
 		--i;
 	}
 	for (i; i < length; i++) {
-		if ((options = arguments[i]) != null) {
+		if ((options = arguments[i]) !== null) {
 			for (name in options) {
 				src = target[name];
 				copy = options[name];
 				if (target === copy) {
-					continue
+					continue;
 				}
 				if (deep && copy && (jQuery.isPlainObject(copy) || (copyIsArray = jQuery.isArray(copy)))) {
 					if (copyIsArray) {
 						copyIsArray = false;
-						clone = src && jQuery.isArray(src) ? src : []
+						clone = src && jQuery.isArray(src) ? src : [];
 					} else {
 						clone = src && jQuery.isPlainObject(src) ? src : {};
 					}
@@ -629,16 +663,16 @@ var math = {
 				data = helpers.shuffleArray(data);
 				break;
 			case "value-asc":
-				data.sort(function(a, b) { return (a.value < b.value) ? -1 : 1 });
+				data.sort(function(a, b) { return (a.value < b.value) ? -1 : 1; });
 				break;
 			case "value-desc":
-				data.sort(function(a, b) { return (a.value < b.value) ? 1 : -1 });
+				data.sort(function(a, b) { return (a.value < b.value) ? 1 : -1; });
 				break;
 			case "label-asc":
-				data.sort(function(a, b) { return (a.label.toLowerCase() > b.label.toLowerCase()) ? 1 : -1 });
+				data.sort(function(a, b) { return (a.label.toLowerCase() > b.label.toLowerCase()) ? 1 : -1; });
 				break;
 			case "label-desc":
-				data.sort(function(a, b) { return (a.label.toLowerCase() < b.label.toLowerCase()) ? 1 : -1 });
+				data.sort(function(a, b) { return (a.label.toLowerCase() < b.label.toLowerCase()) ? 1 : -1; });
 				break;
 		}
 
@@ -649,7 +683,7 @@ var math = {
 
 	// var pieCenter = math.getPieCenter();
 	getPieTranslateCenter: function(pieCenter) {
-		return "translate(" + pieCenter.x + "," + pieCenter.y + ")"
+		return "translate(" + pieCenter.x + "," + pieCenter.y + ")";
 	},
 
 	/**
@@ -696,11 +730,11 @@ var math = {
 	 * @returns {Array}
 	 */
 	rotate: function(x, y, xm, ym, a) {
-		var cos = Math.cos,
+
+        a = a * Math.PI / 180; // convert to radians
+
+        var cos = Math.cos,
 			sin = Math.sin,
-
-		a = a * Math.PI / 180, // convert to radians
-
 		// subtract midpoints, so that midpoint is translated to origin and add it in the end again
 		xr = (x - xm) * cos(a) - (y - ym) * sin(a) + xm,
 		yr = (x - xm) * sin(a) + (y - ym) * cos(a) + ym;
@@ -951,7 +985,7 @@ var labels = {
 				var segmentPercentage = segments.getPercentage(pie, i);
 				var isHidden = (percentage !== null && segmentPercentage < percentage) || pie.options.data.content[i].label === "";
 				return isHidden ? 0 : 1;
-			})
+			});
 	},
 
 	positionLabelGroups: function(pie, section) {
@@ -1092,15 +1126,17 @@ var labels = {
 	},
 
 	checkConflict: function(pie, currIndex, direction, size) {
+        var i,curr;
+
 		if (size <= 1) {
 			return;
 		}
 
 		var currIndexHemisphere = pie.outerLabelGroupData[currIndex].hs;
-		if (direction === "clockwise" && currIndexHemisphere != "right") {
+		if (direction === "clockwise" && currIndexHemisphere !== "right") {
 			return;
 		}
-		if (direction === "anticlockwise" && currIndexHemisphere != "left") {
+		if (direction === "anticlockwise" && currIndexHemisphere !== "left") {
 			return;
 		}
 		var nextIndex = (direction === "clockwise") ? currIndex+1 : currIndex-1;
@@ -1122,8 +1158,9 @@ var labels = {
 		// loop through *ALL* label groups examined so far to check for conflicts. This is because when they're
 		// very tightly fitted, a later label group may still appear high up on the page
 		if (direction === "clockwise") {
-			for (var i=0; i<=currIndex; i++) {
-				var curr = pie.outerLabelGroupData[i];
+            i=0;
+			for (; i<=currIndex; i++) {
+				curr = pie.outerLabelGroupData[i];
 
 				// if there's a conflict with this label group, shift the label to be AFTER the last known
 				// one that's been properly placed
@@ -1133,8 +1170,9 @@ var labels = {
 				}
 			}
 		} else {
-			for (var i=size-1; i>=currIndex; i--) {
-				var curr = pie.outerLabelGroupData[i];
+            i=size-1;
+			for (; i>=currIndex; i--) {
+				curr = pie.outerLabelGroupData[i];
 
 				// if there's a conflict with this label group, shift the label to be AFTER the last known
 				// one that's been properly placed
@@ -1165,10 +1203,6 @@ var labels = {
 			newXPos = info.center.x + xDiff;
 		} else {
 			newXPos = info.center.x - xDiff - pie.outerLabelGroupData[nextIndex].w;
-		}
-
-		if (!newXPos) {
-			console.log(lastCorrectlyPositionedLabel.hs, xDiff)
 		}
 
 		pie.outerLabelGroupData[nextIndex].x = newXPos;
@@ -1204,6 +1238,7 @@ var labels = {
 		};
 	}
 };
+
 	//// --------- segments.js -----------
 var segments = {
 
@@ -1333,9 +1368,19 @@ var segments = {
 				var segColor = pie.options.colors[index];
 				segment.style("fill", helpers.getColorShade(segColor, pie.options.effects.highlightLuminosity));
 			}
+
+      if (pie.options.tooltips.enabled) {
+        index = segment.attr("data-index");
+        tt.showTooltip(pie, index);
+      }
+
 			var isExpanded = segment.attr("class") === pie.cssPrefix + "expanded";
 			segments.onSegmentEvent(pie, pie.options.callbacks.onMouseoverSegment, segment, isExpanded);
 		});
+
+    arc.on("mousemove", function() {
+      tt.moveTooltip(pie);
+    });
 
 		arc.on("mouseout", function() {
 			var currentEl = d3.select(this);
@@ -1356,6 +1401,11 @@ var segments = {
 				}
 				segment.style("fill", color);
 			}
+
+      if (pie.options.tooltips.enabled) {
+        index = segment.attr("data-index");
+        tt.hideTooltip(pie, index);
+      }
 
 			var isExpanded = segment.attr("class") === pie.cssPrefix + "expanded";
 			segments.onSegmentEvent(pie, pie.options.callbacks.onMouseoutSegment, segment, isExpanded);
@@ -1469,6 +1519,7 @@ var segments = {
 		return Math.floor((pie.options.data.content[index].value / pie.totalSize) * 100);
 	}
 };
+
 	//// --------- text.js -----------
 var text = {
 	offscreenCoord: -10000,
@@ -1479,10 +1530,12 @@ var text = {
 			.enter()
 			.append("text")
 			.text(function(d) { return d.text; })
-			.attr("id", pie.cssPrefix + "title")
-			.attr("class", pie.cssPrefix + "title")
-			.attr("x", text.offscreenCoord)
-			.attr("y", text.offscreenCoord)
+			.attr({
+        id: pie.cssPrefix + "title",
+        class: pie.cssPrefix + "title",
+        x: text.offscreenCoord,
+        y: text.offscreenCoord
+      })
 			.attr("text-anchor", function() {
 				var location;
 				if (pie.options.header.location === "top-center" || pie.options.header.location === "pie-center") {
@@ -1639,6 +1692,125 @@ var text = {
 	}
 };
 
+  //// --------- validate.js -----------
+var tt = {
+	addTooltips: function(pie) {
+
+		// group the label groups (label, percentage, value) into a single element for simpler positioning
+		var tooltips = pie.svg.insert("g")
+			.attr("class", pie.cssPrefix + "tooltips");
+
+    tooltips.selectAll("." + pie.cssPrefix + "tooltip")
+      .data(pie.options.data.content)
+      .enter()
+      .append("g")
+        .attr("class", pie.cssPrefix + "tooltip")
+        .attr("id", function(d, i) { return pie.cssPrefix + "tooltip" + i; })
+        .style("opacity", 0)
+      .append("rect")
+        .attr({
+			    rx: pie.options.tooltips.styles.borderRadius,
+			    ry: pie.options.tooltips.styles.borderRadius,
+			    x: -pie.options.tooltips.styles.padding,
+			    opacity: pie.options.tooltips.styles.backgroundOpacity
+		    })
+		    .style("fill", pie.options.tooltips.styles.backgroundColor);
+
+    tooltips.selectAll("." + pie.cssPrefix + "tooltip")
+      .data(pie.options.data.content)
+      .append("text")
+        .attr("fill", function(d) { return pie.options.tooltips.styles.color; })
+        .style("font-size", function(d) { return pie.options.tooltips.styles.fontSize; })
+        .style("font-family", function(d) { return pie.options.tooltips.styles.font; })
+        .text(function(d, i) {
+          var caption = pie.options.tooltips.string;
+          if (pie.options.tooltips.type === "caption") {
+            caption = d.caption;
+          }
+          return tt.replacePlaceholders(caption, {
+            label: d.label,
+            value: d.value,
+            percentage: segments.getPercentage(pie, i)
+          });
+        });
+
+		tooltips.selectAll("." + pie.cssPrefix + "tooltip rect")
+			.attr({
+				width: function (d, i) {
+					var dims = helpers.getDimensions(pie.cssPrefix + "tooltip" + i);
+					return dims.w + (2 * pie.options.tooltips.styles.padding);
+				},
+				height: function (d, i) {
+					var dims = helpers.getDimensions(pie.cssPrefix + "tooltip" + i);
+					return dims.h + (2 * pie.options.tooltips.styles.padding);
+				},
+				y: function (d, i) {
+					var dims = helpers.getDimensions(pie.cssPrefix + "tooltip" + i);
+					return -(dims.h / 2) + 1;
+				}
+			});
+	},
+
+  showTooltip: function(pie, index) {
+
+	  var fadeInSpeed = pie.options.tooltips.styles.fadeInSpeed;
+	  if (tt.currentTooltip === index) {
+		  fadeInSpeed = 1;
+	  }
+
+    tt.currentTooltip = index;
+    d3.select("#" + pie.cssPrefix + "tooltip" + index)
+      .transition()
+      .duration(fadeInSpeed)
+      .style("opacity", function() { return 1; });
+
+    tt.moveTooltip(pie);
+  },
+
+  moveTooltip: function(pie) {
+    d3.selectAll("#" + pie.cssPrefix + "tooltip" + tt.currentTooltip)
+      .attr("transform", function(d) {
+        var mouseCoords = d3.mouse(this.parentElement);
+        var x = mouseCoords[0] + pie.options.tooltips.styles.padding + 2;
+        var y = mouseCoords[1] - (2 * pie.options.tooltips.styles.padding) - 2;
+        return "translate(" + x + "," + y + ")";
+      });
+  },
+
+  hideTooltip: function(pie, index) {
+    d3.select("#" + pie.cssPrefix + "tooltip" + index)
+      .style("opacity", function() { return 0; });
+
+    // move the tooltip offscreen. This ensures that when the user next mousovers the segment the hidden
+    // element won't interfere
+    d3.select("#" + pie.cssPrefix + "tooltip" + tt.currentTooltip)
+      .attr("transform", function(d, i) {
+
+        // klutzy, but it accounts for tooltip padding which could push it onscreen
+        var x = pie.options.size.canvasWidth + 1000;
+        var y = pie.options.size.canvasHeight + 1000;
+        return "translate(" + x + "," + y + ")";
+      });
+
+//	  tt.currentTooltip = null;
+  },
+
+  replacePlaceholders: function(str, replacements) {
+    var replacer = function()  {
+      return function(match) {
+        var placeholder = arguments[1];
+        if (replacements.hasOwnProperty(placeholder)) {
+          return replacements[arguments[1]];
+        } else {
+          return arguments[0];
+        }
+      };
+    };
+    return str.replace(/\{(\w+)\}/g, replacer(replacements));
+  }
+};
+
+
 	// --------------------------------------------------------------------------------------------
 
 	// our constructor
@@ -1663,6 +1835,7 @@ var text = {
 			_uniqueIDCounter++;
 		}
 
+
 		// now run some validation on the user-defined info
 		if (!validate.initialCheck(this)) {
 			return;
@@ -1681,6 +1854,17 @@ var text = {
 
 		_init.call(this);
 	};
+
+	d3pie.prototype.recreate = function() {
+		this.options.data.content = math.sortPieData(this);
+		if (this.options.data.smallSegmentGrouping.enabled) {
+			this.options.data.content = helpers.applySmallSegmentGrouping(this.options.data.content, this.options.data.smallSegmentGrouping);
+		}
+		this.options.colors = helpers.initSegmentColors(this);
+		this.totalSize      = math.getTotalPieSize(this.options.data.content);
+
+		_init.call(this);
+	},
 
 	d3pie.prototype.redraw = function() {
 		this.element.innerHTML = "";
@@ -1709,14 +1893,14 @@ var text = {
 				element: segment,
 				index: index,
 				data: this.options.data.content[index]
-			}
+			};
 		} else {
 			return null;
 		}
 	};
 
 	d3pie.prototype.openSegment = function(index) {
-		var index = parseInt(index, 10);
+		index = parseInt(index, 10);
 		if (index < 0 || index > this.options.data.content.length-1) {
 			return;
 		}
@@ -1765,6 +1949,13 @@ var text = {
 				helpers.processObj(this.options, propKey, value);
 				break;
 
+			// everything else, attempt to update it & do a repaint
+			default:
+				helpers.processObj(this.options, propKey, value);
+
+				this.destroy();
+				this.recreate();
+				break;
 		}
 	};
 
@@ -1774,10 +1965,10 @@ var text = {
 
 	var _init = function() {
 
-		// 1. prep-work
+		// prep-work
 		this.svg = helpers.addSVGSpace(this);
 
-		// 2. store info about the main text components as part of the d3pie object instance. This is populated
+		// store info about the main text components as part of the d3pie object instance
 		this.textComponents = {
 			headerHeight: 0,
 			title: {
@@ -1799,7 +1990,7 @@ var text = {
 
 		this.outerLabelGroupData = [];
 
-		// 3. add the key text components offscreen (title, subtitle, footer). We need to know their widths/heights for later computation
+		// add the key text components offscreen (title, subtitle, footer). We need to know their widths/heights for later computation
 		if (this.textComponents.title.exists) {
 			text.addTitle(this);
 		}
@@ -1808,7 +1999,7 @@ var text = {
 		}
 		text.addFooter(this);
 
-		// the footer never moves - this puts it in place now
+		// the footer never moves. Put it in place now
 		var self = this;
 		helpers.whenIdExists(this.cssPrefix + "footer", function() {
 			text.positionFooter(self);
@@ -1817,7 +2008,7 @@ var text = {
 			self.textComponents.footer.w = d3.w;
 		});
 
-		// STEP 2: now create the pie chart and position everything accordingly
+		// now create the pie chart and position everything accordingly
 		var reqEls = [];
 		if (this.textComponents.title.exists)    { reqEls.push(this.cssPrefix + "title"); }
 		if (this.textComponents.subtitle.exists) { reqEls.push(this.cssPrefix + "subtitle"); }
@@ -1887,11 +2078,14 @@ var text = {
 			labels.positionLabelGroups(self, "inner");
 			labels.fadeInLabelsAndLines(self);
 
-			segments.addSegmentEventHandlers(self);
+      // add and position the tooltips
+      if (self.options.tooltips.enabled) {
+        tt.addTooltips(self);
+      }
+
+      segments.addSegmentEventHandlers(self);
 		});
 	};
 
-	// expose our d3pie function
-	window.d3pie = d3pie;
-
-})();
+  return d3pie;
+}));
