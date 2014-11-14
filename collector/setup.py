@@ -33,8 +33,8 @@ def parse_requirements_txt():
 setup(
     name='collector',
     version='0.0.1',
-    description="Service of collecting anonymous statistics",
-    long_description="""Service of collecting anonymous statistics""",
+    description="Service of collecting usage statistics",
+    long_description="""Service of collecting usage statistics""",
     license="http://www.apache.org/licenses/LICENSE-2.0",
     classifiers=[
         "License :: OSI Approved :: Apache Software License",
