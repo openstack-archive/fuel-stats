@@ -13,6 +13,7 @@
 #    under the License.
 
 from collections import namedtuple
+import datetime
 from elasticsearch import Elasticsearch
 from random import randint
 from unittest2.case import TestCase
@@ -69,7 +70,7 @@ class MigrationTest(ElasticTest, DbTest):
     def setUp(self):
         super(MigrationTest, self).setUp()
 
-    def create_dumb_structure(self):
+    def create_dumb_structure(self, set_md=True):
         mn_uid = '{}'.format(uuid.uuid4())
         structure = {
             'master_node_uid': mn_uid,
@@ -87,8 +88,15 @@ class MigrationTest(ElasticTest, DbTest):
             'clusters_num': 1,
             'clusters': []
         }
+        now = datetime.datetime.utcnow()
+        if set_md:
+            m_date = now
+        else:
+            m_date = None
         db_session.add(InstallationStructure(master_node_uid=mn_uid,
-                                             structure=structure))
+                                             structure=structure,
+                                             creation_date=now,
+                                             modification_date=m_date))
         db_session.commit()
         return mn_uid
 
