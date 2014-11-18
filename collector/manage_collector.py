@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import yaml
+
 from flask_migrate import Migrate
 from flask_migrate import MigrateCommand
 from flask_script import Manager
@@ -23,12 +25,22 @@ from collector.api.app import app
 from collector.api.db.model import *
 
 
-def configure_app(mode=None):
+def external_config_content(conf):
+    result = {}
+    if conf:
+        with open(conf) as f:
+            content = yaml.load(f)
+            result = content if isinstance(content, dict) else {}
+    return result
+
+
+def configure_app(mode=None, conf=None):
     mode_map = {
         'test': 'collector.api.config.Testing',
         'prod': 'collector.api.config.Production'
     }
     app.config.from_object(mode_map.get(mode))
+    app.config.update(**external_config_content(conf))
     log.init_logger()
     return app
 
@@ -36,6 +48,8 @@ def configure_app(mode=None):
 manager = Manager(configure_app)
 manager.add_option('--mode', help="Acceptable modes. Default: 'test'",
                    choices=('test', 'prod'), default='prod', dest='mode')
+manager.add_option('-c', '--config', help="Path to additional yaml config file",
+                   dest='conf')
 
 migrate = Migrate(app, db)
 manager.add_command('db', MigrateCommand)

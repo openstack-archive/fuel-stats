@@ -15,6 +15,9 @@
 #    under the License.
 
 import argparse
+import six
+import sys
+import yaml
 
 from migration.test.test_env import configure_test_env
 
@@ -24,8 +27,20 @@ def handle_mode(params):
         configure_test_env()
 
 
+def handle_external_config(params):
+    if params.config:
+        with open(params.config) as f:
+            from migration import config
+
+            content = yaml.load(f)
+            if isinstance(content, dict):
+                for k, v in six.iteritems(content):
+                    setattr(config, k, v)
+
+
 def execute(params):
     handle_mode(params)
+    handle_external_config(params)
     # importing Migrator only after test or prod environment is configured
     from migration.migrator import Migrator
     migrator = Migrator()
@@ -55,6 +70,10 @@ if __name__ == '__main__':
         help="Running mode",
         choices=('test', 'prod'),
         default='prod'
+    )
+    parser.add_argument(
+        '-c', '--config',
+        help="Path to additional yaml config file"
     )
 
     subparsers = parser.add_subparsers(
