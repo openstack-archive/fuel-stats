@@ -18,8 +18,6 @@ import os
 
 class Production(object):
     DEBUG = False
-    PORT = 5000
-    HOST = 'localhost'
     VALIDATE_RESPONSE = False
     LOG_FILE = '/var/log/fuel-stats/collector.log'
     LOG_LEVEL = logging.ERROR
@@ -31,7 +29,6 @@ class Production(object):
 
 class Testing(Production):
     DEBUG = True
-    HOST = '0.0.0.0'
     VALIDATE_RESPONSE = True
     LOG_FILE = os.path.realpath(os.path.join(
         os.path.dirname(__file__), '..', 'test', 'logs', 'collector.log'))

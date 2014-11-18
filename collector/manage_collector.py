@@ -20,7 +20,9 @@ from flask_script import Manager
 
 from collector.api import log
 from collector.api.app import app
+from collector.api import app as app_module
 from collector.api.db.model import *
+import flask_sqlalchemy
 
 
 def configure_app(mode=None):
@@ -29,6 +31,8 @@ def configure_app(mode=None):
         'prod': 'collector.api.config.Production'
     }
     app.config.from_object(mode_map.get(mode))
+    app.config.from_envvar('COLLECTOR_SETTINGS', silent=False)
+    setattr(app_module, 'db', flask_sqlalchemy.SQLAlchemy(app))
     log.init_logger()
     return app
 
