@@ -44,18 +44,24 @@ NameMapping = namedtuple('NameMapping', ['source', 'dest'])
 
 
 class MappingRule(object):
+    ID_FIELDS_GLUE = '_'
 
-    def __init__(self, db_id_name, json_fields=(), mixed_fields_mapping=()):
+    def __init__(self, db_id_names, json_fields=(), mixed_fields_mapping=()):
         """Describes how db object is mapped into Eslasticsearch document
-        :param db_id_name: NameMapping of db id field name
+        :param db_id_names: db fields names used for Elasticsearch document _id
         :param json_fields: tuple of fields to be merged as dicts into
         Elasicsearch document
         :param mixed_fields_mapping: tuple of NameMapping for adding into
         Elasicsearch document
         """
-        self.db_id_name = db_id_name
+        self.db_id_names = db_id_names
         self.json_fields = json_fields
         self.mixed_fields_mapping = mixed_fields_mapping
+
+    def _get_es_id(self, db_object):
+        values = ('{}'.format(getattr(db_object, db_id_name)) for
+                  db_id_name in self.db_id_names)
+        return self.ID_FIELDS_GLUE.join(values)
 
     def make_doc(self, index_name, doc_type_name, db_object):
         """Returns dictionary for sending into Elasticsearch
@@ -68,7 +74,7 @@ class MappingRule(object):
         return {
             '_index': index_name,
             '_type': doc_type_name,
-            '_id': getattr(db_object, self.db_id_name),
+            '_id': self._get_es_id(db_object),
             '_source': data
         }
 
@@ -129,7 +135,7 @@ class Migrator(object):
     def migrate_installation_structure(self):
         logger.info("Migration of installation structures is started")
         mapping_rule = MappingRule(
-            'master_node_uid',
+            ('master_node_uid',),
             json_fields=('structure',),
             mixed_fields_mapping=(
                 NameMapping(source='creation_date', dest='creation_date'),
@@ -146,8 +152,8 @@ class Migrator(object):
     def migrate_action_logs(self):
         logger.info("Migration of action logs is started")
         mapping_rule = MappingRule(
-            'master_node_uid',
-            json_fields=(),
+            ('master_node_uid', 'external_id'),
+            json_fields=('body',),
             mixed_fields_mapping=(
                 NameMapping(source='master_node_uid', dest='master_node_uid'),
             ))

@@ -196,7 +196,7 @@ class TestActionLogs(DbTest):
                     # about 1/3 is incomplete
                     "end_timestamp": "2" if i % 3 else None,
                     "additional_info": {
-                        "parent_task_id": 0,
+                        "parent_task_id": i if i % 2 else None,
                         "subtasks_ids": [],
                         "operation": "deployment"
                     },

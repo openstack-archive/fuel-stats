@@ -29,7 +29,7 @@ class MappingRuleTest(MigrationTest):
         db_obj = db_session.query(InstallationStructure).filter(
             InstallationStructure.master_node_uid == mn_uid).one()
         rule = MappingRule(
-            'master_node_uid',
+            ('master_node_uid',),
             json_fields=('structure',),
             mixed_fields_mapping=(
                 NameMapping(source='creation_date', dest='creation_date'),

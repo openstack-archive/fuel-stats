@@ -225,6 +225,40 @@ class MigratorTest(MigrationTest):
                           self.get_indexed_docs_num(sync_info))
 
         # checking new docs are indexed
+        check_keys = [
+            'master_node_uid',
+            'id',
+            'actor_id',
+            'action_group',
+            'action_name',
+            'action_type',
+            'start_timestamp',
+            'end_timestamp',
+            'additional_info',
+            'is_sent',
+            'cluster_id',
+            'task_uuid'
+        ]
         for mn_uid in mn_uids:
-            self.es.get(sync_info.index_name, mn_uid,
-                        doc_type=sync_info.doc_type_name)
+            resp = self.es.get(sync_info.index_name, mn_uid,
+                               doc_type=sync_info.doc_type_name)
+            doc = resp['_source']
+            for k in check_keys:
+                self.assertTrue(k in doc)
+
+    @patch('migration.config.DB_SYNC_CHUNK_SIZE', 2)
+    def test_action_logs_one_node_migration(self):
+        docs_num = 5
+        mn_uid = 'xx'
+        for _ in xrange(docs_num):
+            self.create_dumb_action_log(mn_uid=mn_uid)
+
+        migrator = Migrator()
+        sync_info = migrator.get_sync_info(config.ACTION_LOGS_DB_TABLE_NAME)
+        indexed_docs_before = self.get_indexed_docs_num(sync_info)
+        migrator.migrate_action_logs()
+
+        # checking all docs are migrated
+        self.es.indices.refresh(index=sync_info.index_name)
+        self.assertEquals(indexed_docs_before + docs_num,
+                          self.get_indexed_docs_num(sync_info))
