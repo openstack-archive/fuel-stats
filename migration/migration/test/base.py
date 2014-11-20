@@ -198,11 +198,75 @@ class MigrationTest(ElasticTest, DbTest):
         db_session.commit()
         return mn_uid
 
+    def _action_name(self):
+        return random.choice([
+            'deploy',
+            'deployment',
+            'provision',
+            'stop_deployment',
+            'reset_environment',
+            'update',
+        ])
+
+    def _gen_id(self):
+        return random.randint(1, 10000)
+
+    def _task_status(self):
+        return random.choice([
+            'ready',
+            'running',
+            'error'
+        ])
+
+    def _nodes(self):
+        return [self._gen_id() for _ in xrange(0, 100)]
+
+    def _subtasks(self):
+        return [self._gen_id() for _ in xrange(0, 5)]
+
     def create_dumb_action_log(self):
         mn_uid = '{}'.format(uuid.uuid4())
-        external_id = random.randint(1, 10000)
+        external_id = self._gen_id()
+        body = {
+            'id': self._gen_id(),
+            'actor_id': '{}'.format(uuid.uuid4()),
+            'action_group': random.choice([
+                'cluster_changes',
+                'cluster_checking',
+                'operations'
+            ]),
+            'action_name': self._action_name(),
+            'action_type': random.choice(['http_request',
+                                          'nailgun_task']),
+            'start_timestamp': datetime.datetime.utcnow().isoformat(),
+            'end_timestamp': random.choice([
+                None,
+                (datetime.datetime.utcnow() + datetime.timedelta(
+                    seconds=random.randint(0, 60)
+                )).isoformat(),
+            ]),
+            'is_sent': random.choice([True, False]),
+            'cluster_id': self._gen_id(),
+            'task_uuid': '{}'.format(uuid.uuid4()),
+            'additional_info': random.choice([
+                {
+                    # http request
+                    'request_data': {},
+                    'response_data': {},
+                },
+                {
+                    # task
+                    'parent_task_id': self._gen_id(),
+                    'subtasks_ids': self._subtasks(),
+                    'operation': self._action_name(),
+                    'nodes_from_resp': self._nodes(),
+                    'ended_with_status': self._task_status()
+                }
+            ])
+        }
         db_session.add(ActionLog(master_node_uid=mn_uid,
-                                 external_id=external_id))
+                                 external_id=external_id,
+                                 body=body))
         db_session.commit()
         return mn_uid
 
