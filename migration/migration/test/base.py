@@ -14,6 +14,7 @@
 
 from collections import namedtuple
 import datetime
+import functools
 from elasticsearch import Elasticsearch
 from random import randint
 from unittest2.case import TestCase
@@ -102,9 +103,37 @@ class MigrationTest(ElasticTest, DbTest):
 
     def create_dumb_action_log(self):
         mn_uid = '{}'.format(uuid.uuid4())
-        external_id = randint(1, 10000)
+        gen_id = functools.partial(randint, 1, 10000)
+        external_id = gen_id()
+        body = {
+            'id': gen_id(),
+            "actor_id": uuid.uuid4(),
+            # "action_group": {"type": "string"},
+            # "action_name": {"type": "string"},
+            # "action_type": {"type": "string"},
+            # "start_timestamp": {"type": "date"},
+            # "end_timestamp": {"type": "date"},
+            # "additional_info": {
+            #     "type": "object",
+            #     "properties": {
+            #         # http request
+            #         "request_data": {"type": "object"},
+            #         "response_data": {"type": "object"},
+            #         # task
+            #         "parent_task_id": {"type": "long"},
+            #         "subtasks_ids": {"type": "long"},
+            #         "operation": {"type": "string"},
+            #         "nodes_from_resp": {"type": "long"},
+            #         "ended_with_status": {"type": "string"}
+            #     }
+            # },
+            # "is_sent": {"type": "boolean"},
+            # "cluster_id": {"type": "long"},
+            # "task_uuid": {"type": "string"}
+        }
         db_session.add(ActionLog(master_node_uid=mn_uid,
-                                 external_id=external_id))
+                                 external_id=external_id,
+                                 body=body))
         db_session.commit()
         return mn_uid
 
