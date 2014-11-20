@@ -31,7 +31,7 @@ def configure_app(mode=None):
         'prod': 'collector.api.config.Production'
     }
     app.config.from_object(mode_map.get(mode))
-    app.config.from_envvar('COLLECTOR_SETTINGS', silent=False)
+    app.config.from_envvar('COLLECTOR_SETTINGS', silent=True)
     setattr(app_module, 'db', flask_sqlalchemy.SQLAlchemy(app))
     log.init_logger()
     return app

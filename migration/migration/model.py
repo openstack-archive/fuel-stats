@@ -35,6 +35,7 @@ class ActionLog(Base):
     id = Column(Integer, primary_key=True)
     master_node_uid = Column(String, nullable=False)
     external_id = Column(Integer, nullable=False)
+    body = Column(JSON, nullable=False)
 
 
 class InstallationStructure(Base):

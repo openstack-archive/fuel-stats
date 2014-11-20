@@ -225,6 +225,23 @@ class MigratorTest(MigrationTest):
                           self.get_indexed_docs_num(sync_info))
 
         # checking new docs are indexed
+        check_keys = [
+            'master_node_uid',
+            'id',
+            'actor_id',
+            'action_group',
+            'action_name',
+            'action_type',
+            'start_timestamp',
+            'end_timestamp',
+            'additional_info',
+            'is_sent',
+            'cluster_id',
+            'task_uuid'
+        ]
         for mn_uid in mn_uids:
-            self.es.get(sync_info.index_name, mn_uid,
-                        doc_type=sync_info.doc_type_name)
+            resp = self.es.get(sync_info.index_name, mn_uid,
+                               doc_type=sync_info.doc_type_name)
+            doc = resp['_source']
+            for k in check_keys:
+                self.assertTrue(k in doc)

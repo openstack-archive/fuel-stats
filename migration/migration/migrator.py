@@ -147,7 +147,7 @@ class Migrator(object):
         logger.info("Migration of action logs is started")
         mapping_rule = MappingRule(
             'master_node_uid',
-            json_fields=(),
+            json_fields=('body',),
             mixed_fields_mapping=(
                 NameMapping(source='master_node_uid', dest='master_node_uid'),
             ))
