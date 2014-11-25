@@ -47,3 +47,75 @@ For starting test server:
     python manage_collector.py --mode test runserver
 
 Example config for uWSGI is located in collector/uwsgi/collector_test.yaml
+
+
+Local setup
+----------
+
+To run statistics UI locally you need to do the following:
+
+Install elasticsearch 1.3
+
+    pip install elasticsearch
+
+Run test_report from NodesDistribution
+
+    prepare virtualenv:
+
+        cd fuel-stats
+        virtualenv .venv
+        source .venv/bin/activate
+        pip install -r collector/test-requirements.txt
+        cd migration
+
+    run tests:
+
+        nosetests migration.test.report.test_reports:Reports.test_libvirt_type_distribution
+
+    this will create demo data from elasticsearch
+
+Install elasticsearch service
+
+    you can use this helpfull gist https://gist.github.com/wingdspur/2026107
+
+Nginx installation
+
+    sudo apt-get install nginx
+
+    fix Nginx config:
+
+        server {
+            listen 8888;       // your free port
+            location / {
+                root /home/kpimenova/fuel/fuel-stats/analytics/static;    // your path to fuel-stats/analytics/static
+            }
+            location ~ ^(/fuel)?(/[A-Za-z_0-9])?/(_count|_search) {
+                proxy_pass http://127.0.0.1:9200;
+            }
+        }
+
+Then restart Nginx:
+
+    service nginx restart
+
+ After this your local server will be available at 0.0.0.0:8888 // or any other port you've set up :)
+
+
+ Also for correct UI work you need to setup a few things
+
+ Install nodejs packages
+
+    cd fuel-stats/analytics/static
+    npm install
+
+ Install bower packages
+
+    cd fuel-stats/analytics/static
+    gulp bower
+
+ That's all.
+
+ You can anytime lint your code by running
+
+    gulp lint
+
