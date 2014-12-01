@@ -3,13 +3,17 @@ collector
 
 Prototype of statistic collector
 
-Operations
+Requirements
 ----------
 
+System requirements:
+postgresql database server of version 9.3 or greater.
 
-Install requirements:
+To install python requirements use command:
+`pip install -r {corresponding_requirement_file}`
 
-    pip install -r test-requirements.txt
+Operations
+----------
 
 By default manage_collector.py works with prod settings.
 For working with test settings use `python manage_collector.py --mode` option.
