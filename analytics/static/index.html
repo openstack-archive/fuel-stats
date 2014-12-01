@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,161 +9,146 @@
     <link rel="icon" href="favicon.ico">
     <title>Fuel Statistics</title>
     <!-- Bootstrap core CSS -->
-    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="js/libs/bootstrap.css" rel="stylesheet">
     <!-- Custom styles for this template -->
     <link href="css/nv.d3.css" rel="stylesheet">
     <link href="css/fuel-stat.css" rel="stylesheet">
-    <!-- Just for debugging purposes. Don't actually copy these 2 lines! -->
-    <!--[if lt IE 9]><script src="../../assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
-    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
-    <!--[if lt IE 9]>
-      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
-      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
-    <![endif]-->
-    <script data-main="js/main" src="js/require.js"></script>
-  </head>
-  <body>
+    <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+    <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <script data-main="js/main" src="js/libs/require.js"></script>
+</head>
+    <body>
 
-<!-- Start Left Pannel -->
-<div class="nav-pannel">
-  <div class="logo"><a href="#"></a></div>
-  
-  <!-- Nav item 1 -->
-  <div class="nav-item"> <a href="#" class="active">
-    <div class="icon-graphs"></div>
-    <div class="nav-item-name">Graphics</div>
-    </a> </div>
-  
-  <!-- Nav item 1 -->
-  <!-- <div class="nav-item"> <a href="#">
-    <div class="icon-reports"></div>
-    <div class="nav-item-name">Reports</div>
-    </a> </div> -->
-  <!-- <div class="logout-button"> <a href="#">
-    <div class="icon-logout"></div>
-    <div class="nav-item-name">Logout</div>
-    </a> </div> -->
-</div>
-<!-- End Left Pannel --> 
+        <!-- Start Left Pannel -->
+        <div class="nav-pannel">
+            <div class="logo"><a href="#"></a></div>
 
-<!-- Start Base Layout -->
-<div class="base-box"> 
+            <!-- Nav item 1 -->
+            <div class="nav-item"><a href="#" class="active">
+                <div class="icon-graphs"></div>
+                <div class="nav-item-name">Graphics</div>
+            </a></div>
 
-  <!-- TOP INFO-->
-  <!--
-  <div class="container-fluid titul-graph-box">
-    <div class="row">
-        <div class="info-ticket">
-            <div class="installation-counts">Total number of environments: <b><span id="installation-count"></span></b></div>
         </div>
-    </div>
-  </div>
-  -->
+        <!-- End Left Pannel -->
 
-  <!-- TOP BIG GRAPH -->
-  <div class="container-fluid titul-graph-box">
-     <div class="row top-graph">
-     <div class="col-md-4">
-        <div class="header">
-            <p><div class="title">Number of installations: <b><span id="installations-count"></span></b></div></p>
-            <p><div class="title">Total number of environments: <b><span id="environments-count"></span></b></div></p>
+        <!-- Start Base Layout -->
+        <div class="base-box">
+
+            <!-- TOP BIG GRAPH -->
+            <div class="container-fluid titul-graph-box">
+                <div class="row top-graph">
+                    <div class="col-md-4">
+                        <div class="header">
+                            <p>
+                            <div class="title">
+                                Number of installations: <b><span id="installations-count"></span></b>
+                            </div>
+                            </p>
+                            <p>
+                            <div class="title">Total number of environments: <b><span id="environments-count"></span></b>
+                            </div>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="title">Distribution of installations by number of environments</div>
+                        <div id="env-distribution">
+                            <svg style="height: 250px;"></svg>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="title">Environments statuses distribution</div>
+                        <div id="clusters-distribution">
+                            <svg style="height: 250px;"></svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Start Block with small graphics -->
+            <div class="container-fluid small-graphs-box">
+                <div class="row">
+
+                    <!-- Start Graphics Items -->
+                    <div class="container-fluid standard-graph-box">
+                        <div class="row">
+
+                            <!-- Start Item 1 -->
+                            <div class="col-md-4">
+                                <div class="graph-item-box">
+                                    <!-- Start Item Header -->
+                                    <div class="header">
+                                        <div class="title">Environment Size</div>
+                                        <!-- <div class="icon"><a href="#"></a></div> -->
+                                    </div>
+                                    <!-- End Item Header -->
+                                    <!-- Start Item Content -->
+                                    <div class="content">
+                                        <div class="image">
+                                            <div id="nodes-distribution">
+                                                <svg style="height: 280px;"></svg>
+                                            </div>
+                                        </div>
+                                        <div class="description">Number of environments: <span
+                                                id="count-nodes-distribution"></span>
+                                        </div>
+                                    </div>
+                                    <!-- End Item Content -->
+                                </div>
+                            </div>
+                            <!-- End Item 1 -->
+
+                            <!-- Start Item 2 -->
+                            <div class="col-md-4">
+                                <div class="graph-item-box">
+                                    <!-- Start Item Header -->
+                                    <div class="header">
+                                        <div class="title">Hypervisor</div>
+                                    </div>
+                                    <!-- End Item Header -->
+                                    <!-- Start Item Content -->
+                                    <div class="content">
+                                        <div class="image">
+                                            <div id="releases-distribution"></div>
+                                        </div>
+                                        <div class="description">Number of environments: <span
+                                                id="count-releases-distribution"></span>
+                                        </div>
+                                    </div>
+                                    <!-- End Item Content -->
+                                </div>
+                            </div>
+                            <!-- End Item 2 -->
+
+                            <!-- Start Item 3 -->
+                            <div class="col-md-4">
+                                <div class="graph-item-box">
+                                    <!-- Start Item Header -->
+                                    <div class="header">
+                                        <div class="title">Operating System</div>
+                                    </div>
+                                    <!-- End Item Header -->
+                                    <!-- Start Item Content -->
+                                    <div class="content">
+                                        <div class="image">
+                                            <div id="distribution-of-oses"></div>
+                                        </div>
+                                        <div class="description">Number of environments: <span
+                                                id="count-distribution-of-oses"></span>
+                                        </div>
+                                    </div>
+                                    <!-- End Item Content -->
+                                </div>
+                            </div>
+                            <!-- End Item 3 -->
+                        </div>
+                    </div>
+                    <!-- End Graphics Items -->
+                </div>
+            </div>
         </div>
-      </div>
-      <div class="col-md-4">
-        <div class="title">Distribution of installations by number of environments</div>
-        <div id="env-distribution"><svg style="height: 250px;"></svg></div>
-      </div>
-      <div class="col-md-4">
-        <div class="title">Environments statuses distribution</div>
-        <div id="clusters-distribution"><svg style="height: 250px;"></svg></div>
-      </div>
 
-    <!--
-      <div class="col-xs-6 col-md-4">
-            <h4>Dynamic of changing active users count</h4>
-            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis a orci in lorem luctus ullamcorper. Nulla faucibus molestie enim a hendrerit. Etiam ac elit nisl. Mauris sit amet euismod massa. Nulla facilisi. Nullam commodo cursus elit, sit amet pellentesque risus dictum et. Sed luctus scelerisque ex, vitae egestas nisi. Suspendisse eleifend, mi vel venenatis pharetra, nibh erat mattis libero, vel faucibus augue turpis at nisl. Donec non nisi hendrerit, aliquam nunc vel, aliquam magna. Quisque eu tincidunt felis. Ut non tellus sodales, sodales metus at, porttitor magna. Sed at cursus est. Integer vitae congue ante.</p>
-      </div>
-      <div class="col-xs-12 col-md-8">
-        <div id="activity-chart"><svg style="height: 350px;"></svg></div>
-      </div>
-      -->
-    </div> 
-  </div>
-  <!-- Start Block with small graphics -->
-  <div class="container-fluid small-graphs-box">
-    <div class="row"> 
-
-      <!-- Start Graphics Items -->
-      <div class="container-fluid standard-graph-box">
-        <div class="row"> 
-
-          <!-- Start Item 1 -->
-          <div class="col-md-4">
-            <div class="graph-item-box"> 
-              <!-- Start Item Header -->
-              <div class="header">
-                <div class="title">Environment Size</div>
-                <!-- <div class="icon"><a href="#"></a></div> -->
-              </div>
-              <!-- End Item Header --> 
-              <!-- Start Item Content -->
-              <div class="content">
-                <div class="image"><div id="nodes-distribution"><svg style="height: 280px;"></svg></div></div>
-                <div class="description">Number of environments: <span id="count-nodes-distribution"></span>
-                </div>
-              </div>
-              <!-- End Item Content --> 
-            </div>
-          </div>
-          <!-- End Item 1 --> 
-
-          <!-- Start Item 2 -->
-          <div class="col-md-4">
-            <div class="graph-item-box"> 
-              <!-- Start Item Header -->
-              <div class="header">
-                <div class="title">Hypervisor</div>
-                <!-- <div class="icon"><a href="#"></a></div> -->
-              </div>
-              <!-- End Item Header --> 
-              <!-- Start Item Content -->
-              <div class="content">
-                <div class="image"><div id="releases-distribution"></div></div>
-                <div class="description">Number of environments: <span id="count-releases-distribution"></span>
-                </div>
-              </div>
-              <!-- End Item Content --> 
-            </div>
-          </div>
-          <!-- End Item 2 --> 
-
-          <!-- Start Item 3 -->
-          <div class="col-md-4">
-            <div class="graph-item-box"> 
-              <!-- Start Item Header -->
-              <div class="header">
-                <div class="title">Operating System</div>
-                <!-- <div class="icon"><a href="#"></a></div> -->
-              </div>
-              <!-- End Item Header --> 
-              <!-- Start Item Content -->
-              <div class="content">
-                <div class="image"><div id="distribution-of-oses"></div></div>
-                <div class="description">Number of environments: <span id="count-distribution-of-oses"></span>
-                </div>
-              </div>
-              <!-- End Item Content --> 
-            </div>
-          </div>
-          <!-- End Item 3 --> 
-        </div>
-      </div>
-      <!-- End Graphics Items --> 
-    </div>
-  </div>
-</div>
-
-     
-</body>
+    </body>
 </html>
 
