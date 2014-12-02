@@ -15,6 +15,7 @@
 from logging import FileHandler
 from logging import Formatter
 from logging.handlers import RotatingFileHandler
+import os
 
 from collector.api.app import app
 
@@ -42,4 +43,7 @@ def get_formatter():
 
 
 def init_logger():
+    log_dir = os.path.dirname(app.config.get('LOG_FILE'))
+    if not os.path.exists(log_dir):
+        os.mkdir(log_dir, 0o750)
     app.logger.addHandler(get_file_handler())
