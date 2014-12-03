@@ -26,13 +26,12 @@ def get_formatter():
     return Formatter(fmt=LOG_FORMAT, datefmt=DATE_FORMAT)
 
 
-def get_file_handler():
+def get_file_handler(log_file):
     file_handler = RotatingFileHandler(
-        config.LOG_FILE,
+        log_file,
         maxBytes=config.LOG_FILE_SIZE,
         backupCount=config.LOG_FILES_COUNT
     )
-    file_handler.setLevel(config.LOG_LEVEL)
     formatter = get_formatter()
     file_handler.setFormatter(formatter)
     return file_handler
@@ -40,4 +39,14 @@ def get_file_handler():
 
 logger = logging.getLogger('migration')
 logger.setLevel(config.LOG_LEVEL)
-logger.addHandler(get_file_handler())
+logger.addHandler(get_file_handler(config.LOG_FILE))
+
+
+logging.getLogger('elasticsearch').setLevel(config.LOG_LEVEL)
+logging.getLogger('elasticsearch').addHandler(
+    get_file_handler(config.LOG_FILE_ES))
+
+
+logging.getLogger('elasticsearch.trace').setLevel(config.LOG_LEVEL)
+logging.getLogger('elasticsearch.trace').addHandler(
+    get_file_handler(config.LOG_FILE_EST))
