@@ -50,11 +50,13 @@
                                         "additional_info": {
                                             "type": "object",
                                             "properties": {
-                                                "parent_task_id": {"type": "number"},
+                                                "parent_task_id": {"type": ["number", "null"]},
                                                 "subtasks_ids": {"type": "array"},
                                                 "operation": {"type": "string"},
                                                 "nodes_from_resp": {"type": "array"},
-                                                "ended_with_status": {"type": "string"}
+                                                "ended_with_status": {"type": "string"},
+                                                "message": {"type": ["string", "null"]},
+                                                "output": {"type": ["object", "null"]}
                                             }
                                         },
                                         "is_sent": {"type": "boolean"},
