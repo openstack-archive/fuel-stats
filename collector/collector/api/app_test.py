@@ -17,4 +17,5 @@ from collector.api import log
 
 
 app.config.from_object('collector.api.config.Testing')
+app.config.from_envvar('COLLECTOR_SETTINGS', silent=True)
 log.init_logger()

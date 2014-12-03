@@ -4,3 +4,4 @@ uwsgi:
     module: collector.api.app_test
     callable: app
     protocol: http
+    env: COLLECTOR_SETTINGS=/path/to/external/config.py
