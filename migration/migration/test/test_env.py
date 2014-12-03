@@ -24,6 +24,10 @@ def configure_test_env():
     config.ELASTIC_PORT = 9200
     config.DB_CONNECTION_STRING = \
         'postgresql://collector:collector@localhost:5432/collector'
-    config.LOG_FILE = os.path.realpath(os.path.join(
-        os.path.dirname(__file__), 'logs', 'migration.log'))
+    config.LOG_DIR = os.path.realpath(os.path.join(
+        os.path.dirname(__file__), 'logs'))
+    config.LOG_FILE = os.path.join(config.LOG_DIR, 'migration.log')
+    config.LOG_FILE_ES = os.path.join(config.LOG_DIR, 'elasticsearch.log')
+    config.LOG_FILE_EST = os.path.join(config.LOG_DIR,
+                                       'elasticsearch-trace.log')
     config.LOG_LEVEL = logging.DEBUG
