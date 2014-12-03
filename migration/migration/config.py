@@ -13,8 +13,12 @@
 #    under the License.
 
 import logging
+import os
 
-LOG_FILE = "/var/log/migration.log"
+LOG_DIR = '/var/log/fuel-stats'
+LOG_FILE = os.path.join('migration.log')
+LOG_FILE_ES = os.path.join('elasticsearch.log')
+LOG_FILE_EST = os.path.join('elasticsearch-trace.log')
 LOG_LEVEL = logging.INFO
 LOG_FILE_SIZE = 2048000
 LOG_FILES_COUNT = 20
