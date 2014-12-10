@@ -147,8 +147,18 @@ MAPPING_FUEL = {
                 "type": "object",
                 "properties": {
                     # http request
-                    "request_data": {"type": "object"},
-                    "response_data": {"type": "object"},
+                    "request_data": {
+                        "type": "object",
+                        "properties": {
+                            "data": {"enabled": False}
+                        }
+                    },
+                    "response_data": {
+                        "type": "object",
+                        "properties": {
+                            "data": {"enabled": False}
+                        }
+                    },
                     # task
                     "parent_task_id": {"type": "long"},
                     "subtasks_ids": {"type": "long"},
