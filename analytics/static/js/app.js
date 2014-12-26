@@ -226,9 +226,11 @@ function($, d3, D3pie, d3tip, nv, elasticsearch) {
                         labelData = value.key.split('-');
                     $.each(labelData, function(key, value) {
                         if (value) {
-                            if (key == labelData.length - 1) labelText += (value == '*' ? '+' : '-' + parseInt(value));
-                        } else {
-                            labelText += parseInt(value);
+                            if (key == labelData.length - 1) {
+                                labelText += (value == '*' ? '+' : '-' + parseInt(value));
+                            } else {
+                                labelText += parseInt(value);
+                            }
                         }
                     });
                     chartData.push({label: labelText, value: value.doc_count});
