@@ -127,7 +127,7 @@ class ElasticTest(TestCase):
         mn_uid = '{}'.format(uuid.uuid4())
         clusters_num = random.randint(*clusters_num_range)
         fuel_release = {
-            'release': "XX",
+            'release': random.choice(("6.0-techpreview", "6.0-ga")),
             'api': 1,
             'nailgun_sha': "Unknown build",
             'astute_sha': "Unknown build",
