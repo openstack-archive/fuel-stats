@@ -86,6 +86,15 @@ MAPPING_FUEL = {
             "unallocated_nodes_num": {"type": "long"},
             "creation_date": {"type": "date"},
             "modification_date": {"type": "date"},
+            "fuel_release": {
+                "type": "object",
+                "properties": {
+                    "release": {
+                        "type": "string",
+                        "index": "not_analyzed"
+                    }
+                }
+            },
             "clusters": {
                 "type": "nested",
                 "properties": {

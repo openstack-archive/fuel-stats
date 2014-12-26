@@ -71,4 +71,3 @@ class ElasticsearchMapping(ElasticTest):
         }
         self.es.index(config.INDEX_FUEL, config.DOC_TYPE_ACTION_LOGS, doc,
                       id=doc['master_node_uid'])
-
