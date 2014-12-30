@@ -70,10 +70,21 @@ class Reports(ElasticTest):
 
     def test_installations_number(self):
         installations_num = 150
-        self.generate_data(installations_num=installations_num)
+        installations = self.generate_data(installations_num=installations_num)
+        release = "6.0-ga"
+        query = {
+            "query": {
+                "terms": {
+                    "fuel_release.release": [release]
+                }
+            }
+        }
         resp = self.es.count(index=config.INDEX_FUEL,
-                             doc_type=config.DOC_TYPE_STRUCTURE)
-        self.assertEquals(installations_num, resp['count'])
+                             doc_type=config.DOC_TYPE_STRUCTURE,
+                             body=query)
+        inst_count = len(filter(
+            lambda x: x['fuel_release']['release'] == release, installations))
+        self.assertEquals(inst_count, resp['count'])
 
     def test_filtration(self):
         installations_num = 100
