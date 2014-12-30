@@ -251,3 +251,7 @@ svg text {
 .nv-series text, .p0_title, .p1_title {
     font-size: 13px !important;
 }
+
+#release-filter {
+	margin: 10px 0 0 13px;
+}
