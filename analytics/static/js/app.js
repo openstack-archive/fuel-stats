@@ -370,6 +370,7 @@ function($, d3, D3pie, d3tip, nv, elasticsearch) {
                     chartData.push({label: 'unknown', value: unknownHypervisorsCount});
                 }
                 $('#count-releases-distribution').html(total);
+                $('#releases-distribution').html('');
                 new D3pie("releases-distribution", {
                     header: {
                         title: {
@@ -468,6 +469,7 @@ function($, d3, D3pie, d3tip, nv, elasticsearch) {
                 $.each(rawData, function(key, value) {
                     chartData.push({label: value.key, value: value.doc_count});
                 });
+                $('#distribution-of-oses').html('');
                 new D3pie("distribution-of-oses", {
                     header: {
                         title: {
