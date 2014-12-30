@@ -13,14 +13,50 @@ function($, d3, D3pie, d3tip, nv, elasticsearch) {
 
     var statuses = ['operational', 'error'];
 
-    var elasticSearchHost = function() {
-            return {
-                host: {
-                    protocol: $(location).attr('protocol'),
-                    host: $(location).attr('hostname')
+    var releases = [
+        {name: 'All', filter: ''},
+        {name: '6.0 Technical Preview', filter: '6.0-techpreview'},
+        {name: '6.0 GA', filter: '6.0-ga'}
+    ];
+    var currentRelease = releases[0].filter;
+
+    var releaseFilter = $('#release-filter');
+    releases.forEach(function(release) {
+        releaseFilter.append($('<option/>', {text: release.name, value: release.filter}));
+    });
+    releaseFilter.on('change', function(e) {
+        var newRelease = $(e.currentTarget).val();
+        currentRelease = newRelease;
+        statsPage();
+    });
+
+    var applyFilters = function(body) {
+        var result = body;
+        if (currentRelease) {
+            result = {
+                aggs: {
+                    releases: {
+                        filter: {
+                            terms: {
+                                'fuel_release.release': [currentRelease]
+                            }
+                        }
+                    },
+                    aggs: body
                 }
             };
+        }
+        return result;
+    };
+
+    var elasticSearchHost = function() {
+        return {
+            host: {
+                protocol: $(location).attr('protocol'),
+                host: $(location).attr('hostname')
+            }
         };
+    };
 
     var statsPage = function() {
         installationsCount();
@@ -49,20 +85,20 @@ function($, d3, D3pie, d3tip, nv, elasticsearch) {
          client.search({
             index: 'fuel',
             type: 'structure',
-            body: {
+            body: applyFilters({
                aggs: {
                     clusters: {
                         nested: {
                             path: 'clusters'
                         },
-                       aggs: {
+                        aggs: {
                            statuses: {
                                 terms: {field: 'status'}
                             }
                         }
                     }
                 }
-            }
+            })
             }).then(function(resp) {
                 var rawData = resp.aggregations.clusters.statuses.buckets,
                     total = resp.aggregations.clusters.doc_count,
@@ -121,7 +157,7 @@ function($, d3, D3pie, d3tip, nv, elasticsearch) {
          client.search({
             index: 'fuel',
             size: 0,
-            body: {
+            body: applyFilters({
                  aggs: {
                     envs_distribution: {
                         histogram: {
@@ -130,7 +166,7 @@ function($, d3, D3pie, d3tip, nv, elasticsearch) {
                         }
                     }
                 }
-            }
+            })
             }).then(function(resp) {
                 var rawData = resp.aggregations.envs_distribution.buckets,
                     chartData = [];
@@ -192,7 +228,7 @@ function($, d3, D3pie, d3tip, nv, elasticsearch) {
             index: 'fuel',
             type: 'structure',
             size: 0,
-            body: {
+            body: applyFilters({
                 aggs: {
                     clusters: {
                         nested: {
@@ -215,7 +251,7 @@ function($, d3, D3pie, d3tip, nv, elasticsearch) {
                         }
                     }
                 }
-            }
+            })
             }).then(function(resp) {
                 var rawData = resp.aggregations.clusters.statuses.nodes_ranges.buckets,
                     total = resp.aggregations.clusters.statuses.doc_count,
@@ -282,7 +318,7 @@ function($, d3, D3pie, d3tip, nv, elasticsearch) {
             size: 0,
             index: 'fuel',
             type: 'structure',
-            body: {
+            body: applyFilters({
                 aggs: {
                     clusters: {
                         nested: {
@@ -311,7 +347,7 @@ function($, d3, D3pie, d3tip, nv, elasticsearch) {
                         }
                     }
                 }
-            }
+            })
             }).then(function(resp) {
                 var rawData = resp.aggregations.clusters.statuses.attributes.libvirt_types.buckets,
                     total = resp.aggregations.clusters.statuses.attributes.doc_count,
@@ -384,7 +420,7 @@ function($, d3, D3pie, d3tip, nv, elasticsearch) {
             size: 0,
             index: 'fuel',
             type: 'structure',
-            body: {
+            body: applyFilters({
                 aggs: {
                     clusters: {
                         nested: {
@@ -414,7 +450,7 @@ function($, d3, D3pie, d3tip, nv, elasticsearch) {
                         }
                     }
                 }
-            }
+            })
             }).then(function(resp) {
                 var rawData = resp.aggregations.clusters.statuses.release.oses.buckets,
                     total =  resp.aggregations.clusters.statuses.doc_count,
