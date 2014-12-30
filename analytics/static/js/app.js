@@ -13,14 +13,58 @@ function($, d3, D3pie, d3tip, nv, elasticsearch) {
 
     var statuses = ['operational', 'error'];
 
-    var elasticSearchHost = function() {
-            return {
-                host: {
-                    protocol: $(location).attr('protocol'),
-                    host: $(location).attr('hostname')
+    var releases = [
+        {name: 'All', filter: ''},
+        {name: '6.0 Technical Preview', filter: '6.0-techpreview'},
+        {name: '6.0 GA', filter: '6.0-ga'}
+    ];
+    var currentRelease = releases[0].filter;
+
+    var releaseFilter = $('#release-filter');
+    releases.forEach(function(release) {
+        releaseFilter.append($('<option/>', {text: release.name, value: release.filter}));
+    });
+    releaseFilter.on('change', function(e) {
+        var newRelease = $(e.currentTarget).val();
+        currentRelease = newRelease;
+        statsPage();
+    });
+
+    var applyFilters = function(body) {
+        var result = body;
+        if (currentRelease) {
+            result = {
+                aggs: {
+                    releases: {
+                        filter: {
+                            terms: {
+                                'fuel_release.release': [currentRelease]
+                            }
+                        },
+                        aggs: body['aggs']
+                    }
                 }
             };
+        }
+        return result;
+    };
+
+    var getRootData = function(resp) {
+        var result = resp.aggregations;
+        if (currentRelease) {
+            result = resp.aggregations.releases;
+        }
+        return result;
+    };
+
+    var elasticSearchHost = function() {
+        return {
+            host: {
+                protocol: $(location).attr('protocol'),
+                host: $(location).attr('hostname')
+            }
         };
+    };
 
     var statsPage = function() {
         installationsCount();
@@ -33,15 +77,25 @@ function($, d3, D3pie, d3tip, nv, elasticsearch) {
 
     var installationsCount = function() {
         var client = new elasticsearch.Client(elasticSearchHost());
-         client.count({
-            index: 'fuel',
-            type: 'structure',
-            body: {
-               query: {match_all: {}}
-            }
-            }).then(function(resp) {
-                $('#installations-count').html(resp.count);
-            });
+        if (currentRelease) {
+            var request = {
+                query: {
+                    terms: {
+                        'fuel_release.release': [currentRelease]
+                    }
+                }
+            };
+        } else {
+            var request = {query: {match_all: {}}};
+        }
+        console.log(request)
+        client.count({
+           index: 'fuel',
+           type: 'structure',
+           body: request
+           }).then(function(resp) {
+               $('#installations-count').html(resp.count);
+           });
     };
 
     var environmentsCount = function() {
@@ -49,23 +103,24 @@ function($, d3, D3pie, d3tip, nv, elasticsearch) {
          client.search({
             index: 'fuel',
             type: 'structure',
-            body: {
+            body: applyFilters({
                aggs: {
                     clusters: {
                         nested: {
                             path: 'clusters'
                         },
-                       aggs: {
+                        aggs: {
                            statuses: {
                                 terms: {field: 'status'}
                             }
                         }
                     }
                 }
-            }
+            })
             }).then(function(resp) {
-                var rawData = resp.aggregations.clusters.statuses.buckets,
-                    total = resp.aggregations.clusters.doc_count,
+                var rootData = getRootData(resp);
+                var rawData = rootData.clusters.statuses.buckets,
+                    total = rootData.clusters.doc_count,
                     colors = {
                         error: '#FF7372',
                         operational: '#51851A',
@@ -121,7 +176,7 @@ function($, d3, D3pie, d3tip, nv, elasticsearch) {
          client.search({
             index: 'fuel',
             size: 0,
-            body: {
+            body: applyFilters({
                  aggs: {
                     envs_distribution: {
                         histogram: {
@@ -130,9 +185,10 @@ function($, d3, D3pie, d3tip, nv, elasticsearch) {
                         }
                     }
                 }
-            }
+            })
             }).then(function(resp) {
-                var rawData = resp.aggregations.envs_distribution.buckets,
+                var rootData = getRootData(resp);
+                var rawData = rootData.envs_distribution.buckets,
                     chartData = [];
                 $.each(rawData, function(key, value) {
                     chartData.push({label: value.key, value: value.doc_count});
@@ -192,7 +248,7 @@ function($, d3, D3pie, d3tip, nv, elasticsearch) {
             index: 'fuel',
             type: 'structure',
             size: 0,
-            body: {
+            body: applyFilters({
                 aggs: {
                     clusters: {
                         nested: {
@@ -215,10 +271,11 @@ function($, d3, D3pie, d3tip, nv, elasticsearch) {
                         }
                     }
                 }
-            }
+            })
             }).then(function(resp) {
-                var rawData = resp.aggregations.clusters.statuses.nodes_ranges.buckets,
-                    total = resp.aggregations.clusters.statuses.doc_count,
+                var rootData = getRootData(resp);
+                var rawData = rootData.clusters.statuses.nodes_ranges.buckets,
+                    total = rootData.clusters.statuses.doc_count,
                     chartData = [];
                 $('#count-nodes-distribution').html(total);
                 $.each(rawData, function(key, value) {
@@ -282,7 +339,7 @@ function($, d3, D3pie, d3tip, nv, elasticsearch) {
             size: 0,
             index: 'fuel',
             type: 'structure',
-            body: {
+            body: applyFilters({
                 aggs: {
                     clusters: {
                         nested: {
@@ -311,10 +368,11 @@ function($, d3, D3pie, d3tip, nv, elasticsearch) {
                         }
                     }
                 }
-            }
+            })
             }).then(function(resp) {
-                var rawData = resp.aggregations.clusters.statuses.attributes.libvirt_types.buckets,
-                    total = resp.aggregations.clusters.statuses.attributes.doc_count,
+                var rootData = getRootData(resp);
+                var rawData = rootData.clusters.statuses.attributes.libvirt_types.buckets,
+                    total = rootData.clusters.statuses.attributes.doc_count,
                     totalСounted = 0,
                     chartData = [];
                 $.each(rawData, function(key, value) {
@@ -384,7 +442,7 @@ function($, d3, D3pie, d3tip, nv, elasticsearch) {
             size: 0,
             index: 'fuel',
             type: 'structure',
-            body: {
+            body: applyFilters({
                 aggs: {
                     clusters: {
                         nested: {
@@ -414,10 +472,11 @@ function($, d3, D3pie, d3tip, nv, elasticsearch) {
                         }
                     }
                 }
-            }
+            })
             }).then(function(resp) {
-                var rawData = resp.aggregations.clusters.statuses.release.oses.buckets,
-                    total =  resp.aggregations.clusters.statuses.doc_count,
+                var rootData = getRootData(resp);
+                var rawData = rootData.clusters.statuses.release.oses.buckets,
+                    total =  rootData.clusters.statuses.doc_count,
                     chartData = [];
                 $('#count-distribution-of-oses').html(total);
                 $.each(rawData, function(key, value) {
