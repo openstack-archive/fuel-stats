@@ -56,8 +56,9 @@ function($, d3, D3pie, d3tip, nv, elasticsearch) {
     var elasticSearchHost = function() {
         return {
             host: {
-                protocol: $(location).attr('protocol'),
-                host: $(location).attr('hostname')
+                port: location.port || (location.protocol == 'https:' ? 443 : 80),
+                protocol: location.protocol,
+                host: location.hostname
             }
         };
     };
