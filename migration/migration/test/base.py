@@ -98,7 +98,8 @@ class ElasticTest(TestCase):
             release_versions=('6.0 TechPreview', '6.0 GA', '6.1'),
             cluster_statuses=('new', 'deployment', 'stopped', 'operational',
                               'error', 'remove', 'update', 'update_error'),
-            libvirt_names=('qemu', 'kvm', 'vCenter')
+            libvirt_names=('qemu', 'kvm', 'vCenter'),
+            net_providers=('nova_network', 'neutron')
     ):
         nodes_num = random.randint(*nodes_range)
         cluster = {
@@ -109,6 +110,7 @@ class ElasticTest(TestCase):
                 'name': random.choice(release_names),
                 'version': random.choice(release_versions),
             },
+            'net_provider': random.choice(net_providers),
             'status': random.choice(cluster_statuses),
             'nodes': [],
             'attributes': {
@@ -143,7 +145,9 @@ class ElasticTest(TestCase):
             'clusters': [],
             'unallocated_nodes_num_range': random.randint(
                 *unallocated_nodes_num_range),
-            'allocated_nodes_num': 0
+            'allocated_nodes_num': 0,
+            'modification_date': (datetime.datetime.now() -
+                                  datetime.timedelta(hours=random.randint(0, 1000)))
         }
 
         for _ in xrange(clusters_num):
