@@ -77,7 +77,10 @@ class ElasticTest(TestCase):
                         'zabbix', 'mongo'),
             oses=('Ubuntu', 'CentOs', 'Ubuntu LTS XX'),
             node_statuses = ('ready', 'discover', 'provisioning',
-                             'provisioned', 'deploying', 'error')
+                             'provisioned', 'deploying', 'error'),
+            manufacturers = ('Dell Inc.', 'VirtualBox', 'QEMU',
+                             'VirtualBox', 'Supermicro', 'Cisco Systems Inc',
+                             'KVM', 'VMWARE', 'HP')
     ):
         roles = []
         for _ in xrange(random.randint(*roles_range)):
@@ -86,7 +89,8 @@ class ElasticTest(TestCase):
             'id': self.gen_id(),
             'roles': roles,
             'os': random.choice(oses),
-            'status': random.choice(node_statuses)
+            'status': random.choice(node_statuses),
+            'manufacturer': random.choice(manufacturers)
         }
         return node
 
