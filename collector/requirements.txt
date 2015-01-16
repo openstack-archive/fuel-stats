@@ -7,3 +7,4 @@ PyYAML==3.11
 alembic==0.6.7
 psycopg2==2.5.4
 six>=1.8.0
+uWSGI==2.0.9
