@@ -22,8 +22,8 @@ from fuel_analytics.api.app import app
 
 def configure_app(mode=None):
     mode_map = {
-        'test': 'analytics.api.config.Testing',
-        'prod': 'analytics.api.config.Production'
+        'test': 'fuel_analytics.api.config.Testing',
+        'prod': 'fuel_analytics.api.config.Production'
     }
     app.config.from_object(mode_map.get(mode))
     app.config.from_envvar('ANALYTICS_SETTINGS', silent=True)

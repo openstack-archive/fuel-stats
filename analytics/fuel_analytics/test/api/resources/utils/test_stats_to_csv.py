@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 #    Copyright 2015 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -203,6 +205,22 @@ class StatsToCsvExportTest(ElasticTest):
         # Checking reading result CSV
         for _ in reader:
             pass
+
+    def test_unicode_as_csv(self):
+        installations_num = 10
+        self.generate_data(installations_num=installations_num)
+        es_client = ElasticSearchClient()
+        structures = es_client.get_structures()
+
+        exporter = StatsToCsv()
+        structure_paths, cluster_paths, csv_paths = \
+            exporter.get_cluster_keys_paths()
+        flatten_clusters = exporter.get_flatten_clusters(structure_paths,
+                                                         cluster_paths,
+                                                         structures)
+        flatten_clusters = list(flatten_clusters)
+        flatten_clusters[1][0] = u'эюя'
+        list(exporter.flatten_data_as_csv(csv_paths, flatten_clusters))
 
     def test_export_clusters(self):
         installations_num = 100
