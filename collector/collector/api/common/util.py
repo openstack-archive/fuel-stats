@@ -18,6 +18,9 @@ from flask import jsonify
 from functools import wraps
 import jsonschema
 import math
+import six
+from sqlalchemy import and_
+from sqlalchemy import or_
 
 from collector.api.app import db
 
@@ -88,6 +91,11 @@ def db_transaction(fn):
 
 
 def split_collection(collection, chunk_size=1000):
+    """Splits collection on chunks
+    :param collection: input collection
+    :param chunk_size: size of chunk
+    :return:
+    """
     chunks_num = int(math.ceil(float(len(collection)) / chunk_size))
     for i in xrange(chunks_num):
         start = i * chunk_size
@@ -95,9 +103,92 @@ def split_collection(collection, chunk_size=1000):
         yield collection[start:end]
 
 
-def build_index(dicts_coll, *fields):
+def build_index(coll, *fields):
+    """Builds dict from collection. Dict keys are built
+    from values of fields of collection items
+    :param coll: collection
+    :param fields: fields names for build result dict key
+    :return: dict of collection items indexed by attributes
+    values of collection item from 'fields'
+    """
     index = {}
-    for d in dicts_coll:
-        idx = tuple([d[f] for f in fields])
+    for d in coll:
+        if isinstance(d, dict):
+            idx = tuple([d[f] for f in fields])
+        else:
+            idx = tuple(getattr(d, f) for f in fields)
         index[idx] = d
     return index
+
+
+def get_index(target, *fields):
+    """Gets value of index for target object
+    :param target: target object
+    :param fields: fields names for index creation
+    :return: tuple of attributes values of target from 'fields'
+    """
+    if isinstance(target, dict):
+        return tuple(target[field_name] for field_name in fields)
+    else:
+        return tuple(getattr(target, field_name) for field_name in fields)
+
+
+def get_existed_objects_query(dicts, dict_to_obj_fields_mapping, model_class):
+    """Generates SQL query for filtering existed objects
+    :param dicts: list of dicts
+    :param dict_to_obj_fields_mapping: tuple of pairs
+    ('dict_field_name', 'obj_field_name') used for filtering existed objects
+    :param model_class: DB model
+    :return: SQL query for filtering existed objects
+    """
+    dict_index_fields, obj_index_fields = zip(*dict_to_obj_fields_mapping)
+    clauses = []
+    for d in dicts:
+        clause = []
+        for idx, dict_field_name in enumerate(dict_index_fields):
+            obj_field_name = obj_index_fields[idx]
+            clause.append(
+                getattr(model_class, obj_field_name) == d[dict_field_name]
+            )
+        clauses.append(and_(*clause))
+    return db.session.query(model_class).filter(or_(*clauses))
+
+
+def split_new_dicts_and_updated_objs(dicts, dict_to_obj_fields_mapping,
+                                     model_class):
+    """Separates new data and updates existed objects
+    :param dicts: list of dicts for processing
+    :param dict_to_obj_fields_mapping: tuple of pairs
+    ('dict_field_name', 'obj_field_name') used for filtering existed objects
+    :param model_class: DB model
+    :return: list of dicts for new objects, list of updated existed objects
+    """
+    dict_index_fields, obj_index_fields = zip(*dict_to_obj_fields_mapping)
+
+    # Fetching existed objects
+    existed_objs = get_existed_objects_query(
+        dicts, dict_to_obj_fields_mapping, model_class).all()
+    existed_objs_idx = build_index(existed_objs, *obj_index_fields)
+
+    new_dicts = []
+    for d in dicts:
+        obj_idx = get_index(d, *dict_index_fields)
+        if obj_idx in existed_objs_idx:
+            # Updating existed object
+            obj = existed_objs_idx[obj_idx]
+            for k, v in six.iteritems(d):
+                setattr(obj, k, v)
+        else:
+            # Preparing new object data for saving
+            d_copy = d.copy()
+            for idx in xrange(len(dict_index_fields)):
+                dict_feild = dict_index_fields[idx]
+                obj_feild = obj_index_fields[idx]
+                d_copy[obj_feild] = d_copy.pop(dict_feild)
+            new_dicts.append(d_copy)
+    return new_dicts, existed_objs
+
+
+def bulk_insert(dicts, model_class):
+    if dicts:
+        db.session.execute(model_class.__table__.insert(dicts))
