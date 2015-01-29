@@ -18,8 +18,7 @@ from flask import json
 from flask import request
 from flask_jsonschema import validate as validate_request
 
-bp = Blueprint('installation_structure', __name__,
-               url_prefix='/api/v1/installation_structure')
+bp = Blueprint('installation_structure', __name__)
 
 from collector.api.app import app
 from collector.api.app import db
