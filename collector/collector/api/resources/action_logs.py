@@ -20,7 +20,7 @@ import six
 from sqlalchemy import and_
 from sqlalchemy import or_
 
-bp = Blueprint('action_logs', __name__, url_prefix='/api/v1/action_logs')
+bp = Blueprint('action_logs', __name__)
 
 from collector.api.app import app
 from collector.api.app import db
