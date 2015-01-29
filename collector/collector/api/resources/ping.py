@@ -16,7 +16,7 @@ from flask import Blueprint
 from flask import request
 from flask_jsonschema import validate as validate_request
 
-bp = Blueprint('ping', __name__, url_prefix='/api/v1/ping')
+bp = Blueprint('ping', __name__)
 
 from collector.api.app import app
 from collector.api.common.util import exec_time

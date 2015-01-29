@@ -78,7 +78,7 @@ class DbTest(BaseTest):
                                  '..', 'api', 'db', 'migrations')
         with app.app_context():
             try:
-                flask_migrate.downgrade(directory=directory)
+                flask_migrate.downgrade(directory=directory, revision="-2")
             except CommandError:
                 # Workaround for the first migration
                 pass
