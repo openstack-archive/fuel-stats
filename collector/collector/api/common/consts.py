@@ -27,3 +27,21 @@ ACTION_LOG_STATUSES = make_enum(
     'existed',
     'failed'
 )
+
+
+OSWL_STATUSES = make_enum(
+    'added',
+    'updated',
+    'failed'
+)
+
+
+OSWL_RESOURCE_TYPES = make_enum(
+    'vm',
+    'tenant',
+    'volume',
+    'security_group',
+    'keystone_user',
+    'flavor',
+    'cluster_stats'
+)

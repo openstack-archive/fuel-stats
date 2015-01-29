@@ -35,11 +35,14 @@ db = flask_sqlalchemy.SQLAlchemy(app)
 from collector.api.resources.action_logs import bp as action_logs_bp
 from collector.api.resources.installation_structure import \
     bp as installation_structure_bp
+from collector.api.resources.oswl import bp as oswl_stats_bp
 from collector.api.resources.ping import bp as ping_bp
 
-app.register_blueprint(installation_structure_bp)
-app.register_blueprint(action_logs_bp)
-app.register_blueprint(ping_bp)
+app.register_blueprint(installation_structure_bp,
+                       url_prefix='/api/v1/installation_structure')
+app.register_blueprint(action_logs_bp, url_prefix='/api/v1/action_logs')
+app.register_blueprint(ping_bp, url_prefix='/api/v1/ping')
+app.register_blueprint(oswl_stats_bp, url_prefix='/api/v1/oswl_stats')
 
 
 # Registering error handlers
