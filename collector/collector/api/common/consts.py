@@ -22,8 +22,25 @@ def make_enum(*values, **kwargs):
     return namedtuple('Enum', values)(*values)
 
 
-ACTION_LOG_STATUSES = make_enum(
+ITEMS_STATUSES = make_enum(
     'added',
     'existed',
     'failed'
+)
+
+
+ACTION_LOG_STATUSES = ITEMS_STATUSES
+
+
+OSWL_STATUSES = ITEMS_STATUSES
+
+
+OSWL_RESOURCE_TYPES = make_enum(
+    'vm',
+    'tenant',
+    'volume',
+    'security_group',
+    'keystone_user',
+    'flavor',
+    'cluster_stats'
 )

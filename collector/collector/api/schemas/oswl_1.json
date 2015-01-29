@@ -1,0 +1,66 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+
+    "type": "object",
+
+    "request": {
+        "type": "object",
+        "properties": {
+            "oswls": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "id": {"type": "number"},
+                        "master_node_uid": {"type": "string"},
+                        "cluster_id": {"type": "number"},
+                        "creation_date": {"type": "date-time"},
+                        "update_time": {"type": "date-time"},
+                        "resource_type": {"type": "string"},
+                        "resource_current_checksum": {"type": "string"}
+                    }
+                }
+            }
+        },
+        "required": ["oswls"],
+        "additionalProperties": false
+    },
+
+    "response": {
+        "oneOf": [
+            {
+                "type": "object",
+                "properties": {
+                    "status": {"enum": ["ok"]},
+                    "message": {"type": "string"},
+                    "exec_time": {"type": "number"},
+                    "oswls": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "master_node_uid": {"type": "string"},
+                                "id": {"type": "integer"},
+                                "status": {"enum": ["added", "existed", "failed"]}
+                            },
+                            "required": ["master_node_uid", "status", "id"],
+                            "additionalProperties": false
+                        }
+                    }
+                },
+                "required": ["status", "oswls"],
+                "additionalProperties": false
+            },
+            {
+                "type": "object",
+                "properties": {
+                    "status": {"enum": ["error"]},
+                    "exec_time": {"type": "number"},
+                    "message": {"type": "string"}
+                },
+                "required": ["status", "message"],
+                "additionalProperties": false
+            }
+        ]
+    }
+}

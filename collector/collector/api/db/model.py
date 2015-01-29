@@ -12,7 +12,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from sqlalchemy.dialects.postgresql import JSON
+
 from collector.api.app import db
+from collector.api.common import consts
 
 
 class ActionLog(db.Model):
@@ -38,3 +41,29 @@ class InstallationStructure(db.Model):
     structure = db.Column(db.Text)
     creation_date = db.Column(db.DateTime)
     modification_date = db.Column(db.DateTime)
+
+
+class OpenStackWorkloadStats(db.Model):
+    __tablename__ = 'oswl_stats'
+    __table_args__ = (
+        db.UniqueConstraint('master_node_uid', 'external_id'),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    master_node_uid = db.Column(db.Text, nullable=False, index=True)
+    external_id = db.Column(db.Integer, nullable=False, index=True)
+    cluster_id = db.Column(db.Integer, nullable=False)
+    creation_date = db.Column(db.Date, nullable=False, index=True)
+    update_time = db.Column(db.Time, nullable=False)
+
+    resource_type = db.Column(
+        db.Enum(*consts.OSWL_RESOURCE_TYPES, name='oswl_resource_type'),
+        nullable=False,
+        index=True
+    )
+
+    resource_data_added = db.Column(JSON, nullable=True)
+    resource_data_removed = db.Column(JSON, nullable=True)
+    resource_data_modified = db.Column(JSON, nullable=True)
+    resource_data_current = db.Column(JSON, nullable=True)
+    resource_current_checksum = db.Column(db.Text, nullable=False)
