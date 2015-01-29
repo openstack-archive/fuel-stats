@@ -38,3 +38,4 @@ class Testing(Production):
     LOG_FILES_COUNT = 5
     SQLALCHEMY_DATABASE_URI = \
         'postgresql://collector:collector@localhost/collector'
+    SQLALCHEMY_ECHO = True
