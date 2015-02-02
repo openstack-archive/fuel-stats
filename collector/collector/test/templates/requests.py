@@ -212,3 +212,38 @@ class ActionLogRequestTemplate(BaseRequestTemplate):
             data['action_logs'].append(action_log)
 
         return json.dumps(data)
+
+
+class OSwLRequestTemplate(BaseRequestTemplate):
+
+    def __init__(self, max_logs_count=30):
+        BaseRequestTemplate.__init__(self)
+        self.max_logs_count = max_logs_count
+        self.url = "/api/v1/oswl_stats/"
+        self.resources = ['vm', 'tenant', 'volume', 'security_group',
+                          'keystone_user', 'flavor', 'cluster_stats']
+
+    def get_request_body(self):
+        master_node_uid = self.random_sha
+        data = {'oswl_stats': []}
+
+        for id in xrange(0, self.max_logs_count):
+            oswl_stat = {
+                'master_node_uid': master_node_uid,
+                "id": id,
+                "cluster_id": random.randint(1, 999),
+                'created_date': str(datetime.datetime.now()),
+                'updated_time': str(datetime.datetime.now()),
+                'resource_type': random.choice(self.resources),
+                'resource_checksum': self.random_sha,
+                'resource_data': {
+                    'added': {},
+                    'current': [],
+                    'removed': {},
+                    'modified': {}
+                }
+            }
+            data['oswl_stats'].append(oswl_stat)
+
+        return json.dumps(data)
+
