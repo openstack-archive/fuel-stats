@@ -19,13 +19,14 @@ import sys
 
 from requests import ActionLogRequestTemplate
 from requests import InstallationRequestTemplate
+from requests import OSwLRequestTemplate
 
 
 class Settings(object):
     def __init__(self):
         self.config_file = "ammo.txt"
         self.bullets_count = 5
-        self.bullets_types = ['installation', 'action-log']
+        self.bullets_types = ['installation', 'action-log', 'oswl-stat']
         self.host_address = '127.0.0.1'
         self.max_clusters_count = 10
         self.max_cluster_size = 100
@@ -111,7 +112,7 @@ def usage(message=None):
     sys.exit(2)
 
 
-def save_bullets(bullets, file):
+def save_bullets(bullets, _file):
     data_to_save = ''
 
     for bullet in bullets:
@@ -120,19 +121,14 @@ def save_bullets(bullets, file):
                                                   url=bullet['url'])
         data_to_save += '{body}\r\n\n'.format(body=bullet['body'])
 
-    with open(file, 'w+') as _file:
-        _file.write(data_to_save)
-
-    file_size = os.stat(file).st_size / 1024
-    print("\n\tBullets were saved to '{0}' ({1}K) file\n".format(file,
-                                                                 file_size))
+    _file.write(data_to_save)
 
 
 def main(args):
     settings = parse_args(args, Settings())
     req_template = None
-    bullets = []
     for type in settings.bullets_types:
+
         if type == "installation":
             req_template = InstallationRequestTemplate(
                 max_clusters_count=settings.max_clusters_count,
@@ -140,7 +136,11 @@ def main(args):
         elif type == "action-log":
             req_template = ActionLogRequestTemplate(
                 max_logs_count=settings.max_logs_count)
+        elif type == "oswl-stat":
+            req_template = OSwLRequestTemplate()
+        _file = open(settings.config_file, 'a')
         for _ in xrange(settings.bullets_count):
+            bullets = []
             bullet_url = req_template.url
             bullet_headers = ['[Host: {0}]'.format(settings.host_address)]
             bullet_headers.extend(req_template.headers)
@@ -151,7 +151,11 @@ def main(args):
                 'body': bullet_body
             }
             bullets.append(bullet)
-    save_bullets(bullets, settings.config_file)
+            save_bullets(bullets, _file)
+        _file.close()
+        file_size = os.stat(settings.config_file).st_size / 1024
+        print("\n\tBullets were saved to '{0}' ({1}K) file\n".format(
+            settings.config_file, file_size))
 
 
 if __name__ == '__main__':
