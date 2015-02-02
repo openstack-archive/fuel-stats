@@ -16,6 +16,8 @@ import datetime
 import json
 import random
 
+from bisect import bisect
+
 
 class BaseRequestTemplate(object):
 
@@ -210,5 +212,241 @@ class ActionLogRequestTemplate(BaseRequestTemplate):
                 }
             }
             data['action_logs'].append(action_log)
+
+        return json.dumps(data)
+
+
+class OSwLRequestTemplate(BaseRequestTemplate):
+
+    def __init__(self):
+        BaseRequestTemplate.__init__(self)
+        self.url = "/api/v1/oswl_stats/"
+        self.resources = ['vm', 'tenant', 'volume',
+                          'keystone_user', 'flavor', 'image']
+
+    def current_vm(self):
+        return {"status": "ACTIVE", "tenant_id": self.random_sha,
+                "created_at": str(datetime.datetime.now()),
+                "image_id": self.random_sha, "flavor_id": self.random_sha,
+                "power_state": 1, "time": "15:56:12.146313",
+                "host_id": self.random_sha, "id": self.random_sha}
+
+    def current_image(self):
+        return {"created_at": str(datetime.datetime.now()), "minDisk": 0,
+                "updated_at": str(datetime.datetime.now()),
+                "sizeBytes": 14024704, "minRam": 64, "id": self.random_sha}
+
+    def current_volume(self):
+        return {"status": "available", "attachments": [],
+                "availability_zone": "nova", "bootable_flag": "true",
+                "tenant_id": self.random_sha, "encrypted_flag": 'false',
+                "volume_type": "None",
+                "host": "node-3.test.domain.local#DEFAULT",
+                "time": "14:13:06.001065", "snapshot_id": 'null',
+                "id": self.random_sha, "size": 1}
+
+    def current_tenant(self):
+        return {"enabled_flag": 'true', "id": self.random_sha}
+
+    def current_user(self):
+        return {"enabled_flag": 'true', "tenant_id": self.random_sha,
+                "id": self.random_sha}
+
+    def current_flavor(self):
+        return {"ram": 512, "ephemeral": 0, "vcpus": 1, "swap": "",
+                "disk": 1, "id": self.random_sha}
+
+    def added(self):
+        return {"id": self.random_sha, "time": "15:51:11.690102"}
+
+    def weighted_choice(self, choices):
+        values, weights = zip(*choices)
+        total = 0
+        cum_weights = []
+        for w in weights:
+            total += w
+            cum_weights.append(total)
+        x = random.random() * total
+        i = bisect(cum_weights, x)
+        return values[i]
+
+    def real_data(self):
+        return {
+            "1": {
+            "vm": {"current": [self.current_vm()], "removed": [],
+                   "added": [self.added()], "modified": []},
+            "image": {"current": [self.current_image()], "removed": [],
+                      "added": [self.added()], "modified": []},
+            "volume": {"current": [self.current_volume()], "removed": [],
+                       "added": [self.added()], "modified": []},
+            "tenant": {"current": [self.current_tenant()], "removed": [],
+                       "added": [self.added()], "modified": []},
+            "keystone_user": {"current": [self.current_user()], "removed": [],
+                              "added": [self.added()], "modified": []},
+            "flavor": {"current": [self.current_flavor()], "removed": [],
+                       "added": [self.added()], "modified": []}
+            },
+            "3": {
+            "vm": {"current": [self.current_vm() for i in range(5)],
+                   "removed": [self.current_vm() for i in range(1)],
+                   "added": [self.added() for i in range(5)],
+                   "modified": []},
+            "image": {"current": [self.current_image() for i in range(3)],
+                      "removed": [self.current_image() for i in range(1)],
+                      "added": [self.added() for i in range(3)],
+                      "modified": []},
+            "volume": {"current": [self.current_volume() for i in range(2)],
+                       "removed": [],
+                       "added": [self.added() for i in range(2)],
+                       "modified": []},
+            "tenant": {"current": [self.current_tenant() for i in range(9)],
+                       "removed": [self.current_tenant() for i in range(1)],
+                       "added": [self.added() for i in range(9)],
+                       "modified": []},
+            "keystone_user": {"current": [self.current_user()
+                                          for i in range(8)],
+                              "removed": [self.current_user()
+                                          for i in range(2)],
+                              "added": [self.added() for i in range(8)],
+                              "modified": []},
+            "flavor": {"current": [self.current_flavor() for i in range(8)],
+                       "removed": [self.current_flavor()
+                                   for i in range(2)],
+                       "added": [self.added() for i in range(8)],
+                       "modified": []}
+            },
+            "5": {
+            "vm": {"current": [self.current_vm() for i in range(10)],
+                   "removed": [self.current_vm() for i in range(1)],
+                   "added": [self.added() for i in range(10)],
+                   "modified": []},
+            "image": {"current": [self.current_image() for i in range(5)],
+                      "removed": [self.current_image() for i in range(1)],
+                      "added": [self.added() for i in range(5)],
+                      "modified": []},
+            "volume": {"current": [self.current_volume() for i in range(3)],
+                       "removed": [],
+                       "added": [self.added() for i in range(3)],
+                       "modified": []},
+            "tenant": {"current": [self.current_tenant() for i in range(9)],
+                       "removed": [self.current_tenant() for i in range(1)],
+                       "added": [self.added() for i in range(9)],
+                       "modified": []},
+            "keystone_user": {"current": [self.current_user()
+                                          for i in range(8)],
+                              "removed": [self.current_user()
+                                          for i in range(2)],
+                              "added": [self.added() for i in range(8)],
+                              "modified": []},
+            "flavor": {"current": [self.current_flavor() for i in range(8)],
+                       "removed": [self.current_flavor() for i in range(2)],
+                       "added": [self.added() for i in range(8)],
+                       "modified": []}
+            },
+            "10": {
+            "vm": {"current": [self.current_vm() for i in range(50)],
+                   "removed": [self.current_vm() for i in range(10)],
+                   "added": [self.added() for i in range(50)],
+                   "modified": []},
+            "image": {"current": [self.current_image() for i in range(7)],
+                      "removed": [self.current_image() for i in range(1)],
+                      "added": [self.added() for i in range(7)],
+                      "modified": []},
+            "volume": {"current": [self.current_volume() for i in range(10)],
+                       "removed": [],
+                       "added": [self.added() for i in range(10)],
+                       "modified": []},
+            "tenant": {"current": [self.current_tenant() for i in range(9)],
+                       "removed": [self.current_tenant() for i in range(1)],
+                       "added": [self.added() for i in range(9)],
+                       "modified": []},
+            "keystone_user": {"current": [self.current_user()
+                                          for i in range(8)],
+                              "removed": [self.current_user()
+                                          for i in range(2)],
+                              "added": [self.added() for i in range(8)],
+                              "modified": []},
+            "flavor": {"current": [self.current_flavor() for i in range(10)],
+                       "removed": [self.current_flavor() for i in range(2)],
+                       "added": [self.added() for i in range(10)],
+                       "modified": []}
+            },
+            "20": {
+            "vm": {"current": [self.current_vm() for i in range(100)],
+                   "removed": [self.current_vm() for i in range(10)],
+                   "added": [self.added() for i in range(100)],
+                   "modified": []},
+            "image": {"current": [self.current_image() for i in range(10)],
+                      "removed": [self.current_image() for i in range(1)],
+                      "added": [self.added() for i in range(10)],
+                      "modified": []},
+            "volume": {"current": [self.current_volume() for i in range(10)],
+                       "removed": [],
+                       "added": [self.added() for i in range(10)],
+                       "modified": []},
+            "tenant": {"current": [self.current_tenant() for i in range(9)],
+                       "removed": [self.current_tenant() for i in range(1)],
+                       "added": [self.added() for i in range(9)],
+                       "modified": []},
+            "keystone_user": {"current": [self.current_user()
+                                          for i in range(8)],
+                              "removed": [self.current_user()
+                                          for i in range(2)],
+                              "added": [self.added() for i in range(8)],
+                              "modified": []},
+            "flavor": {"current": [self.current_flavor() for i in range(10)],
+                       "removed": [self.current_flavor() for i in range(2)],
+                       "added": [self.added() for i in range(10)],
+                       "modified": []}
+            },
+            "50": {
+            "vm": {"current": [self.current_vm() for i in range(250)],
+                   "removed": [self.current_vm() for i in range(20)],
+                   "added": [self.added() for i in range(250)],
+                   "modified": []},
+            "image": {"current": [self.current_image() for i in range(10)],
+                      "removed": [self.current_image() for i in range(1)],
+                      "added": [self.added() for i in range(10)],
+                      "modified": []},
+            "volume": {"current": [self.current_volume() for i in range(10)],
+                       "removed": [],
+                       "added": [self.added() for i in range(10)],
+                       "modified": []},
+            "tenant": {"current": [self.current_tenant() for i in range(9)],
+                       "removed": [self.current_tenant() for i in range(1)],
+                       "added": [self.added() for i in range(9)],
+                       "modified": []},
+            "keystone_user": {"current": [self.current_user()
+                                          for i in range(8)],
+                              "removed": [self.current_user()
+                                          for i in range(2)],
+                              "added": [self.added() for i in range(8)],
+                              "modified": []},
+            "flavor": {"current": [self.current_flavor() for i in range(10)],
+                       "removed": [self.current_flavor() for i in range(2)],
+                       "added": [self.added() for i in range(10)],
+                       "modified": []}
+            }
+        }
+
+    def get_request_body(self):
+        master_node_uid = self.random_sha
+        data = {'oswl_stats': []}
+        choice = self.weighted_choice([("1", 5), ("3", 10), ("5", 15),
+                                       ("10", 20), ("20", 40), ("50", 10)])
+
+        for type in ['vm', 'image', 'volume', 'tenant', 'keystone_user',
+                     'flavor']:
+            oswl_stat = {
+                'master_node_uid': master_node_uid,
+                "id": random.randint(1, 100),
+                "cluster_id": random.randint(1, 999),
+                'created_date': str(datetime.datetime.now()),
+                'updated_time': str(datetime.datetime.now()),
+                'resource_type': type,
+                'resource_checksum': self.random_sha,
+                'resource_data': self.real_data()[choice][type]
+            }
+            data['oswl_stats'].append(oswl_stat)
 
         return json.dumps(data)
