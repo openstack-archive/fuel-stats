@@ -1,4 +1,4 @@
-#    Copyright 2015 Mirantis, Inc.
+# Copyright 2015 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -12,13 +12,3 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from flask import Flask
-import flask_sqlalchemy
-
-app = Flask(__name__)
-db = flask_sqlalchemy.SQLAlchemy(app)
-
-# Registering blueprints
-from fuel_analytics.api.resources.csv_exporter import bp as csv_exporter_bp
-
-app.register_blueprint(csv_exporter_bp, url_prefix='/api/v1/csv')

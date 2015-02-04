@@ -11,14 +11,3 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
-from flask import Flask
-import flask_sqlalchemy
-
-app = Flask(__name__)
-db = flask_sqlalchemy.SQLAlchemy(app)
-
-# Registering blueprints
-from fuel_analytics.api.resources.csv_exporter import bp as csv_exporter_bp
-
-app.register_blueprint(csv_exporter_bp, url_prefix='/api/v1/csv')

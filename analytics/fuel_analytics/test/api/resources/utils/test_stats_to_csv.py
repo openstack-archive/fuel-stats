@@ -18,101 +18,14 @@ import csv
 import six
 import types
 
-from fuel_analytics.test.base import BaseTest
 from fuel_analytics.test.base import ElasticTest
 
 from fuel_analytics.api.resources.utils.es_client import ElasticSearchClient
+from fuel_analytics.api.resources.utils import export_utils
 from fuel_analytics.api.resources.utils.stats_to_csv import StatsToCsv
 
 
-class StatsToCsvTest(BaseTest):
-
-    def test_dict_construct_skeleton(self):
-        exporter = StatsToCsv()
-        data = {'a': 'b'}
-        skeleton = exporter.construct_skeleton(data)
-        self.assertDictEqual(data, skeleton)
-
-        data = {'a': 'b', 'x': None}
-        skeleton = exporter.construct_skeleton(data)
-        self.assertDictEqual(data, skeleton)
-
-    def test_list_construct_skeleton(self):
-        exporter = StatsToCsv()
-        data = ['a', 'b', 'c']
-        skeleton = exporter.construct_skeleton(data)
-        self.assertListEqual([], skeleton)
-
-        data = [{'a': None}, {'b': 'x'}, {'a': 4, 'c': 'xx'}, {}]
-        skeleton = exporter.construct_skeleton(data)
-        self.assertListEqual(
-            sorted(skeleton[0].keys()),
-            sorted(['a', 'b', 'c'])
-        )
-
-        data = [
-            'a',
-            ['a', 'b', []],
-            [],
-            [{'x': 'z'}, 'zz', {'a': 'b'}],
-            ['a'],
-            {'p': 'q'}
-        ]
-        skeleton = exporter.construct_skeleton(data)
-        self.assertListEqual([[[], {'a': 'b', 'x': 'z'}], {'p': 'q'}],
-                             skeleton)
-
-    def test_get_skeleton(self):
-        exporter = StatsToCsv()
-        data = [
-            {'ci': {'p': True, 'e': '@', 'n': 'n'}},
-            # reducing fields in nested dict
-            {'ci': {'p': False}},
-            # adding list values
-            {'c': [{'s': 'v', 'n': 2}, {'s': 'vv', 'n': 22}]},
-            # adding new value in the list
-            {'c': [{'z': 'p'}]},
-            # checking empty list
-            {'c': []},
-            # adding new value
-            {'a': 'b'},
-        ]
-        skeleton = exporter.get_data_skeleton(data)
-        self.assertDictEqual(
-            {'a': None, 'c': [{'s': None, 'n': None, 'z': None}],
-             'ci': {'p': None, 'e': None, 'n': None}},
-            skeleton)
-
-    def test_get_key_paths(self):
-        exporter = StatsToCsv()
-        skeleton = {'a': 'b', 'c': 'd'}
-        paths = exporter.get_keys_paths(skeleton)
-        self.assertListEqual([['a'], ['c']], paths)
-
-        skeleton = {'a': {'e': 'f', 'g': None}}
-        paths = exporter.get_keys_paths(skeleton)
-        self.assertListEqual([['a', 'e'], ['a', 'g']], paths)
-
-        skeleton = [{'a': 'b', 'c': 'd'}]
-        paths = exporter.get_keys_paths(skeleton)
-        self.assertListEqual([[]], paths)
-
-    def test_get_flatten_data(self):
-        exporter = StatsToCsv()
-        data = [
-            {'a': 'b', 'c': {'e': 2.1}},
-            {'a': 'ee\nxx', 'c': {'e': 3.1415}, 'x': ['z', 'zz']},
-        ]
-        expected_flatten_data = [
-            ['b', 2.1, None],
-            ['ee\nxx', 3.1415, 'z zz'],
-        ]
-        skeleton = exporter.get_data_skeleton(data)
-        key_paths = exporter.get_keys_paths(skeleton)
-
-        for idx, expected in enumerate(expected_flatten_data):
-            actual = exporter.get_flatten_data(key_paths, data[idx])
-            self.assertListEqual(expected, actual)
+class StatsToCsvExportTest(ElasticTest):
 
     def test_get_cluster_keys_paths(self):
         exporter = StatsToCsv()
@@ -127,25 +40,6 @@ class StatsToCsvTest(BaseTest):
         self.assertTrue(['manufacturer_2' in csv_keys_paths])
         self.assertTrue(['attributes', 'heat'] in csv_keys_paths)
 
-    def test_align_enumerated_field_values(self):
-        # Data for checks in format (source, num, expected)
-        checks = [
-            ([], 0, [False]),
-            ([], 1, [False, None]),
-            (['a'], 1, [False, 'a']),
-            (['a'], 2, [False, 'a', None]),
-            (['a', 'b'], 2, [False, 'a', 'b']),
-            (['a', 'b'], 1, [True, 'a'])
-        ]
-        for source, num, expected in checks:
-            self.assertListEqual(
-                expected,
-                StatsToCsv.align_enumerated_field_values(source, num)
-            )
-
-
-class StatsToCsvExportTest(ElasticTest):
-
     def test_new_param_handled_by_structures_skeleton(self):
         installations_num = 5
         self.generate_data(installations_num=installations_num)
@@ -157,8 +51,7 @@ class StatsToCsvExportTest(ElasticTest):
         structures = list(structures)
         structures[-1]['mixed_param'] = 'xx'
 
-        exporter = StatsToCsv()
-        skeleton = exporter.get_data_skeleton(structures)
+        skeleton = export_utils.get_data_skeleton(structures)
         self.assertTrue('mixed_param' in skeleton)
 
     def test_get_flatten_clusters(self):
@@ -190,7 +83,7 @@ class StatsToCsvExportTest(ElasticTest):
                                                          cluster_paths,
                                                          structures)
         self.assertTrue(isinstance(flatten_clusters, types.GeneratorType))
-        result = exporter.flatten_data_as_csv(csv_paths, flatten_clusters)
+        result = export_utils.flatten_data_as_csv(csv_paths, flatten_clusters)
         self.assertTrue(isinstance(result, types.GeneratorType))
         output = six.StringIO(list(result))
         reader = csv.reader(output)
@@ -220,7 +113,7 @@ class StatsToCsvExportTest(ElasticTest):
                                                          structures)
         flatten_clusters = list(flatten_clusters)
         flatten_clusters[1][0] = u'эюя'
-        list(exporter.flatten_data_as_csv(csv_paths, flatten_clusters))
+        list(export_utils.flatten_data_as_csv(csv_paths, flatten_clusters))
 
     def test_export_clusters(self):
         installations_num = 100

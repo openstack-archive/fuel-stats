@@ -16,15 +16,19 @@ from flask import Blueprint
 from flask import Response
 
 from fuel_analytics.api.app import app
+from fuel_analytics.api.app import db
+from fuel_analytics.api.common.consts import OSWL_RESOURCE_TYPES as RT
+from fuel_analytics.api.db.model import OpenStackWorkloadStats
 from fuel_analytics.api.resources.utils.es_client import ElasticSearchClient
+from fuel_analytics.api.resources.utils.oswl_stats_to_csv import OswlStatsToCsv
 from fuel_analytics.api.resources.utils.stats_to_csv import StatsToCsv
 
-bp = Blueprint('csv_exporter', __name__)
+bp = Blueprint('clusters_to_csv', __name__)
 
 
 @bp.route('/clusters', methods=['GET'])
-def csv_exporter():
-    app.logger.debug("Handling csv_exporter get request")
+def clusters_to_csv():
+    app.logger.debug("Handling clusters_to_csv get request")
     es_client = ElasticSearchClient()
     structures = es_client.get_structures()
 
@@ -33,4 +37,25 @@ def csv_exporter():
 
     # NOTE: result - is generator, but streaming can not work with some
     # WSGI middlewares: http://flask.pocoo.org/docs/0.10/patterns/streaming/
+    app.logger.debug("Get request for clusters_to_csv handled")
+    return Response(result, mimetype='text/csv')
+
+
+def get_oswls(yield_per=1000):
+    app.logger.debug("Fetching oswls with yeld per %d", yield_per)
+    return db.session.query(OpenStackWorkloadStats).filter(
+        OpenStackWorkloadStats.resource_type == RT.vm).yield_per(yield_per)
+
+
+@bp.route('/vms', methods=['GET'])
+def vms_to_csv():
+    app.logger.debug("Handling vms_to_csv get request")
+    oswls = get_oswls()
+
+    exporter = OswlStatsToCsv()
+    result = exporter.export_vms(oswls)
+
+    # NOTE: result - is generator, but streaming can not work with some
+    # WSGI middlewares: http://flask.pocoo.org/docs/0.10/patterns/streaming/
+    app.logger.debug("Get request for vms_to_csv handled")
     return Response(result, mimetype='text/csv')
