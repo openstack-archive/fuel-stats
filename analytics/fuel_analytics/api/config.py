@@ -27,10 +27,12 @@ class Production(object):
     ELASTIC_USE_SSL = True
     ELASTIC_INDEX_FUEL = 'fuel'
     ELASTIC_DOC_TYPE_STRUCTURE = 'structure'
+    SQLALCHEMY_DATABASE_URI = \
+        'postgresql://collector:*****@localhost/collector'
 
 
 class Testing(Production):
-    DEBUG = False
+    DEBUG = True
     LOG_FILE = os.path.realpath(os.path.join(
         os.path.dirname(__file__), '..', 'test', 'logs', 'analytics.log'))
     LOG_LEVEL = logging.DEBUG
@@ -40,3 +42,6 @@ class Testing(Production):
     ELASTIC_HOST = 'localhost'
     ELASTIC_PORT = 9200
     ELASTIC_USE_SSL = False
+    SQLALCHEMY_DATABASE_URI = \
+        'postgresql://collector:collector@localhost/collector'
+    SQLALCHEMY_ECHO = True

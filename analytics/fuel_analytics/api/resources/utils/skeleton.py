@@ -106,3 +106,27 @@ INSTALLATION_INFO_SKELETON = {
         'name': None
     }
 }
+
+OSWL_STATS_SKELETON = {
+    'id': None,
+    'master_node_uid': None,
+    'external_id': None,
+    'cluster_id': None,
+    'created_date': None,
+    'updated_time': None,
+    'resource_type': None,
+    'resource_checksum': None,
+}
+
+OSWL_VM_SKELETON = {
+    'vm': {
+        'id': None,
+        'status': None,
+        'tenant_id': None,
+        'host_id': None,
+        'created_at': None,
+        'power_state': None,
+        'flavor_id': None,
+        'image_id': None
+    }
+}

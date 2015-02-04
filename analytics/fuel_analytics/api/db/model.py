@@ -12,13 +12,19 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from flask import Flask
-import flask_sqlalchemy
+from sqlalchemy.dialects.postgresql import JSON
 
-app = Flask(__name__)
-db = flask_sqlalchemy.SQLAlchemy(app)
+from fuel_analytics.api.app import db
 
-# Registering blueprints
-from fuel_analytics.api.resources.csv_exporter import bp as csv_exporter_bp
 
-app.register_blueprint(csv_exporter_bp, url_prefix='/api/v1/csv')
+class OpenStackWorkloadStats(db.Model):
+    __tablename__ = 'oswl_stats'
+    id = db.Column(db.Integer, primary_key=True)
+    master_node_uid = db.Column(db.Text)
+    external_id = db.Column(db.Integer)
+    cluster_id = db.Column(db.Integer)
+    created_date = db.Column(db.Date)
+    updated_time = db.Column(db.Time)
+    resource_type = db.Column(db.Text)
+    resource_data = db.Column(JSON)
+    resource_checksum = db.Column(db.Text)
