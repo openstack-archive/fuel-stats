@@ -12,13 +12,22 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from flask import Flask
-import flask_sqlalchemy
+from collections import namedtuple
 
-app = Flask(__name__)
-db = flask_sqlalchemy.SQLAlchemy(app)
 
-# Registering blueprints
-from fuel_analytics.api.resources.csv_exporter import bp as csv_exporter_bp
+def make_enum(*values, **kwargs):
+    names = kwargs.get('names')
+    if names:
+        return namedtuple('Enum', names)(*values)
+    return namedtuple('Enum', values)(*values)
 
-app.register_blueprint(csv_exporter_bp, url_prefix='/api/v1/csv')
+
+OSWL_RESOURCE_TYPES = make_enum(
+    'vm',
+    'tenant',
+    'volume',
+    'security_group',
+    'keystone_user',
+    'flavor',
+    'cluster_stats'
+)
