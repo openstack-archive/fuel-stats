@@ -1,3 +1,4 @@
 include *.txt
 recursive-include collector/api/schemas *.json
+graft collector/api/db/migrations
 include collector/test/logs
