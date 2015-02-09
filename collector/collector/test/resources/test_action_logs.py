@@ -229,10 +229,10 @@ class TestActionLogs(DbTest):
         )
         passed = sum(r['status'] == consts.ACTION_LOG_STATUSES.added
                      for r in resp_logs)
-        failed = sum(r['status'] == consts.ACTION_LOG_STATUSES.failed
-                     for r in resp_logs)
+        skipped = sum(r['status'] == consts.ACTION_LOG_STATUSES.skipped
+                      for r in resp_logs)
         self.assertEqual(
-            passed + failed,
+            passed + skipped,
             len(action_logs)
         )
         self.assertEqual(

@@ -89,7 +89,7 @@
                             "properties": {
                                 "master_node_uid": {"type": "string"},
                                 "external_id": {"type": "integer"},
-                                "status": {"enum": ["added", "existed", "failed"]}
+                                "status": {"enum": ["added", "existed", "failed", "skipped"]}
                             },
                             "required": ["master_node_uid", "external_id", "status"],
                             "additionalProperties": false
