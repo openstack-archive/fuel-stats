@@ -56,7 +56,7 @@ def post():
         for obj in skipped_objs:
             action_logs_to_add.remove(obj)
         objects_info.extend(_extract_dicts_info(
-            skipped_objs, consts.ACTION_LOG_STATUSES.failed))
+            skipped_objs, consts.ACTION_LOG_STATUSES.skipped))
         objects_info.extend(_save_action_logs(action_logs_to_add))
     return 200, {'status': 'ok', 'action_logs': list(objects_info)}
 

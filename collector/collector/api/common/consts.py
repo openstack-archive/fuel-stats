@@ -25,7 +25,8 @@ def make_enum(*values, **kwargs):
 ACTION_LOG_STATUSES = make_enum(
     'added',
     'existed',
-    'failed'
+    'failed',
+    'skipped'
 )
 
 

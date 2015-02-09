@@ -13,6 +13,7 @@
 #    under the License.
 
 from flask import json
+from mock import patch
 
 from collector.test.base import DbTest
 
@@ -229,13 +230,50 @@ class TestActionLogs(DbTest):
         )
         passed = sum(r['status'] == consts.ACTION_LOG_STATUSES.added
                      for r in resp_logs)
-        failed = sum(r['status'] == consts.ACTION_LOG_STATUSES.failed
-                     for r in resp_logs)
+        skipped = sum(r['status'] == consts.ACTION_LOG_STATUSES.skipped
+                      for r in resp_logs)
         self.assertEqual(
-            passed + failed,
+            passed + skipped,
             len(action_logs)
         )
         self.assertEqual(
             passed,
             completed_count
         )
+
+    def test_failed_action_logs(self):
+        al_num = 100
+        action_logs = [
+            {
+                'master_node_uid': 'xx',
+                'external_id': i,
+                'body': {
+                    "id": i,
+                    "actor_id": "",
+                    "action_group": "cluster_changes",
+                    "action_name": "deployment",
+                    "action_type": "nailgun_task",
+                    "start_timestamp": "1",
+                    "end_timestamp": "2",
+                    "additional_info": {
+                        "parent_task_id": None,
+                        "subtasks_ids": [],
+                        "operation": "deployment"
+                    },
+                    "is_sent": False,
+                    "cluster_id": 5
+                }
+            }
+            for i in xrange(al_num)]
+        with patch.object(ActionLog.__table__, 'insert',
+                          side_effect=Exception('stop')):
+            resp = self.post(
+                '/api/v1/action_logs/',
+                {'action_logs': action_logs}
+            )
+            self.check_response_ok(resp)
+
+            resp_logs = json.loads(resp.data)['action_logs']
+            for r in resp_logs:
+                self.assertEqual(consts.ACTION_LOG_STATUSES.failed,
+                                 r['status'])
