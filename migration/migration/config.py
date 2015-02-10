@@ -135,6 +135,17 @@ MAPPING_FUEL = {
                             "manufacturer": {"type": "string"}
                         }
                     },
+                    "network_configuration": {
+                        "type": "object",
+                        "properties": {
+                            "segmentation_type": {"type": "string"},
+                            "net_l23_provider": {"type": "string"},
+                            "net_manager": {"type": "string"},
+                            "fixed_networks_vlan_start": {"type": "integer"},
+                            "fixed_network_size": {"type": "integer"},
+                            "fixed_networks_amount": {"type": "integer"}
+                        }
+                    }
                 }
             }
         }

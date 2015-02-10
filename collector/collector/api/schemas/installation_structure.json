@@ -66,7 +66,18 @@
                                     }
                                 },
                                 "status": {"type": "string"},
-                                "attributes": {"type": "object"}
+                                "attributes": {"type": "object"},
+                                "network_configuration": {
+                                    "type": "object",
+                                    "properties": {
+                                        "segmentation_type": {"type": "string"},
+                                        "net_l23_provider": {"type": "string"},
+                                        "net_manager": {"type": "string"},
+                                        "fixed_networks_vlan_start": {"type": ["integer", "null"]},
+                                        "fixed_network_size": {"type": "integer"},
+                                        "fixed_networks_amount": {"type": "integer"}
+                                    }
+                                }
                             },
                             "required": ["id", "nodes_num", "nodes", "mode", "release", "status", "attributes"]
                         }

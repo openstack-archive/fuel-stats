@@ -75,7 +75,11 @@ class TestInstallationStructure(DbTest):
                         {'id': 35, 'roles': ['c'], 'status': 's'}
                     ],
                     "status": "new",
-                    "attributes": {}
+                    "attributes": {},
+                    "network_configuration": {
+                        "segmentation_type": "vlan",
+                        "net_l23_provider": "ovs"
+                    }
                 },
                 {
                     'id': 32,

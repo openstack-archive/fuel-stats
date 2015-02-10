@@ -119,9 +119,28 @@ class ElasticTest(TestCase):
                 'libvirt_type': random.choice(libvirt_names)
             }
         }
+        network_configuration = self.generate_network_configuration()
+        cluster.update(network_configuration)
         for _ in xrange(nodes_num):
             cluster['nodes'].append(self.generate_node())
         return cluster
+
+    def generate_network_configuration(self):
+        return random.choice((
+            {'network_configuration': {
+                'segmentation_type': random.choice(("gre", "vlan")),
+                'net_l23_provider': random.choice(("ovw", "nsx")),
+            }},
+            {'network_configuration': {
+                'net_manager': random.choice(('FlatDHCPManager',
+                                              'VlanManager')),
+                'fixed_networks_vlan_start': random.choice((2, 3, None)),
+                'fixed_network_size': random.randint(0, 255),
+                'fixed_networks_amount': random.randint(0, 10),
+            }},
+            {'network_configuration': {}},
+            {}
+        ))
 
     def generate_structure(
             self,
