@@ -18,30 +18,32 @@ import six
 from fuel_analytics.api.app import app
 from fuel_analytics.api.resources.utils import export_utils
 from fuel_analytics.api.resources.utils.export_utils import get_keys_paths
-from fuel_analytics.api.resources.utils.skeleton import \
-    OSWL_STATS_SKELETON
-from fuel_analytics.api.resources.utils.skeleton import \
-    OSWL_VM_SKELETON
+from fuel_analytics.api.resources.utils.skeleton import OSWL_SKELETONS
+# from fuel_analytics.api.resources.utils.skeleton import \
+#     OSWL_STATS_SKELETON
+# from fuel_analytics.api.resources.utils.skeleton import \
+#     OSWL_VM_SKELETON
 
 
 class OswlStatsToCsv(object):
 
-    def get_vm_keys_paths(self):
-        """Gets key paths for vm. csv key paths is combination
-        of oswl, vm and additional vm key paths
-        :return: tuple of lists of oswl, vm, csv key paths
+    def get_vm_keys_paths(self, resource_type='vm'):
+        """Gets key paths for resource type. csv key paths is combination
+        of oswl, vm and additional resource type key paths
+        :return: tuple of lists of oswl, resource type, csv key paths
         """
-        app.logger.debug("Getting vm keys paths")
-        oswl_key_paths = get_keys_paths(OSWL_STATS_SKELETON)
-        vm_key_paths = get_keys_paths(OSWL_VM_SKELETON)
+        app.logger.debug("Getting %s keys paths", resource_type)
+        oswl_key_paths = get_keys_paths(OSWL_SKELETONS['general'])
+        vm_key_paths = get_keys_paths({resource_type: OSWL_SKELETONS[resource_type]})
 
-        # Additional key paths for vm info
-        vm_additional_key_paths = [['vm', 'is_added'], ['vm', 'is_modified'],
-                                   ['vm', 'is_removed']]
+        # Additional key paths for resource type info
+        vm_additional_key_paths = [[resource_type, 'is_added'],
+                                   [resource_type, 'is_modified'],
+                                   [resource_type, 'is_removed']]
         result_key_paths = oswl_key_paths + vm_key_paths + \
             vm_additional_key_paths
 
-        app.logger.debug("Vm keys paths got")
+        app.logger.debug("%s keys paths got", resource_type)
         return oswl_key_paths, vm_key_paths, result_key_paths
 
     def get_additional_vm_info(self, vm, oswl):
@@ -92,3 +94,14 @@ class OswlStatsToCsv(object):
         result = export_utils.flatten_data_as_csv(csv_keys_paths, flatten_vms)
         app.logger.info("Export oswls vms info into CSV is finished")
         return result
+
+    def export(self, resource_type):
+        app.logger.info("Export oswls %s info into CSV is started",
+                        resource_type)
+        oswl_keys_paths, vm_keys_paths, csv_keys_paths = \
+            self.get_vm_keys_paths(resource_type=resource_type)
+        # flatten_vms = self.get_flatten_vms(oswl_keys_paths, vm_keys_paths,
+        #                                    oswls)
+        # result = export_utils.flatten_data_as_csv(csv_keys_paths, flatten_vms)
+        # app.logger.info("Export oswls vms info into CSV is finished")
+        # return result
