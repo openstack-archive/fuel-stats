@@ -16,79 +16,88 @@ import itertools
 import six
 
 from fuel_analytics.api.app import app
+from fuel_analytics.api.common import consts
 from fuel_analytics.api.resources.utils import export_utils
 from fuel_analytics.api.resources.utils.export_utils import get_keys_paths
-from fuel_analytics.api.resources.utils.skeleton import \
-    OSWL_STATS_SKELETON
-from fuel_analytics.api.resources.utils.skeleton import \
-    OSWL_VM_SKELETON
+from fuel_analytics.api.resources.utils.skeleton import OSWL_SKELETONS
 
 
 class OswlStatsToCsv(object):
 
-    def get_vm_keys_paths(self):
-        """Gets key paths for vm. csv key paths is combination
-        of oswl, vm and additional vm key paths
-        :return: tuple of lists of oswl, vm, csv key paths
+    def get_resource_keys_paths(self, resource_type):
+        """Gets key paths for resource type. csv key paths is combination
+        of oswl, vm and additional resource type key paths
+        :return: tuple of lists of oswl, resource type, csv key paths
         """
-        app.logger.debug("Getting vm keys paths")
-        oswl_key_paths = get_keys_paths(OSWL_STATS_SKELETON)
-        vm_key_paths = get_keys_paths(OSWL_VM_SKELETON)
+        app.logger.debug("Getting %s keys paths", resource_type)
+        oswl_key_paths = get_keys_paths(OSWL_SKELETONS['general'])
+        vm_key_paths = get_keys_paths(
+            {resource_type: OSWL_SKELETONS[resource_type]})
 
-        # Additional key paths for vm info
-        vm_additional_key_paths = [['vm', 'is_added'], ['vm', 'is_modified'],
-                                   ['vm', 'is_removed']]
+        # Additional key paths for resource type info
+        vm_additional_key_paths = [[resource_type, 'is_added'],
+                                   [resource_type, 'is_modified'],
+                                   [resource_type, 'is_removed']]
         result_key_paths = oswl_key_paths + vm_key_paths + \
             vm_additional_key_paths
 
-        app.logger.debug("Vm keys paths got")
+        app.logger.debug("%s keys paths got: %s", resource_type,
+                         result_key_paths)
         return oswl_key_paths, vm_key_paths, result_key_paths
 
-    def get_additional_vm_info(self, vm, oswl):
-        """Gets additional info about vm operations
-        :param vm: vm info
+    def get_additional_resource_info(self, resource, oswl):
+        """Gets additional info about operations with resource
+        :param resource: resource info
         :param oswl: OpenStack workload
-        :return: list of is_added, is_removed, is_modified flags
+        :return: list of integer flags: is_added, is_removed, is_modified
         """
         resource_data = oswl.resource_data
         added = resource_data.get('added', {})
         removed = resource_data.get('removed', {})
         modified = resource_data.get('modified', {})
         # After JSON saving in the object dict keys are converted into strings
-        vm_id = six.text_type(vm.get('id'))
+        vm_id = six.text_type(resource.get('id'))
         is_added = vm_id in added
         is_modified = vm_id in modified
         is_removed = vm_id in removed
         return [is_added, is_modified, is_removed]
 
-    def get_flatten_vms(self, oswl_keys_paths, vm_keys_paths, oswls):
+    def get_flatten_resources(self, resource_type, oswl_keys_paths,
+                              resource_keys_paths, oswls):
         """Gets flatten vms data
         :param oswl_keys_paths: list of keys paths in the OpenStack workload
         info
-        :param vm_keys_paths: list of keys paths in the vm
+        :param resource_keys_paths: list of keys paths in the resource
         :param oswls: list of OpenStack workloads
-        :return: list of flatten vms info
+        :return: list of flatten resources info
         """
-        app.logger.debug("Getting flatten vms info is started")
+        app.logger.debug("Getting flatten %s info started", resource_type)
         for oswl in oswls:
             flatten_oswl = export_utils.get_flatten_data(oswl_keys_paths,
                                                          oswl)
             resource_data = oswl.resource_data
             current = resource_data.get('current', [])
             removed = resource_data.get('removed', {})
-            for vm in itertools.chain(current, six.itervalues(removed)):
-                flatten_vm = export_utils.get_flatten_data(vm_keys_paths,
-                                                           {'vm': vm})
-                vm_additional_info = self.get_additional_vm_info(vm, oswl)
-                yield flatten_oswl + flatten_vm + vm_additional_info
-        app.logger.debug("Flatten vms info is got")
+            for resource in itertools.chain(current, six.itervalues(removed)):
+                flatten_resource = export_utils.get_flatten_data(
+                    resource_keys_paths, {resource_type: resource})
+                additional_info = self.get_additional_resource_info(
+                    resource, oswl)
+                yield flatten_oswl + flatten_resource + additional_info
+        app.logger.debug("Getting flatten %s info finished", resource_type)
+
+    def export(self, resource_type, oswls):
+        app.logger.info("Export oswls %s info into CSV started",
+                        resource_type)
+        oswl_keys_paths, vm_keys_paths, csv_keys_paths = \
+            self.get_resource_keys_paths(resource_type)
+        flatten_resources = self.get_flatten_resources(
+            resource_type, oswl_keys_paths, vm_keys_paths, oswls)
+        result = export_utils.flatten_data_as_csv(csv_keys_paths,
+                                                  flatten_resources)
+        app.logger.info("Export oswls %s info into CSV finished",
+                        resource_type)
+        return result
 
     def export_vms(self, oswls):
-        app.logger.info("Export oswls vms info into CSV is started")
-        oswl_keys_paths, vm_keys_paths, csv_keys_paths = \
-            self.get_vm_keys_paths()
-        flatten_vms = self.get_flatten_vms(oswl_keys_paths, vm_keys_paths,
-                                           oswls)
-        result = export_utils.flatten_data_as_csv(csv_keys_paths, flatten_vms)
-        app.logger.info("Export oswls vms info into CSV is finished")
-        return result
+        return self.export(consts.OSWL_RESOURCE_TYPES.vm, oswls)

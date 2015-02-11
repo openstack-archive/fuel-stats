@@ -12,9 +12,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from sqlalchemy.orm import scoped_session
+from sqlalchemy.orm import sessionmaker
 from unittest2.case import TestCase
 
 from fuel_analytics.api.app import app
+from fuel_analytics.api.app import db
 from fuel_analytics.api.log import init_logger
 
 # Configuring app for the test environment
@@ -39,3 +42,26 @@ class BaseTest(TestCase):
 
 class ElasticTest(MigrationElasticTest):
     pass
+
+
+class DbTest(BaseTest):
+
+    def setUp(self):
+        super(DbTest, self).setUp()
+        # connect to the database
+        self.connection = db.session.connection()
+
+        # begin a non-ORM transaction
+        self.trans = self.connection.begin()
+
+        # bind an individual Session to the connection
+        db.session = scoped_session(sessionmaker(bind=self.connection))
+
+    def tearDown(self):
+        # rollback - everything that happened with the
+        # Session above (including calls to commit())
+        # is rolled back.
+        self.trans.rollback()
+        db.session.close()
+
+        super(DbTest, self).tearDown()

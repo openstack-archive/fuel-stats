@@ -113,7 +113,7 @@ class StatsToCsv(object):
         app.logger.debug("Flatten clusters info is got")
 
     def export_clusters(self, structures):
-        app.logger.info("Export clusters info into CSV is started")
+        app.logger.info("Export clusters info into CSV started")
         structure_keys_paths, cluster_keys_paths, csv_keys_paths = \
             self.get_cluster_keys_paths()
         flatten_clusters = self.get_flatten_clusters(structure_keys_paths,
@@ -121,5 +121,5 @@ class StatsToCsv(object):
                                                      structures)
         result = export_utils.flatten_data_as_csv(csv_keys_paths,
                                                   flatten_clusters)
-        app.logger.info("Export clusters info into CSV is finished")
+        app.logger.info("Export clusters info into CSV finished")
         return result
