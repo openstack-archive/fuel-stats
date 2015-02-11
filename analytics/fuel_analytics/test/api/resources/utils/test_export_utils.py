@@ -66,6 +66,26 @@ class ExportUtilsTest(BaseTest):
             actual = export_utils.get_flatten_data(key_paths, data)
             self.assertListEqual(expected_flatten_data[idx], actual)
 
+    def test_get_flatten_as_csv_unicode(self):
+        data = [
+            {'a': u'b'},
+            {'a': 'tt', u'эюя': 'x'},
+        ]
+        expected_csv = [
+            'a,эюя\r\n',
+            'b,\r\n',
+            'tt,x\r\n'
+        ]
+        skeleton = export_utils.get_data_skeleton(data)
+        key_paths = export_utils.get_keys_paths(skeleton)
+        flatten_data = []
+        for d in data:
+            flatten_data.append(export_utils.get_flatten_data(key_paths, d))
+
+        result = export_utils.flatten_data_as_csv(key_paths, flatten_data)
+        for idx, actual_csv in enumerate(result):
+            self.assertEqual(expected_csv[idx], actual_csv)
+
     def test_dict_construct_skeleton(self):
         data = {'a': 'b'}
         skeleton = export_utils.construct_skeleton(data)
