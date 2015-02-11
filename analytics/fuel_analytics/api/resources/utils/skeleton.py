@@ -11,6 +11,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+from fuel_analytics.api.common import consts
 
 INSTALLATION_INFO_SKELETON = {
     'allocated_nodes_num': None,
@@ -107,19 +108,16 @@ INSTALLATION_INFO_SKELETON = {
     }
 }
 
-OSWL_STATS_SKELETON = {
-    'id': None,
-    'master_node_uid': None,
-    'external_id': None,
-    'cluster_id': None,
-    'created_date': None,
-    'updated_time': None,
-    'resource_type': None,
-    'resource_checksum': None,
-}
-
-OSWL_VM_SKELETON = {
-    'vm': {
+OSWL_SKELETONS = {
+    'general': {
+        'id': None,
+        'master_node_uid': None,
+        'cluster_id': None,
+        'created_date': None,
+        'resource_type': None,
+        'resource_checksum': None,
+    },
+    consts.OSWL_RESOURCE_TYPES.vm: {
         'id': None,
         'status': None,
         'tenant_id': None,
@@ -128,5 +126,13 @@ OSWL_VM_SKELETON = {
         'power_state': None,
         'flavor_id': None,
         'image_id': None
+    },
+    consts.OSWL_RESOURCE_TYPES.flavor: {
+        'id': None,
+        'ram': None,
+        'vcpus': None,
+        'OS-FLV-EXT-DATA:ephemeral': None,
+        'disk': None,
+        'swap': None,
     }
 }
