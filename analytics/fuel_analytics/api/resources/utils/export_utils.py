@@ -14,6 +14,7 @@
 
 import csv
 import io
+import itertools
 import six
 
 from fuel_analytics.api.app import app
@@ -141,15 +142,13 @@ def flatten_data_as_csv(keys_paths, flatten_data):
     :param flatten_data: list of flatten data dicts
     :return: stream with data in CSV format
     """
-    app.logger.debug("Saving flatten data as CSV is started")
+    app.logger.debug("Saving flatten data as CSV started")
     names = []
     for key_path in keys_paths:
         names.append('.'.join(key_path))
-    yield names
 
     output = six.BytesIO()
     writer = csv.writer(output)
-    writer.writerow(names)
 
     def read_and_flush():
         output.seek(io.SEEK_SET)
@@ -158,10 +157,10 @@ def flatten_data_as_csv(keys_paths, flatten_data):
         output.truncate()
         return data
 
-    for d in flatten_data:
+    for d in itertools.chain((names,), flatten_data):
         app.logger.debug("Writing row %s", d)
         encoded_d = [s.encode("utf-8") if isinstance(s, unicode) else s
                      for s in d]
         writer.writerow(encoded_d)
         yield read_and_flush()
-    app.logger.debug("Saving flatten data as CSV is finished")
+    app.logger.debug("Saving flatten data as CSV finished")

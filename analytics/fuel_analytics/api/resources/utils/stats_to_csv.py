@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from six.moves import range
+
 from fuel_analytics.api.app import app
 from fuel_analytics.api.resources.utils import export_utils
 from fuel_analytics.api.resources.utils.skeleton import \
@@ -48,7 +50,7 @@ class StatsToCsv(object):
             :return: list of cut fact column and enumerated columns names
             """
             result = [['{}_gt{}'.format(field_name, number)]]
-            for i in xrange(number):
+            for i in range(number):
                 result.append(['{}_{}'.format(field_name, i)])
             return result
 
@@ -113,7 +115,7 @@ class StatsToCsv(object):
         app.logger.debug("Flatten clusters info is got")
 
     def export_clusters(self, structures):
-        app.logger.info("Export clusters info into CSV is started")
+        app.logger.info("Export clusters info into CSV started")
         structure_keys_paths, cluster_keys_paths, csv_keys_paths = \
             self.get_cluster_keys_paths()
         flatten_clusters = self.get_flatten_clusters(structure_keys_paths,
@@ -121,5 +123,5 @@ class StatsToCsv(object):
                                                      structures)
         result = export_utils.flatten_data_as_csv(csv_keys_paths,
                                                   flatten_clusters)
-        app.logger.info("Export clusters info into CSV is finished")
+        app.logger.info("Export clusters info into CSV finished")
         return result
