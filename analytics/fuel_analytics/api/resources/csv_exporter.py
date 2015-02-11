@@ -17,7 +17,6 @@ from flask import Response
 
 from fuel_analytics.api.app import app
 from fuel_analytics.api.app import db
-from fuel_analytics.api.common.consts import OSWL_RESOURCE_TYPES as RT
 from fuel_analytics.api.db.model import OpenStackWorkloadStats
 from fuel_analytics.api.resources.utils.es_client import ElasticSearchClient
 from fuel_analytics.api.resources.utils.oswl_stats_to_csv import OswlStatsToCsv
@@ -38,24 +37,39 @@ def clusters_to_csv():
     # NOTE: result - is generator, but streaming can not work with some
     # WSGI middlewares: http://flask.pocoo.org/docs/0.10/patterns/streaming/
     app.logger.debug("Get request for clusters_to_csv handled")
-    return Response(result, mimetype='text/csv')
+    headers = {
+        'Content-Disposition': 'attachment; filename=clusters.csv'
+    }
+    return Response(result, mimetype='text/csv', headers=headers)
 
 
-def get_oswls(yield_per=1000):
-    app.logger.debug("Fetching oswls with yeld per %d", yield_per)
+def get_oswls(resource_type, yield_per=1000):
+    app.logger.debug("Fetching %s oswls with yeld per %d",
+                     resource_type, yield_per)
     return db.session.query(OpenStackWorkloadStats).filter(
-        OpenStackWorkloadStats.resource_type == RT.vm).yield_per(yield_per)
+        OpenStackWorkloadStats.resource_type == resource_type).\
+        order_by(OpenStackWorkloadStats.created_date).\
+        yield_per(yield_per)
 
 
-@bp.route('/vms', methods=['GET'])
-def vms_to_csv():
-    app.logger.debug("Handling vms_to_csv get request")
-    oswls = get_oswls()
+@bp.route('/<resource_type>', methods=['GET'])
+def oswl_to_csv(resource_type):
+    app.logger.debug("Handling oswl_to_csv get request for resource %s",
+                     resource_type)
 
+    # if resource_type == 'clusters':
+    #     return clusters_to_csv()
+    #
     exporter = OswlStatsToCsv()
-    result = exporter.export_vms(oswls)
+    oswls = get_oswls(resource_type)
+    result = exporter.export(resource_type, oswls)
 
     # NOTE: result - is generator, but streaming can not work with some
     # WSGI middlewares: http://flask.pocoo.org/docs/0.10/patterns/streaming/
-    app.logger.debug("Get request for vms_to_csv handled")
-    return Response(result, mimetype='text/csv')
+    app.logger.debug("Request oswl_to_csv for resource %s handled",
+                     resource_type)
+    headers = {
+        'Content-Disposition': 'attachment; filename={}.csv'.format(
+            resource_type)
+    }
+    return Response(result, mimetype='text/csv', headers=headers)
