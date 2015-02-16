@@ -23,7 +23,9 @@ import uuid
 
 from fuel_analytics.test.base import BaseTest
 
+from fuel_analytics.api.app import db
 from fuel_analytics.api.common import consts
+from fuel_analytics.api.db.model import InstallationStructure
 from fuel_analytics.api.db.model import OpenStackWorkloadStats
 
 
@@ -151,3 +153,48 @@ class OswlTest(BaseTest):
                 )
                 current_mn_stats -= 1
             yield obj
+
+    def get_saved_oswls(self, num, resource_type, *args, **kwargs):
+        oswls = self.generate_oswls(num, resource_type, *args, **kwargs)
+        result = []
+        for oswl in oswls:
+            db.session.add(oswl)
+            result.append(oswl)
+        db.session.commit()
+        return result
+
+    def generate_inst_structs(self, oswls,
+                              creation_date_range=(2, 10),
+                              modification_date_range=(2, 5),
+                              is_modified_date_nullable=True):
+
+        mn_uids = set()
+        for oswl in oswls:
+            if oswl.master_node_uid not in mn_uids:
+                creation_date = (datetime.utcnow() - timedelta(
+                    days=random.randint(*creation_date_range))).\
+                    date().isoformat()
+                if random.choice((False, is_modified_date_nullable)):
+                    modification_date = None
+                else:
+                    modification_date = (datetime.utcnow() - timedelta(
+                        days=random.randint(*modification_date_range))).\
+                        date().isoformat()
+
+                obj = InstallationStructure(
+                    master_node_uid=oswl.master_node_uid,
+                    creation_date=creation_date,
+                    modification_date=modification_date,
+                    structure='',
+                )
+                mn_uids.add(oswl.master_node_uid)
+                yield obj
+
+    def get_saved_inst_structs(self, oswls):
+        inst_structs = self.generate_inst_structs(oswls)
+        result = []
+        for inst_struct in inst_structs:
+            db.session.add(inst_struct)
+            result.append(inst_struct)
+        db.session.commit()
+        return result
