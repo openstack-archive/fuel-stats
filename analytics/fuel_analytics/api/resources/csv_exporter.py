@@ -17,7 +17,8 @@ from flask import Response
 
 from fuel_analytics.api.app import app
 from fuel_analytics.api.app import db
-from fuel_analytics.api.db.model import OpenStackWorkloadStats
+from fuel_analytics.api.db.model import InstallationStructure as IS
+from fuel_analytics.api.db.model import OpenStackWorkloadStats as OSWS
 from fuel_analytics.api.resources.utils.es_client import ElasticSearchClient
 from fuel_analytics.api.resources.utils.oswl_stats_to_csv import OswlStatsToCsv
 from fuel_analytics.api.resources.utils.stats_to_csv import StatsToCsv
@@ -43,13 +44,21 @@ def clusters_to_csv():
     return Response(result, mimetype='text/csv', headers=headers)
 
 
+def get_oswls_query(resource_type):
+    return db.session.query(
+        OSWS.master_node_uid, OSWS.cluster_id, OSWS.created_date,
+        OSWS.updated_time, OSWS.resource_type, OSWS.resource_data,
+        OSWS.creation_date.label('installation_created_date'),
+        IS.modification_date.label('installation_updated_date')).\
+        join(IS, IS.master_node_uid == OSWS.master_node_uid).\
+        filter(OSWS.resource_type == resource_type).\
+        order_by(OSWS.created_date)
+
+
 def get_oswls(resource_type, yield_per=1000):
     app.logger.debug("Fetching %s oswls with yeld per %d",
                      resource_type, yield_per)
-    return db.session.query(OpenStackWorkloadStats).filter(
-        OpenStackWorkloadStats.resource_type == resource_type).\
-        order_by(OpenStackWorkloadStats.created_date).\
-        yield_per(yield_per)
+    return get_oswls_query(resource_type).yield_per(yield_per)
 
 
 @bp.route('/<resource_type>', methods=['GET'])

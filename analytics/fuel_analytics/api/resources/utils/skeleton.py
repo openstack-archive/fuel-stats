@@ -110,12 +110,10 @@ INSTALLATION_INFO_SKELETON = {
 
 OSWL_SKELETONS = {
     'general': {
-        'id': None,
         'master_node_uid': None,
         'cluster_id': None,
         'created_date': None,
         'resource_type': None,
-        'resource_checksum': None,
     },
     consts.OSWL_RESOURCE_TYPES.vm: {
         'id': None,
