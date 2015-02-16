@@ -28,3 +28,12 @@ class OpenStackWorkloadStats(db.Model):
     resource_type = db.Column(db.Text)
     resource_data = db.Column(JSON)
     resource_checksum = db.Column(db.Text)
+
+
+class InstallationStructure(db.Model):
+    __tablename__ = 'installation_structures'
+    id = db.Column(db.Integer, primary_key=True)
+    master_node_uid = db.Column(db.String, nullable=False, unique=True)
+    structure = db.Column(JSON)
+    creation_date = db.Column(db.DateTime)
+    modification_date = db.Column(db.DateTime)

@@ -24,6 +24,7 @@ from fuel_analytics.test.base import DbTest
 from fuel_analytics.api.app import db
 from fuel_analytics.api.common import consts
 from fuel_analytics.api.resources.csv_exporter import get_oswls
+from fuel_analytics.api.resources.csv_exporter import get_oswls_query
 from fuel_analytics.api.resources.utils.oswl_stats_to_csv import OswlStatsToCsv
 
 
@@ -94,15 +95,36 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
         num = 200
         for resource_type in self.RESOURCE_TYPES:
             # Saving data for true JSON loading from DB object
-            gen_oswls = self.generate_oswls(num, resource_type)
-            for oswl in gen_oswls:
-                db.session.add(oswl)
-            db.session.commit()
-
-            oswls = get_oswls(resource_type)
+            oswls_saved = self.get_saved_oswls(num, resource_type)
+            # Saving installation structures for proper oswls filtering
+            self.get_saved_inst_structs(oswls_saved)
+            # Checking oswls filtered properly
+            oswls = list(get_oswls(resource_type))
+            self.assertEqual(num, len(oswls))
+            # Checking export
             result = exporter.export(resource_type, oswls)
             self.assertTrue(isinstance(result, types.GeneratorType))
             output = six.StringIO(list(result))
             reader = csv.reader(output)
             for _ in reader:
                 pass
+
+    def test_get_oswls_query(self):
+        num = 2
+        for resource_type in self.RESOURCE_TYPES[0:1]:
+            # Fetching oswls count
+            count_before = get_oswls_query(resource_type).count()
+
+            # Generating oswls without installation info
+            oswls = self.get_saved_oswls(num, resource_type)
+
+            # Checking count of fetched oswls is not changed
+            count_after = get_oswls_query(resource_type).count()
+            self.assertEqual(count_before, count_after)
+
+            # Saving inst structures
+            self.get_saved_inst_structs(oswls)
+
+            # Checking count of fetched oswls is changed
+            count_after = get_oswls_query(resource_type).count()
+            self.assertEqual(num + count_before, count_after)
