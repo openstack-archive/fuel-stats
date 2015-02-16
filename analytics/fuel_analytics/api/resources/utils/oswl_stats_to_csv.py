@@ -16,7 +16,6 @@ import itertools
 import six
 
 from fuel_analytics.api.app import app
-from fuel_analytics.api.common import consts
 from fuel_analytics.api.resources.utils import export_utils
 from fuel_analytics.api.resources.utils.export_utils import get_keys_paths
 from fuel_analytics.api.resources.utils.skeleton import OSWL_SKELETONS
@@ -98,6 +97,3 @@ class OswlStatsToCsv(object):
         app.logger.info("Export oswls %s info into CSV finished",
                         resource_type)
         return result
-
-    def export_vms(self, oswls):
-        return self.export(consts.OSWL_RESOURCE_TYPES.vm, oswls)
