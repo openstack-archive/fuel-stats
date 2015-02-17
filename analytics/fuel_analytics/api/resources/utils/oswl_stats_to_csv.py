@@ -12,16 +12,19 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
+import datetime
 import itertools
 import six
 
 from fuel_analytics.api.app import app
 from fuel_analytics.api.resources.utils import export_utils
-from fuel_analytics.api.resources.utils.export_utils import get_keys_paths
 from fuel_analytics.api.resources.utils.skeleton import OSWL_SKELETONS
 
 
 class OswlStatsToCsv(object):
+
+    OSWL_INDEX_FIELDS = ('master_node_uid', 'cluster_id', 'resource_type')
 
     def get_resource_keys_paths(self, resource_type):
         """Gets key paths for resource type. csv key paths is combination
@@ -29,8 +32,8 @@ class OswlStatsToCsv(object):
         :return: tuple of lists of oswl, resource type, csv key paths
         """
         app.logger.debug("Getting %s keys paths", resource_type)
-        oswl_key_paths = get_keys_paths(OSWL_SKELETONS['general'])
-        vm_key_paths = get_keys_paths(
+        oswl_key_paths = export_utils.get_keys_paths(OSWL_SKELETONS['general'])
+        vm_key_paths = export_utils.get_keys_paths(
             {resource_type: OSWL_SKELETONS[resource_type]})
 
         # Additional key paths for resource type info
@@ -68,7 +71,7 @@ class OswlStatsToCsv(object):
         info
         :param resource_keys_paths: list of keys paths in the resource
         :param oswls: list of OpenStack workloads
-        :return: list of flatten resources info
+        :return: generator on flatten resources info collection
         """
         app.logger.debug("Getting flatten %s info started", resource_type)
         for oswl in oswls:
@@ -85,15 +88,85 @@ class OswlStatsToCsv(object):
                 yield flatten_oswl + flatten_resource + additional_info
         app.logger.debug("Getting flatten %s info finished", resource_type)
 
+    def get_last_sync_datetime(self, oswl):
+        """Gets datetime of last synchronization of masternode with
+        stats collector.
+        :param oswl: OpenStackWorkloadStats object with mixed info
+        from InstallationStructure
+        :return: datetime
+        """
+        return max(filter(
+            lambda x: x is not None,
+            (oswl.installation_created_date, oswl.installation_updated_date)))
+
+    def fill_date_gaps(self, oswls, to_date):
+        """Fills the gaps of stats info. If masternode sends stats on
+        on_date and we haven't oswl on this date - the last one oswl for
+        this master_node, cluster_id, resource_type will be used
+        :param oswls: collection of SQLAlchemy oswl objects ordered by
+        creation_date in ascending order
+        :param to_date: fill gaps until this date
+        :return: generator on seamless by dates oswls collection
+        """
+        app.logger.debug("Filling gaps in oswls started")
+        horizon = {}
+        last_date = None
+
+        def stream_horizon_content(on_date):
+            app.logger.debug("Streaming oswls content on date: %s", on_date)
+            # Copying keys to list for make dictionary modification possible
+            # during iteration through it
+            keys = list(six.iterkeys(horizon))
+            for key in keys:
+                last_value = horizon[key]
+                update_date = self.get_last_sync_datetime(last_value)
+                if on_date is not None and update_date.date() < on_date:
+                    # Removing obsolete oswl from horizon
+                    horizon.pop(key)
+                else:
+                    return_value = copy.deepcopy(last_value)
+                    return_value.stats_on_date = on_date
+                    # Removing modified, removed, added from resource data
+                    # if we are duplicating oswl in CSV
+                    if return_value.created_date != on_date:
+                        return_value.resource_data['added'] = {}
+                        return_value.resource_data['removed'] = {}
+                        return_value.resource_data['modified'] = {}
+                    yield return_value
+
+        # Filling horizon of oswls on last date. Oswls are ordered by
+        # created_date so, then last_date is changed we can assume horizon
+        # of oswls is filled and can be shown
+        for oswl in oswls:
+            if last_date != oswl.created_date:
+                for content in stream_horizon_content(last_date):
+                    yield content
+                last_date = oswl.created_date
+                if last_date > to_date:
+                    break
+            idx = export_utils.get_index(oswl, *self.OSWL_INDEX_FIELDS)
+            horizon[idx] = oswl
+
+        # Filling gaps if oswls exhausted on date before to_date
+        if last_date is not None:
+            while last_date < to_date:
+                for content in stream_horizon_content(last_date):
+                    yield content
+                last_date += datetime.timedelta(days=1)
+
+        app.logger.debug("Filling gaps in oswls finished")
+
     def export(self, resource_type, oswls):
         app.logger.info("Export oswls %s info into CSV started",
                         resource_type)
         oswl_keys_paths, vm_keys_paths, csv_keys_paths = \
             self.get_resource_keys_paths(resource_type)
+        seamless_oswls = self.fill_date_gaps(
+            oswls, datetime.datetime.utcnow().date())
         flatten_resources = self.get_flatten_resources(
-            resource_type, oswl_keys_paths, vm_keys_paths, oswls)
-        result = export_utils.flatten_data_as_csv(csv_keys_paths,
-                                                  flatten_resources)
+            resource_type, oswl_keys_paths, vm_keys_paths, seamless_oswls)
+        result = export_utils.flatten_data_as_csv(
+            csv_keys_paths, flatten_resources)
         app.logger.info("Export oswls %s info into CSV finished",
                         resource_type)
         return result
