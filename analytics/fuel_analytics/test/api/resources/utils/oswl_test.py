@@ -51,7 +51,7 @@ class OswlTest(BaseTest):
             result[i] = {'time': datetime.utcnow().time().isoformat()}
         return result
 
-    def generate_vms(self, vms_num, statuses=('on', 'off'),
+    def generate_vms(self, vms_num, statuses=('ACTIVE', 'ERROR', 'BUILT'),
                      created_at_range=(1, 10),
                      power_states_range=(1, 10)):
         result = []
@@ -69,7 +69,7 @@ class OswlTest(BaseTest):
             })
         return result
 
-    def generate_modified_vms(self, vms_num, modifs_num_range=(0, 10),
+    def generate_modified_vms(self, vms_num, modifs_num_range=(1, 10),
                               power_states_range=(1, 10)):
         result = {}
         for i in range(vms_num):
@@ -95,7 +95,7 @@ class OswlTest(BaseTest):
             })
         return result
 
-    def generate_modified_flavors(self, num, modifs_num_range=(0, 3),
+    def generate_modified_flavors(self, num, modifs_num_range=(1, 3),
                                   swap_range=(1, 128),
                                   disk_range=(13, 23)):
         result = {}
@@ -130,13 +130,13 @@ class OswlTest(BaseTest):
                 i += 1
                 created_date = (datetime.utcnow() - timedelta(
                     days=random.randint(*created_date_range))).\
-                    date().isoformat()
+                    date()
                 obj = OpenStackWorkloadStats(
                     master_node_uid=mn_uid,
                     external_id=i,
                     cluster_id=random.choice(cluster_ids_range),
                     created_date=created_date,
-                    updated_time=datetime.utcnow().time().isoformat(),
+                    updated_time=datetime.utcnow().time(),
                     resource_type=resource_type,
                     resource_checksum=six.text_type(uuid.uuid4()),
                     resource_data={
@@ -180,7 +180,6 @@ class OswlTest(BaseTest):
                     modification_date = (datetime.utcnow() - timedelta(
                         days=random.randint(*modification_date_range))).\
                         date().isoformat()
-
                 obj = InstallationStructure(
                     master_node_uid=oswl.master_node_uid,
                     creation_date=creation_date,

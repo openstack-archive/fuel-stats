@@ -112,7 +112,7 @@ OSWL_SKELETONS = {
     'general': {
         'master_node_uid': None,
         'cluster_id': None,
-        'created_date': None,
+        'stats_on_date': None,
         'resource_type': None,
     },
     consts.OSWL_RESOURCE_TYPES.vm: {

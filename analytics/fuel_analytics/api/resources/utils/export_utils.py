@@ -164,3 +164,15 @@ def flatten_data_as_csv(keys_paths, flatten_data):
         writer.writerow(encoded_d)
         yield read_and_flush()
     app.logger.debug("Saving flatten data as CSV finished")
+
+
+def get_index(target, *fields):
+    """Gets value of index for target object
+    :param target: target object
+    :param fields: fields names for index creation
+    :return: tuple of attributes values of target from 'fields'
+    """
+    if isinstance(target, dict):
+        return tuple(target[field_name] for field_name in fields)
+    else:
+        return tuple(getattr(target, field_name) for field_name in fields)
