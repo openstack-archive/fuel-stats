@@ -46,9 +46,16 @@ def clusters_to_csv():
 
 
 def get_oswls_query(resource_type):
+    """Composes query for fetching oswls with installation
+    info creation and update dates with ordering by created_date
+    :param resource_type: resource type
+    :return: SQLAlchemy query
+    """
     return db.session.query(
-        OSWS.master_node_uid, OSWS.cluster_id, OSWS.created_date,
-        OSWS.updated_time, OSWS.resource_type, OSWS.resource_data,
+        OSWS.master_node_uid, OSWS.cluster_id,
+        OSWS.created_date,  # for checking if row is duplicated in CSV
+        OSWS.created_date.label('stats_on_date'),  # for showing in CSV
+        OSWS.resource_type, OSWS.resource_data,
         IS.creation_date.label('installation_created_date'),
         IS.modification_date.label('installation_updated_date')).\
         join(IS, IS.master_node_uid == OSWS.master_node_uid).\
