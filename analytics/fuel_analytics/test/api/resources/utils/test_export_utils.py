@@ -154,3 +154,19 @@ class ExportUtilsTest(BaseTest):
                 expected,
                 export_utils.align_enumerated_field_values(source, num)
             )
+
+    def test_get_index(self):
+
+        class Indexed(object):
+            """Helper object for testing indexing of objects
+            """
+            def __init__(self, **kwds):
+                self.__dict__.update(kwds)
+
+        checks = [
+            (Indexed(**{'one': 1, 'two': 2}), ('one', ), (1,)),
+            (Indexed(**{'one': 1, 'two': 2}), ('one', 'two'), (1, 2)),
+            (Indexed(**{'one': 1, 'two': 2}), (), ()),
+        ]
+        for obj, fields, idx in checks:
+            self.assertTupleEqual(idx, export_utils.get_index(obj, *fields))
