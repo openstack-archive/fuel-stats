@@ -15,6 +15,7 @@
 #    under the License.
 
 import csv
+from datetime import datetime
 import six
 import types
 
@@ -109,6 +110,16 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
             for _ in reader:
                 pass
 
+    def test_export_on_empty_data(self):
+        exporter = OswlStatsToCsv()
+        for resource_type in self.RESOURCE_TYPES:
+            result = exporter.export(resource_type, [])
+            self.assertTrue(isinstance(result, types.GeneratorType))
+            output = six.StringIO(list(result))
+            reader = csv.reader(output)
+            for _ in reader:
+                pass
+
     def test_get_oswls_query(self):
         num = 2
         for resource_type in self.RESOURCE_TYPES[0:1]:
@@ -128,3 +139,61 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
             # Checking count of fetched oswls is changed
             count_after = get_oswls_query(resource_type).count()
             self.assertEqual(num + count_before, count_after)
+
+    def test_get_last_sync_date(self):
+        exporter = OswlStatsToCsv()
+        for resource_type in self.RESOURCE_TYPES:
+            oswls_saved = self.get_saved_oswls(1, resource_type)
+            inst_sturcts = self.get_saved_inst_structs(oswls_saved)
+            inst_struct = inst_sturcts[0]
+            inst_struct.modification_date = None
+            db.session.commit()
+
+            oswls = get_oswls(resource_type)
+            oswl = oswls[0]
+            self.assertEquals(
+                inst_struct.creation_date,
+                exporter.get_last_sync_date(oswl)
+            )
+
+            inst_struct.modification_date = datetime.utcnow()
+            db.session.commit()
+            oswls = get_oswls(resource_type)
+            oswl = oswls[0]
+            self.assertEquals(
+                inst_struct.modification_date,
+                exporter.get_last_sync_date(oswl)
+            )
+
+    def test_fill_date_gaps(self):
+        exporter = OswlStatsToCsv()
+        resource_type = consts.OSWL_RESOURCE_TYPES.vm
+
+        # # Generating vms time series for one master node
+        # # vm without modification date
+        # days = 5
+        # oswls_saved = self.get_saved_oswls(1, resource_type, created_date_range=(days, days))
+        # inst_sturcts = self.get_saved_inst_structs(oswls_saved, creation_date_range=(days, days))
+        # inst_struct = inst_sturcts[0]
+        # inst_struct.modification_date = None
+        # db.session.commit()
+        #
+        # oswls = get_oswls(resource_type)
+        # oswl = oswls[0]
+        # self.assertIsNotNone(oswl.installation_created_date)
+        # self.assertIsNone(oswl.installation_updated_date)
+        #
+        # # Checking only one record is present
+        # oswls_seamless = exporter.fill_date_gaps(oswls)
+        # self.assertEquals(1, len(list(oswls_seamless)))
+        #
+        # # Checking record is duplicated
+        # inst_struct.modification_date = datetime.utcnow()
+        # db.session.commit()
+        #
+        # oswls_seamless = exporter.fill_date_gaps(oswls)
+        # self.assertEquals(days, len(list(oswls_seamless)))
+
+    def test_fill_date_gaps_empty_data(self):
+        exporter = OswlStatsToCsv()
+        exporter.fill_date_gaps([])

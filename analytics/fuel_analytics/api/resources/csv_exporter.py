@@ -45,6 +45,11 @@ def clusters_to_csv():
 
 
 def get_oswls_query(resource_type):
+    """Composes query for fetching oswls with installation
+    info creation and update dates with ordering by created_date
+    :param resource_type: resource type
+    :return: SQLAlchemy query
+    """
     return db.session.query(
         OpenStackWorkloadStats.master_node_uid,
         OpenStackWorkloadStats.cluster_id,

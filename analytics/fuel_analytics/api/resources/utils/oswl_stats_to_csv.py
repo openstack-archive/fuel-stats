@@ -85,13 +85,49 @@ class OswlStatsToCsv(object):
                 yield flatten_oswl + flatten_resource + additional_info
         app.logger.debug("Getting flatten %s info finished", resource_type)
 
+    def get_last_sync_date(self, oswl):
+        return max(filter(
+            lambda x: x is not None,
+            (oswl.installation_created_date, oswl.installation_updated_date)))
+
+    def fill_date_gaps(self, oswls):
+        """
+        :param oswls: ordered by creation_date oswls
+        :return:
+        """
+        app.logger.debug("Filling gaps in oswls started")
+        horizon = {}
+        last_date = None
+
+        def stream_horizon_content(on_date):
+            for mn_uid, last_value in six.iteritems(horizon):
+                update_date = self.get_last_sync_date(last_value)
+                if on_date is not None and update_date < on_date:
+                    horizon.pop(mn_uid)
+                else:
+                    yield last_value
+
+        for oswl in oswls:
+            if last_date != oswl.created_date:
+                stream_horizon_content(last_date)
+                last_date = oswl.created_date
+            horizon[oswl.master_node_uid] = oswl
+        stream_horizon_content(last_date)
+        app.logger.debug("Filling gaps in oswls finished")
+
     def export(self, resource_type, oswls):
         app.logger.info("Export oswls %s info into CSV started",
                         resource_type)
         oswl_keys_paths, vm_keys_paths, csv_keys_paths = \
             self.get_resource_keys_paths(resource_type)
+        seamless_oswls = self.fill_date_gaps(oswls)
+
+        # In case of oswls has no items
+        if seamless_oswls is None:
+            seamless_oswls = ()
+
         flatten_resources = self.get_flatten_resources(
-            resource_type, oswl_keys_paths, vm_keys_paths, oswls)
+            resource_type, oswl_keys_paths, vm_keys_paths, seamless_oswls)
         result = export_utils.flatten_data_as_csv(csv_keys_paths,
                                                   flatten_resources)
         app.logger.info("Export oswls %s info into CSV finished",

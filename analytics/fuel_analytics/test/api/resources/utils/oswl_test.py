@@ -51,7 +51,7 @@ class OswlTest(BaseTest):
             result[i] = {'time': datetime.utcnow().time().isoformat()}
         return result
 
-    def generate_vms(self, vms_num, statuses=('on', 'off'),
+    def generate_vms(self, vms_num, statuses=('ACTIVE', 'ERROR', 'BUILT'),
                      created_at_range=(1, 10),
                      power_states_range=(1, 10)):
         result = []
@@ -180,7 +180,6 @@ class OswlTest(BaseTest):
                     modification_date = (datetime.utcnow() - timedelta(
                         days=random.randint(*modification_date_range))).\
                         date().isoformat()
-
                 obj = InstallationStructure(
                     master_node_uid=oswl.master_node_uid,
                     creation_date=creation_date,
