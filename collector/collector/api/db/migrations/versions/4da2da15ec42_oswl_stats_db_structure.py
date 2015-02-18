@@ -31,7 +31,7 @@ from sqlalchemy.dialects import postgresql
 
 resource_type = sa.Enum('vm', 'tenant', 'volume', 'security_group',
                         'keystone_user', 'flavor', 'cluster_stats',
-                        name='oswl_resource_type')
+                        'image', name='oswl_resource_type')
 
 
 def upgrade():
