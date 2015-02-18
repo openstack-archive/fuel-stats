@@ -44,5 +44,6 @@ OSWL_RESOURCE_TYPES = make_enum(
     'security_group',
     'keystone_user',
     'flavor',
-    'cluster_stats'
+    'cluster_stats',
+    'image',
 )
