@@ -89,7 +89,7 @@ class OswlTest(BaseTest):
                 'id': i,
                 'ram': random.randint(*ram_range),
                 'vcpus': random.randint(*vcpus_range),
-                'OS-FLV-EXT-DATA:ephemeral': random.randint(*ephemeral_range),
+                'ephemeral': random.randint(*ephemeral_range),
                 'disk': random.randint(*disk_range),
                 'swap': random.randint(*swap_range),
             })

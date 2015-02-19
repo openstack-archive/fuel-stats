@@ -129,7 +129,7 @@ OSWL_SKELETONS = {
         'id': None,
         'ram': None,
         'vcpus': None,
-        'OS-FLV-EXT-DATA:ephemeral': None,
+        'ephemeral': None,
         'disk': None,
         'swap': None,
     }
