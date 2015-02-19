@@ -55,14 +55,27 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
     def test_get_flatten_resources(self):
         for resource_type in self.RESOURCE_TYPES:
             exporter = OswlStatsToCsv()
-            oswl_keys_paths, vm_keys_paths, csv_keys_paths = \
+            oswl_keys_paths, resource_keys_paths, csv_keys_paths = \
                 exporter.get_resource_keys_paths(resource_type)
             oswls = self.generate_oswls(2, resource_type)
-            flatten_vms = exporter.get_flatten_resources(
-                resource_type, oswl_keys_paths, vm_keys_paths, oswls)
-            self.assertTrue(isinstance(flatten_vms, types.GeneratorType))
-            for _ in flatten_vms:
+            flatten_resources = exporter.get_flatten_resources(
+                resource_type, oswl_keys_paths, resource_keys_paths, oswls)
+            self.assertTrue(isinstance(flatten_resources, types.GeneratorType))
+            for _ in flatten_resources:
                 pass
+
+    def test_flavor_ephemeral_in_flatten(self):
+        exporter = OswlStatsToCsv()
+        resource_type = consts.OSWL_RESOURCE_TYPES.flavor
+        oswl_keys_paths, resource_keys_paths, csv_keys_paths = \
+            exporter.get_resource_keys_paths(resource_type)
+        oswls = self.generate_oswls(1, resource_type)
+        flatten_resources = exporter.get_flatten_resources(
+            resource_type, oswl_keys_paths, resource_keys_paths, oswls)
+
+        ephemeral_idx = csv_keys_paths.index(['flavor', 'ephemeral'])
+        for fr in flatten_resources:
+            self.assertIsNotNone(fr[ephemeral_idx])
 
     def test_get_additional_info(self):
         exporter = OswlStatsToCsv()
