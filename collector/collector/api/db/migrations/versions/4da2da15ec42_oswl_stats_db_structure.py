@@ -47,7 +47,7 @@ def upgrade():
         sa.Column('resource_data', postgresql.JSON(), nullable=True),
         sa.Column('resource_checksum', sa.Text(), nullable=False),
         sa.PrimaryKeyConstraint('id'),
-        sa.UniqueConstraint('master_node_uid', 'external_id')
+        sa.UniqueConstraint('master_node_uid', 'external_id', 'resource_type')
     ),
     op.create_index(op.f('ix_oswl_stats_created_date'), 'oswl_stats',
                     ['created_date'], unique=False)
