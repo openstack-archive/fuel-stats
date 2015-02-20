@@ -24,8 +24,6 @@ from fuel_analytics.api.log import init_logger
 app.config.from_object('fuel_analytics.api.config.Testing')
 init_logger()
 
-from migration.test.base import ElasticTest as MigrationElasticTest
-
 
 class BaseTest(TestCase):
 
@@ -38,10 +36,6 @@ class BaseTest(TestCase):
 
     def check_response_error(self, resp, code):
         self.assertEquals(code, resp.status_code)
-
-
-class ElasticTest(MigrationElasticTest):
-    pass
 
 
 class DbTest(BaseTest):
