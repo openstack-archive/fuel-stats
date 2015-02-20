@@ -29,15 +29,12 @@ class StatsToCsv(object):
         app.logger.debug("Getting cluster keys paths")
         structure_skeleton = INSTALLATION_INFO_SKELETON
         structure_key_paths = export_utils.get_keys_paths(structure_skeleton)
-        clusters = structure_skeleton.get('clusters')
-        if not clusters:
-            clusters = [{}]
+        clusters = structure_skeleton['structure']['clusters']
         cluster_skeleton = clusters[0]
 
         # Removing lists of dicts from cluster skeleton
         cluster_skeleton.pop('nodes', None)
         cluster_skeleton.pop('node_groups', None)
-        cluster_skeleton.pop('openstack_info', None)
         cluster_key_paths = export_utils.get_keys_paths(cluster_skeleton)
 
         result_key_paths = cluster_key_paths + structure_key_paths
@@ -66,8 +63,8 @@ class StatsToCsv(object):
         return structure_key_paths, cluster_key_paths, result_key_paths
 
     def get_flatten_clusters(self, structure_keys_paths, cluster_keys_paths,
-                             structures):
-        """Gets flatten clusters data
+                             inst_structures):
+        """Gets flatten clusters data form installation structures collection
         :param structure_keys_paths: list of keys paths in the
         installation structure
         :param cluster_keys_paths: list of keys paths in the cluster
@@ -91,10 +88,12 @@ class StatsToCsv(object):
         def extract_nodes_platform_name(nodes):
             return extract_nodes_fields('platform_name', nodes)
 
-        for structure in structures:
+        for inst_structure in inst_structures:
+            structure = inst_structure.structure
             clusters = structure.pop('clusters', [])
             flatten_structure = export_utils.get_flatten_data(
-                structure_keys_paths, structure)
+                structure_keys_paths, inst_structure)
+
             for cluster in clusters:
                 flatten_cluster = export_utils.get_flatten_data(
                     cluster_keys_paths, cluster)
@@ -114,14 +113,13 @@ class StatsToCsv(object):
 
         app.logger.debug("Flatten clusters info is got")
 
-    def export_clusters(self, structures):
+    def export_clusters(self, inst_structures):
         app.logger.info("Export clusters info into CSV started")
         structure_keys_paths, cluster_keys_paths, csv_keys_paths = \
             self.get_cluster_keys_paths()
-        flatten_clusters = self.get_flatten_clusters(structure_keys_paths,
-                                                     cluster_keys_paths,
-                                                     structures)
-        result = export_utils.flatten_data_as_csv(csv_keys_paths,
-                                                  flatten_clusters)
+        flatten_clusters = self.get_flatten_clusters(
+            structure_keys_paths, cluster_keys_paths, inst_structures)
+        result = export_utils.flatten_data_as_csv(
+            csv_keys_paths, flatten_clusters)
         app.logger.info("Export clusters info into CSV finished")
         return result

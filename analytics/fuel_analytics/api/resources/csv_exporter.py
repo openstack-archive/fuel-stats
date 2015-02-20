@@ -19,21 +19,22 @@ from fuel_analytics.api.app import app
 from fuel_analytics.api.app import db
 from fuel_analytics.api.db.model import InstallationStructure as IS
 from fuel_analytics.api.db.model import OpenStackWorkloadStats as OSWS
-from fuel_analytics.api.resources.utils.es_client import ElasticSearchClient
 from fuel_analytics.api.resources.utils.oswl_stats_to_csv import OswlStatsToCsv
 from fuel_analytics.api.resources.utils.stats_to_csv import StatsToCsv
 
 bp = Blueprint('clusters_to_csv', __name__)
 
 
+def get_inst_structures(yield_per=1000):
+    return db.session.query(IS).order_by(IS.id).yield_per(yield_per)
+
+
 @bp.route('/clusters', methods=['GET'])
 def clusters_to_csv():
     app.logger.debug("Handling clusters_to_csv get request")
-    es_client = ElasticSearchClient()
-    structures = es_client.get_structures()
-
+    inst_structures = get_inst_structures()
     exporter = StatsToCsv()
-    result = exporter.export_clusters(structures)
+    result = exporter.export_clusters(inst_structures)
 
     # NOTE: result - is generator, but streaming can not work with some
     # WSGI middlewares: http://flask.pocoo.org/docs/0.10/patterns/streaming/

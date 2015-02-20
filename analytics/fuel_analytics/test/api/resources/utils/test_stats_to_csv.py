@@ -18,14 +18,15 @@ import csv
 import six
 import types
 
-from fuel_analytics.test.base import ElasticTest
+from fuel_analytics.test.api.resources.utils.inst_structure_test import \
+    InstStructureTest
+from fuel_analytics.test.base import DbTest
 
-from fuel_analytics.api.resources.utils.es_client import ElasticSearchClient
 from fuel_analytics.api.resources.utils import export_utils
 from fuel_analytics.api.resources.utils.stats_to_csv import StatsToCsv
 
 
-class StatsToCsvExportTest(ElasticTest):
+class StatsToCsvExportTest(InstStructureTest, DbTest):
 
     def test_get_cluster_keys_paths(self):
         exporter = StatsToCsv()
@@ -40,48 +41,29 @@ class StatsToCsvExportTest(ElasticTest):
         self.assertTrue(['manufacturer_2' in csv_keys_paths])
         self.assertTrue(['attributes', 'heat'] in csv_keys_paths)
 
-    def test_new_param_handled_by_structures_skeleton(self):
-        installations_num = 5
-        self.generate_data(installations_num=installations_num)
-
-        # Mixing new pram into structures
-        es_client = ElasticSearchClient()
-        structures = es_client.get_structures()
-        self.assertTrue(isinstance(structures, types.GeneratorType))
-        structures = list(structures)
-        structures[-1]['mixed_param'] = 'xx'
-
-        skeleton = export_utils.get_data_skeleton(structures)
-        self.assertTrue('mixed_param' in skeleton)
-
     def test_get_flatten_clusters(self):
         installations_num = 200
-        self.generate_data(installations_num=installations_num)
-        es_client = ElasticSearchClient()
-        structures = es_client.get_structures()
-
+        inst_structures = self.get_saved_inst_structures(
+            installations_num=installations_num)
         exporter = StatsToCsv()
         structure_paths, cluster_paths, csv_paths = \
             exporter.get_cluster_keys_paths()
-        flatten_clusters = exporter.get_flatten_clusters(structure_paths,
-                                                         cluster_paths,
-                                                         structures)
+        flatten_clusters = exporter.get_flatten_clusters(
+            structure_paths, cluster_paths, inst_structures)
         self.assertTrue(isinstance(flatten_clusters, types.GeneratorType))
         for flatten_cluster in flatten_clusters:
             self.assertEquals(len(csv_paths), len(flatten_cluster))
 
     def test_flatten_data_as_csv(self):
         installations_num = 100
-        self.generate_data(installations_num=installations_num)
-        es_client = ElasticSearchClient()
-        structures = es_client.get_structures()
+        inst_structures = self.get_saved_inst_structures(
+            installations_num=installations_num)
 
         exporter = StatsToCsv()
         structure_paths, cluster_paths, csv_paths = \
             exporter.get_cluster_keys_paths()
-        flatten_clusters = exporter.get_flatten_clusters(structure_paths,
-                                                         cluster_paths,
-                                                         structures)
+        flatten_clusters = exporter.get_flatten_clusters(
+            structure_paths, cluster_paths, inst_structures)
         self.assertTrue(isinstance(flatten_clusters, types.GeneratorType))
         result = export_utils.flatten_data_as_csv(csv_paths, flatten_clusters)
         self.assertTrue(isinstance(result, types.GeneratorType))
@@ -101,26 +83,22 @@ class StatsToCsvExportTest(ElasticTest):
 
     def test_unicode_as_csv(self):
         installations_num = 10
-        self.generate_data(installations_num=installations_num)
-        es_client = ElasticSearchClient()
-        structures = es_client.get_structures()
+        inst_structures = self.get_saved_inst_structures(
+            installations_num=installations_num)
 
         exporter = StatsToCsv()
         structure_paths, cluster_paths, csv_paths = \
             exporter.get_cluster_keys_paths()
-        flatten_clusters = exporter.get_flatten_clusters(structure_paths,
-                                                         cluster_paths,
-                                                         structures)
+        flatten_clusters = exporter.get_flatten_clusters(
+            structure_paths, cluster_paths, inst_structures)
         flatten_clusters = list(flatten_clusters)
         flatten_clusters[1][0] = u'эюя'
         list(export_utils.flatten_data_as_csv(csv_paths, flatten_clusters))
 
     def test_export_clusters(self):
         installations_num = 100
-        self.generate_data(installations_num=installations_num)
-
-        es_client = ElasticSearchClient()
-        structures = es_client.get_structures()
+        inst_structures = self.get_saved_inst_structures(
+            installations_num=installations_num)
         exporter = StatsToCsv()
-        result = exporter.export_clusters(structures)
+        result = exporter.export_clusters(inst_structures)
         self.assertTrue(isinstance(result, types.GeneratorType))
