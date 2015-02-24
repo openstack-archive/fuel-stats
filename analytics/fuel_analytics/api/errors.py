@@ -1,4 +1,4 @@
-#    Copyright 2015 Mirantis, Inc.
+# Copyright 2015 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -12,22 +12,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from flask import Flask
-from flask import make_response
-import flask_sqlalchemy
-import six
 
-from fuel_analytics.api.errors import DateExtractionError
-
-app = Flask(__name__)
-db = flask_sqlalchemy.SQLAlchemy(app)
-
-# Registering blueprints
-from fuel_analytics.api.resources.csv_exporter import bp as csv_exporter_bp
-
-app.register_blueprint(csv_exporter_bp, url_prefix='/api/v1/csv')
+class FuelAnalyticsException(Exception):
+    def __init__(self, *args, **kwargs):
+        super(FuelAnalyticsException, self).__init__(
+            *args, **kwargs)
 
 
-@app.errorhandler(DateExtractionError)
-def date_parsing_error(error):
-    return make_response(six.text_type(error), 400)
+class DateExtractionError(FuelAnalyticsException):
+    pass
