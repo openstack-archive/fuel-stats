@@ -12,21 +12,71 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from datetime import datetime
+from datetime import timedelta
 from flask import Blueprint
+from flask import request
 from flask import Response
 
 from fuel_analytics.api.app import app
 from fuel_analytics.api.app import db
 from fuel_analytics.api.db.model import InstallationStructure as IS
 from fuel_analytics.api.db.model import OpenStackWorkloadStats as OSWS
+from fuel_analytics.api.errors import DateExtractionError
 from fuel_analytics.api.resources.utils.oswl_stats_to_csv import OswlStatsToCsv
 from fuel_analytics.api.resources.utils.stats_to_csv import StatsToCsv
+from sqlalchemy import or_
 
 bp = Blueprint('clusters_to_csv', __name__)
 
 
-def get_inst_structures(yield_per=1000):
-    return db.session.query(IS).order_by(IS.id).yield_per(yield_per)
+def extract_date(field_name, default_value=None, date_format='%Y-%m-%d'):
+    if field_name not in request.args:
+        return default_value
+    date_string = request.args.get(field_name, default_value)
+    try:
+        return datetime.strptime(date_string, date_format).date()
+    except ValueError:
+        msg = "Date '{}' value in wrong format. Use format: {}".format(
+            field_name, date_format)
+        app.logger.debug(msg)
+        raise DateExtractionError(msg)
+
+
+def get_from_date():
+    default_value = datetime.utcnow().date() - \
+        timedelta(days=app.config.get('CSV_DEFAULT_FROM_DATE_DAYS'))
+    return extract_date('from_date', default_value=default_value)
+
+
+def get_to_date():
+    return extract_date('from_date',
+                        default_value=datetime.utcnow().date())
+
+
+def get_inst_structures_query(from_date=None, to_date=None):
+    """Composes query for fetching installation structures
+    info with filtering by from and to dates and ordering by id
+    :param from_date: filter from creation or modification date
+    :param to_date: filter to creation or modification date
+    :return: SQLAlchemy query
+    """
+    query = db.session.query(IS)
+    if from_date is not None:
+        query = query.filter(or_(IS.creation_date >= from_date,
+                                 IS.modification_date >= from_date))
+    if to_date is not None:
+        query = query.filter(or_(IS.creation_date <= to_date,
+                                 IS.modification_date <= to_date))
+    return query.order_by(IS.id)
+
+
+def get_inst_structures():
+    yield_per = app.config['CSV_DB_YIELD_PER']
+    from_date = get_from_date()
+    to_date = get_to_date()
+    return get_inst_structures_query(from_date=from_date,
+                                     to_date=to_date).yield_per(yield_per)
 
 
 @bp.route('/clusters', methods=['GET'])
@@ -45,13 +95,15 @@ def clusters_to_csv():
     return Response(result, mimetype='text/csv', headers=headers)
 
 
-def get_oswls_query(resource_type):
+def get_oswls_query(resource_type, from_date=None, to_date=None):
     """Composes query for fetching oswls with installation
     info creation and update dates with ordering by created_date
     :param resource_type: resource type
+    :param from_date: filter from date
+    :param to_date: filter to date
     :return: SQLAlchemy query
     """
-    return db.session.query(
+    query = db.session.query(
         OSWS.master_node_uid, OSWS.cluster_id,
         OSWS.created_date,  # for checking if row is duplicated in CSV
         OSWS.created_date.label('stats_on_date'),  # for showing in CSV
@@ -59,14 +111,22 @@ def get_oswls_query(resource_type):
         IS.creation_date.label('installation_created_date'),
         IS.modification_date.label('installation_updated_date')).\
         join(IS, IS.master_node_uid == OSWS.master_node_uid).\
-        filter(OSWS.resource_type == resource_type).\
-        order_by(OSWS.created_date)
+        filter(OSWS.resource_type == resource_type)
+    if from_date is not None:
+        query = query.filter(OSWS.created_date >= from_date)
+    if to_date is not None:
+        query = query.filter(OSWS.created_date <= to_date)
+    return query.order_by(OSWS.created_date)
 
 
-def get_oswls(resource_type, yield_per=1000):
+def get_oswls(resource_type):
+    yield_per = app.config['CSV_DB_YIELD_PER']
     app.logger.debug("Fetching %s oswls with yeld per %d",
                      resource_type, yield_per)
-    return get_oswls_query(resource_type).yield_per(yield_per)
+    from_date = get_from_date()
+    to_date = get_to_date()
+    return get_oswls_query(resource_type, from_date=from_date,
+                           to_date=to_date).yield_per(yield_per)
 
 
 @bp.route('/<resource_type>', methods=['GET'])

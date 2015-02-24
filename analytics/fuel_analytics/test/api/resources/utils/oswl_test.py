@@ -31,6 +31,11 @@ from fuel_analytics.api.db.model import OpenStackWorkloadStats
 
 class OswlTest(BaseTest):
 
+    RESOURCE_TYPES = (
+        consts.OSWL_RESOURCE_TYPES.vm,
+        consts.OSWL_RESOURCE_TYPES.flavor
+    )
+
     RESOURCE_GENERATORS = {
         consts.OSWL_RESOURCE_TYPES.vm: ('generate_vms',
                                         'generate_modified_vms'),
