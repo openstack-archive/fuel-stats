@@ -15,6 +15,8 @@
 #    under the License.
 
 import csv
+import flask
+import mock
 import six
 import types
 
@@ -22,6 +24,7 @@ from fuel_analytics.test.api.resources.utils.inst_structure_test import \
     InstStructureTest
 from fuel_analytics.test.base import DbTest
 
+from fuel_analytics.api.app import app
 from fuel_analytics.api.resources.utils import export_utils
 from fuel_analytics.api.resources.utils.stats_to_csv import StatsToCsv
 
@@ -102,3 +105,19 @@ class StatsToCsvExportTest(InstStructureTest, DbTest):
         exporter = StatsToCsv()
         result = exporter.export_clusters(inst_structures)
         self.assertTrue(isinstance(result, types.GeneratorType))
+
+    def test_filter_by_date(self):
+        exporter = StatsToCsv()
+        num = 10
+        with app.test_request_context(), mock.patch.object(
+                flask.request, 'args', {'from_date': '2015-02-01'}):
+            # Creating installation structures
+            inst_structures = self.get_saved_inst_structures(
+                installations_num=num)
+            # Filtering installation structures
+            result = exporter.export_clusters(inst_structures)
+            self.assertTrue(isinstance(result, types.GeneratorType))
+            output = six.StringIO(list(result))
+            reader = csv.reader(output)
+            for _ in reader:
+                pass

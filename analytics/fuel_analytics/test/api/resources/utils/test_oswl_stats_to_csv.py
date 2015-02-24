@@ -17,6 +17,8 @@
 import csv
 from datetime import datetime
 from datetime import timedelta
+import flask
+import mock
 import six
 import types
 import uuid
@@ -24,8 +26,10 @@ import uuid
 from fuel_analytics.test.api.resources.utils.oswl_test import OswlTest
 from fuel_analytics.test.base import DbTest
 
+from fuel_analytics.api.app import app
 from fuel_analytics.api.app import db
 from fuel_analytics.api.common import consts
+from fuel_analytics.api.db.model import InstallationStructure
 from fuel_analytics.api.db.model import OpenStackWorkloadStats
 from fuel_analytics.api.resources.csv_exporter import get_oswls
 from fuel_analytics.api.resources.csv_exporter import get_oswls_query
@@ -35,10 +39,11 @@ from fuel_analytics.api.resources.utils.oswl_stats_to_csv import OswlStatsToCsv
 
 class OswlStatsToCsvTest(OswlTest, DbTest):
 
-    RESOURCE_TYPES = (
-        consts.OSWL_RESOURCE_TYPES.vm,
-        consts.OSWL_RESOURCE_TYPES.flavor
-    )
+    def setUp(self):
+        super(OswlTest, self).setUp()
+        OpenStackWorkloadStats.query.delete()
+        InstallationStructure.query.delete()
+        db.session.commit()
 
     def test_get_keys_paths(self):
         for resource_type in self.RESOURCE_TYPES:
@@ -111,21 +116,22 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
     def test_export(self):
         exporter = OswlStatsToCsv()
         num = 200
-        for resource_type in self.RESOURCE_TYPES:
-            # Saving data for true JSON loading from DB object
-            oswls_saved = self.get_saved_oswls(num, resource_type)
-            # Saving installation structures for proper oswls filtering
-            self.get_saved_inst_structs(oswls_saved)
-            # Checking oswls filtered properly
-            oswls = list(get_oswls(resource_type))
-            self.assertEqual(num, len(oswls))
-            # Checking export
-            result = exporter.export(resource_type, oswls)
-            self.assertTrue(isinstance(result, types.GeneratorType))
-            output = six.StringIO(list(result))
-            reader = csv.reader(output)
-            for _ in reader:
-                pass
+        with app.test_request_context():
+            for resource_type in self.RESOURCE_TYPES:
+                # Saving data for true JSON loading from DB object
+                oswls_saved = self.get_saved_oswls(num, resource_type)
+                # Saving installation structures for proper oswls filtering
+                self.get_saved_inst_structs(oswls_saved)
+                # Checking oswls filtered properly
+                oswls = list(get_oswls(resource_type))
+                self.assertEqual(num, len(oswls))
+                # Checking export
+                result = exporter.export(resource_type, oswls)
+                self.assertTrue(isinstance(result, types.GeneratorType))
+                output = six.StringIO(list(result))
+                reader = csv.reader(output)
+                for _ in reader:
+                    pass
 
     def test_export_on_empty_data(self):
         exporter = OswlStatsToCsv()
@@ -137,26 +143,6 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
             for _ in reader:
                 pass
 
-    def test_get_oswls_query(self):
-        num = 2
-        for resource_type in self.RESOURCE_TYPES[0:1]:
-            # Fetching oswls count
-            count_before = get_oswls_query(resource_type).count()
-
-            # Generating oswls without installation info
-            oswls = self.get_saved_oswls(num, resource_type)
-
-            # Checking count of fetched oswls is not changed
-            count_after = get_oswls_query(resource_type).count()
-            self.assertEqual(count_before, count_after)
-
-            # Saving inst structures
-            self.get_saved_inst_structs(oswls)
-
-            # Checking count of fetched oswls is changed
-            count_after = get_oswls_query(resource_type).count()
-            self.assertEqual(num + count_before, count_after)
-
     def test_get_last_sync_datetime(self):
         exporter = OswlStatsToCsv()
         for resource_type in self.RESOURCE_TYPES:
@@ -166,7 +152,7 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
             inst_struct.modification_date = None
             db.session.commit()
 
-            oswls = get_oswls(resource_type)
+            oswls = get_oswls_query(resource_type).all()
             oswl = oswls[0]
             self.assertEquals(
                 inst_struct.creation_date,
@@ -175,7 +161,7 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
 
             inst_struct.modification_date = datetime.utcnow()
             db.session.commit()
-            oswls = get_oswls(resource_type)
+            oswls = get_oswls_query(resource_type).all()
             oswl = oswls[0]
             self.assertEquals(
                 inst_struct.modification_date,
@@ -193,7 +179,7 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
             self.get_saved_inst_structs(
                 oswls_saved, creation_date_range=(created_days, created_days))
 
-            oswls = list(get_oswls(resource_type))
+            oswls = get_oswls_query(resource_type).all()
             oswl = oswls[0]
             oswl_idx = export_utils.get_index(
                 oswl, *exporter.OSWL_INDEX_FIELDS)
@@ -230,8 +216,9 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
 
             # Checking only one record is present
             inst_struct.modification_date = None
+            db.session.add(inst_struct)
             db.session.commit()
-            oswls = list(get_oswls(resource_type))
+            oswls = get_oswls_query(resource_type).all()
             oswl = oswls[0]
             self.assertIsNotNone(oswl.installation_created_date)
             self.assertIsNone(oswl.installation_updated_date)
@@ -242,8 +229,10 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
 
             # Checking record is duplicated
             inst_struct.modification_date = datetime.utcnow()
+            db.session.add(inst_struct)
             db.session.commit()
-            oswls = list(get_oswls(resource_type))
+
+            oswls = get_oswls_query(resource_type).all()
             oswl = oswls[0]
             self.assertIsNotNone(oswl.installation_created_date)
             self.assertIsNotNone(oswl.installation_updated_date)
@@ -277,7 +266,7 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
             )
             self.get_saved_inst_structs(oswls_saved,
                                         creation_date_range=(0, 0))
-            oswls = list(get_oswls(resource_type))
+            oswls = get_oswls_query(resource_type).all()
             self.assertEquals(oswls_before + num, len(list(oswls)))
 
             # Checking added, modified, removed not empty
@@ -326,7 +315,7 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
                 self.get_saved_inst_structs(oswls_saved,
                                             creation_date_range=(0, 0))
             # Checking all resources in seamless oswls
-            oswls = list(get_oswls(resource_type))
+            oswls = get_oswls_query(resource_type).all()
             self.assertEquals(insts_num * clusters_num, len(oswls))
             oswls_seamless = list(exporter.fill_date_gaps(
                 oswls, datetime.utcnow().date()))
@@ -336,3 +325,21 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
             # Checking dates do not decrease in seamless oswls
             dates = [oswl.stats_on_date for oswl in oswls_seamless]
             self.assertListEqual(sorted(dates), dates)
+
+    def test_filter_by_date(self):
+        exporter = OswlStatsToCsv()
+        num = 10
+        with app.test_request_context(), mock.patch.object(
+                flask.request, 'args', {'from_date': '2015-02-01'}):
+            for resource_type in self.RESOURCE_TYPES:
+                # Creating oswls
+                oswls_saved = self.get_saved_oswls(num, resource_type)
+                self.get_saved_inst_structs(oswls_saved)
+                # Filtering oswls
+                oswls = get_oswls(resource_type)
+                result = exporter.export(resource_type, oswls)
+                self.assertTrue(isinstance(result, types.GeneratorType))
+                output = six.StringIO(list(result))
+                reader = csv.reader(output)
+                for _ in reader:
+                    pass
