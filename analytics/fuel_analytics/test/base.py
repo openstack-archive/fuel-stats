@@ -39,7 +39,6 @@ class BaseTest(TestCase):
 
 
 class DbTest(BaseTest):
-
     def setUp(self):
         super(DbTest, self).setUp()
         # connect to the database
