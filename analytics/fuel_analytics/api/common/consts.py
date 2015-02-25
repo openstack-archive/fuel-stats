@@ -26,6 +26,7 @@ OSWL_RESOURCE_TYPES = make_enum(
     'vm',
     'tenant',
     'volume',
+    'image',
     'security_group',
     'keystone_user',
     'flavor',
