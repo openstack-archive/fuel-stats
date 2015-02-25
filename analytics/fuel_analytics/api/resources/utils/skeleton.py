@@ -11,6 +11,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+
 from fuel_analytics.api.common import consts
 
 INSTALLATION_INFO_SKELETON = {
@@ -138,5 +139,26 @@ OSWL_SKELETONS = {
         'ephemeral': None,
         'disk': None,
         'swap': None,
+    },
+    consts.OSWL_RESOURCE_TYPES.volume: {
+        'id': None,
+        'availability_zone': None,
+        'encrypted_flag': None,
+        'bootable_flag': None,
+        'status': None,
+        'volume_type': None,
+        'size': None,
+        'host': None,
+        'snapshot_id': None,
+        'attachments': None,
+        'tenant_id': None
+    },
+    consts.OSWL_RESOURCE_TYPES.image: {
+        'id': None,
+        'minDisk': None,
+        'minRam': None,
+        'sizeBytes': None,
+        'created_at': None,
+        'updated_at': None,
     }
 }

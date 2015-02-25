@@ -33,7 +33,9 @@ class OswlTest(BaseTest):
 
     RESOURCE_TYPES = (
         consts.OSWL_RESOURCE_TYPES.vm,
-        consts.OSWL_RESOURCE_TYPES.flavor
+        consts.OSWL_RESOURCE_TYPES.flavor,
+        consts.OSWL_RESOURCE_TYPES.volume,
+        consts.OSWL_RESOURCE_TYPES.image
     )
 
     RESOURCE_GENERATORS = {
@@ -41,6 +43,10 @@ class OswlTest(BaseTest):
                                         'generate_modified_vms'),
         consts.OSWL_RESOURCE_TYPES.flavor: ('generate_flavors',
                                             'generate_modified_flavors'),
+        consts.OSWL_RESOURCE_TYPES.volume: ('generate_volumes',
+                                            'generate_modified_volumes'),
+        consts.OSWL_RESOURCE_TYPES.image: ('generate_images',
+                                           'generate_modified_images'),
     }
 
     def generate_removed_resources(self, num, gen_func):
@@ -110,6 +116,75 @@ class OswlTest(BaseTest):
                     'time': datetime.utcnow().time().isoformat(),
                     'swap': random.randint(*swap_range),
                     'disk': random.randint(*disk_range)
+                })
+        return result
+
+    def generate_volumes(self, num, avail_zones=('zone_0', 'zone_1', 'zone_2'),
+                         statuses=('available', 'error'),
+                         volume_types=('test_0', 'test_1'),
+                         size_range=(1, 1024),
+                         attachments=(None, 'att_0', 'att_1')
+                         ):
+        result = []
+        for i in range(num):
+            result.append({
+                'id': i,
+                'availability_zone': random.choice(avail_zones),
+                'encrypted_flag': random.choice((False, True)),
+                'bootable_flag': random.choice((False, True)),
+                'status': random.choice(statuses),
+                'volume_type': random.choice(volume_types),
+                'size': random.randint(*size_range),
+                'host': six.text_type(uuid.uuid4()),
+                'snapshot_id': random.choice((
+                    None, six.text_type(uuid.uuid4()))),
+                'attachments': random.choice(attachments),
+                'tenant_id': six.text_type(uuid.uuid4())
+            })
+        return result
+
+    def generate_modified_volumes(self, num, modifs_num_range=(1, 3),
+                                  size_range=(1, 1024),
+                                  volume_types=('test_0', 'test_1')):
+        result = {}
+        for i in range(num):
+            for _ in range(random.randint(*modifs_num_range)):
+                result.setdefault(i, []).append({
+                    'time': datetime.utcnow().time().isoformat(),
+                    'size': random.randint(*size_range),
+                    'volume_type': random.choice(volume_types)
+                })
+        return result
+
+    def generate_images(self, num, min_disk_range=(1, 1024),
+                        min_ram_range=(1, 2048), size_range=(1, 4096),
+                        created_at_range=(1, 10), updated_at_range=(1, 10)):
+        result = []
+        for i in range(num):
+            result.append({
+                'id': i,
+                'minDisk': random.randint(*min_disk_range),
+                'minRam': random.randint(*min_ram_range),
+                'sizeBytes': random.randint(*size_range),
+                'created_at': (datetime.utcnow() - timedelta(
+                    days=random.randint(*created_at_range))).isoformat(),
+                'updated_at': (datetime.utcnow() - timedelta(
+                    days=random.randint(*updated_at_range))).isoformat(),
+            })
+        return result
+
+    def generate_modified_images(self, num, modifs_num_range=(1, 3),
+                                 min_disk_range=(1, 1024),
+                                 min_ram_range=(1, 4096),
+                                 size_bytes_range=(1, 1024000)):
+        result = {}
+        for i in range(num):
+            for _ in range(random.randint(*modifs_num_range)):
+                result.setdefault(i, []).append({
+                    'time': datetime.utcnow().time().isoformat(),
+                    'minDisk': random.randint(*min_disk_range),
+                    'minRam': random.randint(*min_ram_range),
+                    'sizeBytes': random.randint(*size_bytes_range),
                 })
         return result
 
