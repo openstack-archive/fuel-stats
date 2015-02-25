@@ -139,17 +139,19 @@ class OswlStatsToCsv(object):
         """
         app.logger.debug("Filling gaps in oswls started")
         horizon = {}
-        last_date = None
+        last_date = oswls[0].created_date if oswls else None
 
         # Filling horizon of oswls on last date. Oswls are ordered by
         # created_date so, then last_date is changed we can assume horizon
         # of oswls is filled and can be shown
         for oswl in oswls:
             if last_date != oswl.created_date:
-                for content in self.stream_horizon_content(
-                        horizon, last_date):
-                    yield content
-                last_date = oswl.created_date
+                # Filling gaps in created_dates of oswls
+                while last_date != oswl.created_date:
+                    for content in self.stream_horizon_content(
+                            horizon, last_date):
+                        yield content
+                    last_date += datetime.timedelta(days=1)
                 if last_date > to_date:
                     break
             idx = export_utils.get_index(oswl, *self.OSWL_INDEX_FIELDS)
@@ -157,7 +159,7 @@ class OswlStatsToCsv(object):
 
         # Filling gaps if oswls exhausted on date before to_date
         if last_date is not None:
-            while last_date < to_date:
+            while last_date <= to_date:
                 for content in self.stream_horizon_content(
                         horizon, last_date):
                     yield content
@@ -165,13 +167,13 @@ class OswlStatsToCsv(object):
 
         app.logger.debug("Filling gaps in oswls finished")
 
-    def export(self, resource_type, oswls):
+    def export(self, resource_type, oswls, to_date):
         app.logger.info("Export oswls %s info into CSV started",
                         resource_type)
         oswl_keys_paths, vm_keys_paths, csv_keys_paths = \
             self.get_resource_keys_paths(resource_type)
         seamless_oswls = self.fill_date_gaps(
-            oswls, datetime.datetime.utcnow().date())
+            oswls, to_date)
         flatten_resources = self.get_flatten_resources(
             resource_type, oswl_keys_paths, vm_keys_paths, seamless_oswls)
         result = export_utils.flatten_data_as_csv(
