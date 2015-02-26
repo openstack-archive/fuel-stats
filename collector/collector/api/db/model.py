@@ -46,7 +46,8 @@ class InstallationStructure(db.Model):
 class OpenStackWorkloadStats(db.Model):
     __tablename__ = 'oswl_stats'
     __table_args__ = (
-        db.UniqueConstraint('master_node_uid', 'external_id'),
+        db.UniqueConstraint('master_node_uid', 'external_id',
+                            'resource_type'),
     )
 
     id = db.Column(db.Integer, primary_key=True)
