@@ -126,7 +126,8 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
                 oswls = list(get_oswls(resource_type))
                 self.assertEqual(num, len(oswls))
                 # Checking export
-                result = exporter.export(resource_type, oswls)
+                result = exporter.export(resource_type, oswls,
+                                         datetime.utcnow().date())
                 self.assertTrue(isinstance(result, types.GeneratorType))
                 output = six.StringIO(list(result))
                 reader = csv.reader(output)
@@ -136,7 +137,7 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
     def test_export_on_empty_data(self):
         exporter = OswlStatsToCsv()
         for resource_type in self.RESOURCE_TYPES:
-            result = exporter.export(resource_type, [])
+            result = exporter.export(resource_type, [], None)
             self.assertTrue(isinstance(result, types.GeneratorType))
             output = six.StringIO(list(result))
             reader = csv.reader(output)
@@ -240,7 +241,7 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
             on_date_days = 1
             on_date = (datetime.utcnow() - timedelta(days=on_date_days)).date()
             oswls_seamless = list(exporter.fill_date_gaps(oswls, on_date))
-            self.assertEquals(created_days - on_date_days,
+            self.assertEquals(created_days - on_date_days + 1,
                               len(oswls_seamless))
 
             # Checking dates are seamless and grow
@@ -319,7 +320,7 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
             self.assertEquals(insts_num * clusters_num, len(oswls))
             oswls_seamless = list(exporter.fill_date_gaps(
                 oswls, datetime.utcnow().date()))
-            self.assertEqual(insts_num * clusters_num * created_days,
+            self.assertEqual(insts_num * clusters_num * (created_days + 1),
                              len(list(oswls_seamless)))
 
             # Checking dates do not decrease in seamless oswls
@@ -337,9 +338,66 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
                 self.get_saved_inst_structs(oswls_saved)
                 # Filtering oswls
                 oswls = get_oswls(resource_type)
-                result = exporter.export(resource_type, oswls)
+                result = exporter.export(resource_type, oswls,
+                                         datetime.utcnow().date())
                 self.assertTrue(isinstance(result, types.GeneratorType))
                 output = six.StringIO(list(result))
                 reader = csv.reader(output)
                 for _ in reader:
                     pass
+
+    def test_seamless_dates(self):
+        exporter = OswlStatsToCsv()
+        # Creating oswls with not continuous created dates
+        resource_type = consts.OSWL_RESOURCE_TYPES.vm
+        old_days = 7
+        new_days = 2
+        oswls_saved = [
+            OpenStackWorkloadStats(
+                master_node_uid='x',
+                external_id=1,
+                cluster_id=1,
+                created_date=(datetime.utcnow().date() -
+                              timedelta(days=old_days)),
+                updated_time=datetime.utcnow().time(),
+                resource_type=resource_type,
+                resource_checksum='',
+                resource_data={}
+            ),
+            OpenStackWorkloadStats(
+                master_node_uid='x',
+                external_id=2,
+                cluster_id=2,
+                created_date=(datetime.utcnow().date() -
+                              timedelta(days=new_days)),
+                updated_time=datetime.utcnow().time(),
+                resource_type=resource_type,
+                resource_checksum='',
+                resource_data={}
+            ),
+        ]
+        for oswl in oswls_saved:
+            db.session.add(oswl)
+        self.get_saved_inst_structs(oswls_saved, creation_date_range=(0, 0))
+        db.session.commit()
+
+        with app.test_request_context():
+            oswls = get_oswls(resource_type)
+        oswls_seamless = list(exporter.fill_date_gaps(
+            oswls, datetime.utcnow().date()))
+
+        # Checking size of seamless report
+        single_record = old_days - new_days
+        number_of_records = new_days + 1  # current date should be in report
+        expected_num = single_record + number_of_records * len(oswls_saved)
+        actual_num = len(oswls_seamless)
+        self.assertEqual(expected_num, actual_num)
+
+        # Checking no gaps in dates
+        stats_on_date = oswls_seamless[0].stats_on_date
+        for o in oswls_seamless:
+            self.assertIn(
+                o.stats_on_date - stats_on_date,
+                (timedelta(days=0), timedelta(days=1))
+            )
+            stats_on_date = o.stats_on_date

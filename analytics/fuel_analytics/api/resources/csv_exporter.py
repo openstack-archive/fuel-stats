@@ -138,7 +138,7 @@ def oswl_to_csv(resource_type):
 
     exporter = OswlStatsToCsv()
     oswls = get_oswls(resource_type)
-    result = exporter.export(resource_type, oswls)
+    result = exporter.export(resource_type, oswls, get_to_date())
 
     # NOTE: result - is generator, but streaming can not work with some
     # WSGI middlewares: http://flask.pocoo.org/docs/0.10/patterns/streaming/
