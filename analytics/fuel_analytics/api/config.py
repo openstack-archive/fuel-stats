@@ -29,6 +29,8 @@ class Production(object):
     ELASTIC_DOC_TYPE_STRUCTURE = 'structure'
     SQLALCHEMY_DATABASE_URI = \
         'postgresql://collector:*****@localhost/collector'
+    CSV_DEFAULT_FROM_DATE_DAYS = 90
+    CSV_DB_YIELD_PER = 1000
 
 
 class Testing(Production):
