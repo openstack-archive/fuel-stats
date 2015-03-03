@@ -401,3 +401,47 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
                 (timedelta(days=0), timedelta(days=1))
             )
             stats_on_date = o.stats_on_date
+
+    def test_dates_filtering(self):
+        exporter = OswlStatsToCsv()
+        resource_type = consts.OSWL_RESOURCE_TYPES.vm
+        oswl = OpenStackWorkloadStats(
+            master_node_uid='x',
+            external_id=1,
+            cluster_id=1,
+            created_date=datetime(2015, 2, 23).date(),
+            updated_time=datetime.utcnow().time(),
+            resource_type=resource_type,
+            resource_checksum='',
+            resource_data={'current': [{'id': 444, 'status': 'ACTIVE'}]}
+        )
+        db.session.add(oswl)
+        self.get_saved_inst_structs([oswl], creation_date_range=(0, 0))
+        db.session.commit()
+
+        with app.test_request_context():
+            with mock.patch.object(flask.request, 'args',
+                                   {'from_date': '2015-02-21',
+                                    'to_date': '2015-02-22'}):
+                oswls = list(get_oswls(resource_type))
+                self.assertEqual(0, len(oswls))
+                result = exporter.export(resource_type, oswls,
+                                         datetime(2015, 2, 22).date())
+                # Only column names in result
+                self.assertEqual(1, len(list(result)))
+            with mock.patch.object(flask.request, 'args',
+                                   {'to_date': '2015-02-22'}):
+                oswls = list(get_oswls(resource_type))
+                self.assertEqual(0, len(oswls))
+                result = exporter.export(resource_type, oswls,
+                                         datetime(2015, 2, 22).date())
+                # Only column names in result
+                self.assertEqual(1, len(list(result)))
+            with mock.patch.object(flask.request, 'args',
+                                   {'to_date': '2015-02-24'}):
+                oswls = list(get_oswls(resource_type))
+                self.assertEqual(1, len(oswls))
+                result = exporter.export(resource_type, oswls,
+                                         datetime(2015, 2, 24).date())
+                # Not only column names in result
+                self.assertEqual(1 + 2, len(list(result)))
