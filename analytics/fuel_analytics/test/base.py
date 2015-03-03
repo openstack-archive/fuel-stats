@@ -18,6 +18,8 @@ from unittest2.case import TestCase
 
 from fuel_analytics.api.app import app
 from fuel_analytics.api.app import db
+from fuel_analytics.api.db.model import InstallationStructure
+from fuel_analytics.api.db.model import OpenStackWorkloadStats
 from fuel_analytics.api.log import init_logger
 
 # Configuring app for the test environment
@@ -50,6 +52,11 @@ class DbTest(BaseTest):
 
         # bind an individual Session to the connection
         db.session = scoped_session(sessionmaker(bind=self.connection))
+
+        # Cleaning DB
+        OpenStackWorkloadStats.query.delete()
+        InstallationStructure.query.delete()
+        db.session.commit()
 
     def tearDown(self):
         # rollback - everything that happened with the
