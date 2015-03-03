@@ -29,7 +29,6 @@ from fuel_analytics.test.base import DbTest
 from fuel_analytics.api.app import app
 from fuel_analytics.api.app import db
 from fuel_analytics.api.common import consts
-from fuel_analytics.api.db.model import InstallationStructure
 from fuel_analytics.api.db.model import OpenStackWorkloadStats
 from fuel_analytics.api.resources.csv_exporter import get_oswls
 from fuel_analytics.api.resources.csv_exporter import get_oswls_query
@@ -38,12 +37,6 @@ from fuel_analytics.api.resources.utils.oswl_stats_to_csv import OswlStatsToCsv
 
 
 class OswlStatsToCsvTest(OswlTest, DbTest):
-
-    def setUp(self):
-        super(OswlTest, self).setUp()
-        OpenStackWorkloadStats.query.delete()
-        InstallationStructure.query.delete()
-        db.session.commit()
 
     def test_get_keys_paths(self):
         for resource_type in self.RESOURCE_TYPES:
