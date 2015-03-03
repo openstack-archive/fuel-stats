@@ -17,7 +17,13 @@ from datetime import timedelta
 from flask import Blueprint
 from flask import request
 from flask import Response
+from flask import send_file
+import os
+import shutil
+from sqlalchemy import distinct
 from sqlalchemy import or_
+import tempfile
+import zipfile
 
 from fuel_analytics.api.app import app
 from fuel_analytics.api.app import db
@@ -149,3 +155,80 @@ def oswl_to_csv(resource_type):
             resource_type)
     }
     return Response(result, mimetype='text/csv', headers=headers)
+
+
+def get_resources_types():
+    """Gets all available resource types
+    :return: generator of resources types names collection
+    """
+    result = db.session.query(distinct(OSWS.resource_type))
+    return (row[0] for row in result)
+
+
+def save_all_reports(tmp_dir):
+    """Saves all available CSV reports into single directory
+    :param tmp_dir: path to target directory
+    """
+    app.logger.debug("Saving all reports to %s", tmp_dir)
+    stats_exporter = StatsToCsv()
+    oswl_exporter = OswlStatsToCsv()
+
+    resources_types = get_resources_types()
+    with open(os.path.join(tmp_dir, 'clusters.csv'), mode='w') as f:
+        app.logger.debug("Getting installation structures started")
+        inst_strucutres = get_inst_structures()
+        clusters = stats_exporter.export_clusters(inst_strucutres)
+        f.writelines(clusters)
+        app.logger.debug("Getting installation structures finished")
+
+    for resource_type in resources_types:
+        app.logger.debug("Getting resource '%s' started", resource_type)
+
+        file_name = os.path.join(tmp_dir, '{}.csv'.format(resource_type))
+        oswls = get_oswls(resource_type)
+        with open(file_name, mode='w') as f:
+            resources = oswl_exporter.export(
+                resource_type, oswls, get_to_date())
+            f.writelines(resources)
+        app.logger.debug("Getting resource '%s' finished", resource_type)
+    app.logger.debug("All reports saved into %s", tmp_dir)
+
+
+def archive_dir(dir_path):
+    """Archives directory to zip file
+    :param dir_path: path to target directory
+    :return: ZipFile object
+    """
+    app.logger.debug("Dir '%s' archiving started", dir_path)
+    tmp_file = tempfile.NamedTemporaryFile(delete=False)
+    with zipfile.ZipFile(tmp_file, 'w', zipfile.ZIP_DEFLATED) as archive:
+        for root, dirs, files in os.walk(dir_path):
+            for f in files:
+                archive.write(os.path.join(root, f), arcname=f)
+        app.logger.debug("Dir '%s' archiving to '%s' finished",
+                         dir_path, archive.filename)
+        return archive
+
+
+@bp.route('/all', methods=['GET'])
+def all_reports():
+    """Single report for all resource types and clusters info
+    :return: zip archive of CSV reports
+    """
+    app.logger.debug("Handling all_reports get request")
+    tmp_dir = tempfile.mkdtemp()
+    try:
+        save_all_reports(tmp_dir)
+        try:
+            archive = archive_dir(tmp_dir)
+            name = 'reports_from{}_to{}.zip'.format(
+                get_from_date(), get_to_date())
+            return send_file(archive.filename, mimetype='application/zip',
+                             as_attachment=True, attachment_filename=name)
+        finally:
+            app.logger.debug("Removing temporary archive")
+            os.unlink(archive.filename)
+    finally:
+        app.logger.debug("Removing temporary directory %s", tmp_dir)
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+        app.logger.debug("Request all_reports handled")
