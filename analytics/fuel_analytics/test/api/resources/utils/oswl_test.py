@@ -35,7 +35,8 @@ class OswlTest(BaseTest):
         consts.OSWL_RESOURCE_TYPES.vm,
         consts.OSWL_RESOURCE_TYPES.flavor,
         consts.OSWL_RESOURCE_TYPES.volume,
-        consts.OSWL_RESOURCE_TYPES.image
+        consts.OSWL_RESOURCE_TYPES.image,
+        consts.OSWL_RESOURCE_TYPES.tenant
     )
 
     RESOURCE_GENERATORS = {
@@ -47,6 +48,8 @@ class OswlTest(BaseTest):
                                             'generate_modified_volumes'),
         consts.OSWL_RESOURCE_TYPES.image: ('generate_images',
                                            'generate_modified_images'),
+        consts.OSWL_RESOURCE_TYPES.tenant: ('generate_tenants',
+                                            'generate_modified_tenants'),
     }
 
     def generate_removed_resources(self, num, gen_func):
@@ -185,6 +188,26 @@ class OswlTest(BaseTest):
                     'minDisk': random.randint(*min_disk_range),
                     'minRam': random.randint(*min_ram_range),
                     'sizeBytes': random.randint(*size_bytes_range),
+                })
+        return result
+
+    def generate_tenants(self, num, enabled_flag_values=(True, False)):
+        result = []
+        for i in range(num):
+            result.append({
+                'id': i,
+                'enabled_flag': random.choice(enabled_flag_values)
+            })
+        return result
+
+    def generate_modified_tenants(self, num, modifs_num_range=(1, 3),
+                                  enabled_flag_values=(True, False)):
+        result = {}
+        for i in range(num):
+            for _ in range(random.randint(*modifs_num_range)):
+                result.setdefault(i, []).append({
+                    'time': datetime.utcnow().time().isoformat(),
+                    'enabled_flag': random.choice(enabled_flag_values)
                 })
         return result
 

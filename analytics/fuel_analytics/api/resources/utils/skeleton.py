@@ -160,5 +160,9 @@ OSWL_SKELETONS = {
         'sizeBytes': None,
         'created_at': None,
         'updated_at': None,
+    },
+    consts.OSWL_RESOURCE_TYPES.tenant: {
+        'id': None,
+        'enabled_flag': None,
     }
 }
