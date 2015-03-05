@@ -287,7 +287,7 @@ class OswlTest(BaseTest):
                     master_node_uid=oswl.master_node_uid,
                     creation_date=creation_date,
                     modification_date=modification_date,
-                    structure='',
+                    structure={},
                 )
                 mn_uids.add(oswl.master_node_uid)
                 yield obj

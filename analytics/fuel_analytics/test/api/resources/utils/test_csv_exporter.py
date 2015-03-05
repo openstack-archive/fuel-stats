@@ -17,19 +17,27 @@
 from datetime import datetime
 from datetime import timedelta
 from flask import request
-from fuel_analytics.api.common import consts
-from fuel_analytics.api.errors import DateExtractionError
+import itertools
 import mock
+import os
+import shutil
+import tempfile
+import zipfile
 
 from fuel_analytics.test.api.resources.utils.oswl_test import OswlTest
 from fuel_analytics.test.base import DbTest
 
 from fuel_analytics.api.app import app
+from fuel_analytics.api.common import consts
+from fuel_analytics.api.errors import DateExtractionError
+from fuel_analytics.api.resources.csv_exporter import archive_dir
 from fuel_analytics.api.resources.csv_exporter import extract_date
 from fuel_analytics.api.resources.csv_exporter import get_from_date
 from fuel_analytics.api.resources.csv_exporter import get_inst_structures_query
 from fuel_analytics.api.resources.csv_exporter import get_oswls_query
+from fuel_analytics.api.resources.csv_exporter import get_resources_types
 from fuel_analytics.api.resources.csv_exporter import get_to_date
+from fuel_analytics.api.resources.csv_exporter import save_all_reports
 
 
 class CsvExporterTest(OswlTest, DbTest):
@@ -141,3 +149,46 @@ class CsvExporterTest(OswlTest, DbTest):
             datetime.utcnow().date(),
             datetime.utcnow().date() - timedelta(days=100)).count()
         self.assertEqual(0, count_after)
+
+    def test_get_resources_types(self):
+        for resource_type in self.RESOURCE_TYPES:
+            self.get_saved_oswls(1, resource_type)
+        resources_names = get_resources_types()
+        self.assertItemsEqual(self.RESOURCE_TYPES, resources_names)
+
+    def test_save_all_reports(self):
+        oswls = []
+        for resource_type in self.RESOURCE_TYPES:
+            oswls.extend(self.get_saved_oswls(10, resource_type))
+        self.get_saved_inst_structs(oswls)
+        tmp_dir = tempfile.mkdtemp()
+        try:
+            with app.test_request_context():
+                save_all_reports(tmp_dir)
+            files = itertools.chain(('clusters', ), self.RESOURCE_TYPES)
+            for f in files:
+                path = os.path.join(tmp_dir, '{}.csv'.format(f))
+                self.assertTrue(os.path.isfile(path), path)
+        finally:
+            shutil.rmtree(tmp_dir)
+
+    def test_archive_dir(self):
+        oswls = []
+        for resource_type in self.RESOURCE_TYPES:
+            oswls.extend(self.get_saved_oswls(10, resource_type))
+        self.get_saved_inst_structs(oswls)
+        tmp_dir = tempfile.mkdtemp()
+        try:
+            with app.test_request_context():
+                save_all_reports(tmp_dir)
+            files = itertools.chain(('clusters', ), self.RESOURCE_TYPES)
+            for f in files:
+                path = os.path.join(tmp_dir, '{}.csv'.format(f))
+                self.assertTrue(os.path.isfile(path), path)
+            archive = archive_dir(tmp_dir)
+            try:
+                self.assertTrue(zipfile.is_zipfile(archive.filename))
+            finally:
+                os.unlink(archive.filename)
+        finally:
+            shutil.rmtree(tmp_dir)
