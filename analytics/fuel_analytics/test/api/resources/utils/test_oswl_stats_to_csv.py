@@ -95,13 +95,15 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
             db.session.add(oswl)
             db.session.commit()
             resource_data = oswl.resource_data
+            added_ids = set(d['id'] for d in resource_data['added'])
+            modified_ids = set(d['id'] for d in resource_data['modified'])
+            removed_ids = set(d['id'] for d in resource_data['removed'])
             for resource in resource_data['current']:
-                # After conversion into JSON dict keys became strings
-                resource_id = six.text_type(resource['id'])
+                resource_id = resource['id']
                 expected = [
-                    resource_id in resource_data['added'],
-                    resource_id in resource_data['modified'],
-                    resource_id in resource_data['removed'],
+                    resource_id in added_ids,
+                    resource_id in modified_ids,
+                    resource_id in removed_ids
                 ]
                 actual = exporter.get_additional_resource_info(resource, oswl)
                 self.assertListEqual(expected, actual)

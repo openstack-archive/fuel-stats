@@ -59,10 +59,10 @@ class TestOswlStats(DbTest):
                 'created_date': datetime.utcnow().date().isoformat(),
                 'updated_time': datetime.utcnow().time().isoformat(),
                 'resource_data': {
-                    'added': {},
+                    'added': [],
                     'current': [],
-                    'removed': {},
-                    'modified': {}
+                    'removed': [],
+                    'modified': []
                 }
             },
             {
@@ -74,10 +74,10 @@ class TestOswlStats(DbTest):
                 'created_date': datetime.utcnow().date().isoformat(),
                 'updated_time': datetime.utcnow().time().isoformat(),
                 'resource_data': {
-                    'added': {1: {'time': 343434343}},
+                    'added': [{'id': 1, 'time': 343434343}],
                     'current': [{'id': 'xxx', 'status': 'down'}],
-                    'removed': {},
-                    'modified': {}
+                    'removed': [],
+                    'modified': []
 
                 }
             }
@@ -104,10 +104,10 @@ class TestOswlStats(DbTest):
                 'resource_type': random.choice(consts.OSWL_RESOURCE_TYPES),
                 'resource_checksum': 'xx',
                 'resource_data': {
-                    'added': {},
+                    'added': [],
                     'current': [],
-                    'removed': {},
-                    'modified': {}
+                    'removed': [],
+                    'modified': []
                 }
             }
             for i in xrange(oswls_num)]
