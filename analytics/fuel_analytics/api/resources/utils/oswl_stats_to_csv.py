@@ -54,14 +54,13 @@ class OswlStatsToCsv(object):
         :return: list of integer flags: is_added, is_removed, is_modified
         """
         resource_data = oswl.resource_data
-        added = resource_data.get('added', {})
-        removed = resource_data.get('removed', {})
-        modified = resource_data.get('modified', {})
-        # After JSON saving in the object dict keys are converted into strings
-        vm_id = six.text_type(resource.get('id'))
-        is_added = vm_id in added
-        is_modified = vm_id in modified
-        is_removed = vm_id in removed
+        added = resource_data.get('added', [])
+        removed = resource_data.get('removed', [])
+        modified = resource_data.get('modified', [])
+        vm_id = resource.get('id')
+        is_added = vm_id in set(item['id'] for item in added)
+        is_modified = vm_id in set(item['id'] for item in modified)
+        is_removed = vm_id in set(item['id'] for item in removed)
         return [is_added, is_modified, is_removed]
 
     def get_flatten_resources(self, resource_type, oswl_keys_paths,
@@ -79,8 +78,10 @@ class OswlStatsToCsv(object):
                                                          oswl)
             resource_data = oswl.resource_data
             current = resource_data.get('current', [])
-            removed = resource_data.get('removed', {})
-            for resource in itertools.chain(current, six.itervalues(removed)):
+            removed = resource_data.get('removed', [])
+            # Filtering id, time only data
+            removed = filter(lambda x: len(x) > 2, removed)
+            for resource in itertools.chain(current, removed):
                 flatten_resource = export_utils.get_flatten_data(
                     resource_keys_paths, {resource_type: resource})
                 additional_info = self.get_additional_resource_info(

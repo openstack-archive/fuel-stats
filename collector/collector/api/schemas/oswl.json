@@ -27,10 +27,10 @@
                         "resource_data": {
                             "type": "object",
                             "properties": {
-                                "added": {"type": "object"},
+                                "added": {"type": "array"},
                                 "current": {"type": "array"},
-                                "removed": {"type": "object"},
-                                "modified": {"type": "object"}
+                                "removed": {"type": "array"},
+                                "modified": {"type": "array"}
                             },
                             "required": ["added", "current", "removed", "modified"],
                             "additionalProperties": false

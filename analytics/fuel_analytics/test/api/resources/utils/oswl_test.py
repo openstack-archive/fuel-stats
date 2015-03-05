@@ -53,16 +53,19 @@ class OswlTest(BaseTest):
     }
 
     def generate_removed_resources(self, num, gen_func):
-        result = {}
+        result = []
         for vm in gen_func(num):
             vm['time'] = datetime.utcnow().time().isoformat()
-            result[vm['id']] = vm
+            result.append(vm)
         return result
 
     def generate_added_resources(self, num):
-        result = {}
+        result = []
         for i in range(num):
-            result[i] = {'time': datetime.utcnow().time().isoformat()}
+            result.append({
+                'id': i,
+                'time': datetime.utcnow().time().isoformat()
+            })
         return result
 
     def generate_vms(self, vms_num, statuses=('ACTIVE', 'ERROR', 'BUILT'),
@@ -85,10 +88,11 @@ class OswlTest(BaseTest):
 
     def generate_modified_vms(self, vms_num, modifs_num_range=(1, 10),
                               power_states_range=(1, 10)):
-        result = {}
+        result = []
         for i in range(vms_num):
             for _ in range(random.randint(*modifs_num_range)):
-                result.setdefault(i, []).append({
+                result.append({
+                    'id': i,
                     'time': datetime.utcnow().time().isoformat(),
                     'power_state': random.choice(power_states_range)
                 })
@@ -112,10 +116,11 @@ class OswlTest(BaseTest):
     def generate_modified_flavors(self, num, modifs_num_range=(1, 3),
                                   swap_range=(1, 128),
                                   disk_range=(13, 23)):
-        result = {}
+        result = []
         for i in range(num):
             for _ in range(random.randint(*modifs_num_range)):
-                result.setdefault(i, []).append({
+                result.append({
+                    'id': i,
                     'time': datetime.utcnow().time().isoformat(),
                     'swap': random.randint(*swap_range),
                     'disk': random.randint(*disk_range)
@@ -149,10 +154,11 @@ class OswlTest(BaseTest):
     def generate_modified_volumes(self, num, modifs_num_range=(1, 3),
                                   size_range=(1, 1024),
                                   volume_types=('test_0', 'test_1')):
-        result = {}
+        result = []
         for i in range(num):
             for _ in range(random.randint(*modifs_num_range)):
-                result.setdefault(i, []).append({
+                result.append({
+                    'id': i,
                     'time': datetime.utcnow().time().isoformat(),
                     'size': random.randint(*size_range),
                     'volume_type': random.choice(volume_types)
@@ -180,10 +186,11 @@ class OswlTest(BaseTest):
                                  min_disk_range=(1, 1024),
                                  min_ram_range=(1, 4096),
                                  size_bytes_range=(1, 1024000)):
-        result = {}
+        result = []
         for i in range(num):
             for _ in range(random.randint(*modifs_num_range)):
-                result.setdefault(i, []).append({
+                result.append({
+                    'id': i,
                     'time': datetime.utcnow().time().isoformat(),
                     'minDisk': random.randint(*min_disk_range),
                     'minRam': random.randint(*min_ram_range),
@@ -202,10 +209,11 @@ class OswlTest(BaseTest):
 
     def generate_modified_tenants(self, num, modifs_num_range=(1, 3),
                                   enabled_flag_values=(True, False)):
-        result = {}
+        result = []
         for i in range(num):
             for _ in range(random.randint(*modifs_num_range)):
-                result.setdefault(i, []).append({
+                result.append({
+                    'id': i,
                     'time': datetime.utcnow().time().isoformat(),
                     'enabled_flag': random.choice(enabled_flag_values)
                 })
