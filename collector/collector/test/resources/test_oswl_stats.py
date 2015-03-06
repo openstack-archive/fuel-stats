@@ -21,7 +21,7 @@ from collector.test.base import DbTest
 from collector.api.app import db
 from collector.api.common import consts
 from collector.api.common import util
-from collector.api.db.model import OpenStackWorkloadStats
+from collector.api.db.model import OpenStackWorkloadStats as OSWL
 
 
 class TestOswlStats(DbTest):
@@ -120,7 +120,7 @@ class TestOswlStats(DbTest):
         query = util.get_existed_objects_query(
             dicts,
             zip(dict_index_fields, obj_index_fields),
-            OpenStackWorkloadStats
+            OSWL
         )
 
         # We have no objects for update
@@ -129,7 +129,7 @@ class TestOswlStats(DbTest):
         for d in dicts[:save_oswls]:
             copy_d = d.copy()
             copy_d['external_id'] = copy_d.pop('id')
-            db.session.add(OpenStackWorkloadStats(**copy_d))
+            db.session.add(OSWL(**copy_d))
         db.session.flush()
         db.session.commit()
 
@@ -137,7 +137,7 @@ class TestOswlStats(DbTest):
         query = util.get_existed_objects_query(
             dicts,
             zip(dict_index_fields, obj_index_fields),
-            OpenStackWorkloadStats
+            OSWL
         )
         self.assertEqual(save_oswls, query.count())
 
@@ -149,13 +149,13 @@ class TestOswlStats(DbTest):
         dicts_new, _ = util.split_new_dicts_and_updated_objs(
             dicts,
             zip(dict_index_fields, obj_index_fields),
-            OpenStackWorkloadStats
+            OSWL
         )
-        util.bulk_insert(dicts_new, OpenStackWorkloadStats)
+        util.bulk_insert(dicts_new, OSWL)
         db.session.commit()
 
     def test_oswls_empty_bulk_insert(self):
-        util.bulk_insert([], OpenStackWorkloadStats)
+        util.bulk_insert([], OSWL)
         db.session.commit()
 
     def test_oswls_split_new_dicts_and_updated_objs(self):
@@ -166,7 +166,7 @@ class TestOswlStats(DbTest):
         dicts_new, objs_updated = util.split_new_dicts_and_updated_objs(
             dicts,
             zip(dict_index_fields, obj_index_fields),
-            OpenStackWorkloadStats
+            OSWL
         )
 
         # We have no objects for update
@@ -175,7 +175,7 @@ class TestOswlStats(DbTest):
 
         # Saving part of oswls
         oswls_to_save = 3
-        util.bulk_insert(dicts_new[:oswls_to_save], OpenStackWorkloadStats)
+        util.bulk_insert(dicts_new[:oswls_to_save], OSWL)
         db.session.commit()
 
         # Adding changes into dicts
@@ -186,7 +186,7 @@ class TestOswlStats(DbTest):
         dicts_new, objs_updated = util.split_new_dicts_and_updated_objs(
             dicts,
             zip(dict_index_fields, obj_index_fields),
-            OpenStackWorkloadStats
+            OSWL
         )
         self.assertEqual(oswls_num - oswls_to_save, len(dicts_new))
         self.assertEqual(oswls_to_save, len(objs_updated))
@@ -203,7 +203,7 @@ class TestOswlStats(DbTest):
         )
         self.check_response_ok(resp)
         resp_data = json.loads(resp.data)
-        oswls_actual_num = db.session.query(OpenStackWorkloadStats).count()
+        oswls_actual_num = db.session.query(OSWL).count()
         self.assertEqual(oswls_num, oswls_actual_num)
         self.assertEqual(len(resp_data['oswl_stats']), oswls_actual_num)
         for oswl in resp_data['oswl_stats']:
@@ -225,7 +225,7 @@ class TestOswlStats(DbTest):
         )
         self.check_response_ok(resp)
         resp_data = json.loads(resp.data)
-        oswls_actual_num = db.session.query(OpenStackWorkloadStats).count()
+        oswls_actual_num = db.session.query(OSWL).count()
         self.assertEqual(oswls_num, oswls_actual_num)
         self.assertEqual(len(resp_data['oswl_stats']), oswls_actual_num)
 
@@ -235,3 +235,45 @@ class TestOswlStats(DbTest):
             {'oswl_stats': expected_oswls}
         )
         self.check_response_ok(resp)
+
+    def test_post_updating_objects_ids(self):
+        last_oswl = db.session.query(OSWL).order_by(OSWL.id.desc()).first()
+        first_ext_id = last_oswl.id + 1 if last_oswl is not None else 2
+        oswl_first = {
+            'master_node_uid': 'x',
+            'cluster_id': 1,
+            'id': first_ext_id,
+            'created_date': datetime.utcnow().date().isoformat(),
+            'updated_time': datetime.utcnow().time().isoformat(),
+            'resource_type': consts.OSWL_RESOURCE_TYPES.flavor,
+            'resource_checksum': 'xx',
+            'resource_data': {
+                'added': [],
+                'current': [],
+                'removed': [],
+                'modified': []
+            }
+        }
+
+        resp = self.post(
+            '/api/v1/oswl_stats/',
+            {'oswl_stats': [oswl_first]}
+        )
+        self.check_response_ok(resp)
+
+        first_oswl_db = db.session.query(OSWL).order_by(
+            OSWL.id.desc()).first()
+
+        # Set id of the first DB object as external id to the second
+        oswl_second = oswl_first.copy()
+        oswl_second['id'] = first_oswl_db.id
+
+        resp = self.post(
+            '/api/v1/oswl_stats/',
+            {'oswl_stats': [oswl_first, oswl_second]}
+        )
+        self.check_response_ok(resp)
+        resp_data = json.loads(resp.data)
+        for oswl_stat in resp_data['oswl_stats']:
+            self.assertNotEqual(oswl_stat['status'],
+                                consts.OSWL_STATUSES.failed)
