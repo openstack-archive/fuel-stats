@@ -173,18 +173,21 @@ def split_new_dicts_and_updated_objs(dicts, dict_to_obj_fields_mapping,
     new_dicts = []
     for d in dicts:
         obj_idx = get_index(d, *dict_index_fields)
+
+        # Preparing data for saving. We should change field names as
+        # described in dict_to_obj_fields_mapping
+        d_copy = d.copy()
+        for idx, dict_field in enumerate(dict_index_fields):
+            obj_field = obj_index_fields[idx]
+            d_copy[obj_field] = d_copy.pop(dict_field)
+
         if obj_idx in existed_objs_idx:
             # Updating existed object
             obj = existed_objs_idx[obj_idx]
-            for k, v in six.iteritems(d):
+            for k, v in six.iteritems(d_copy):
                 setattr(obj, k, v)
         else:
-            # Preparing new object data for saving
-            d_copy = d.copy()
-            for idx in xrange(len(dict_index_fields)):
-                dict_feild = dict_index_fields[idx]
-                obj_feild = obj_index_fields[idx]
-                d_copy[obj_feild] = d_copy.pop(dict_feild)
+            # Adding new object data
             new_dicts.append(d_copy)
     return new_dicts, existed_objs
 
