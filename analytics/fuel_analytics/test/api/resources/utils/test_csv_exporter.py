@@ -28,16 +28,21 @@ from fuel_analytics.test.api.resources.utils.oswl_test import OswlTest
 from fuel_analytics.test.base import DbTest
 
 from fuel_analytics.api.app import app
+from fuel_analytics.api.app import db
 from fuel_analytics.api.common import consts
+from fuel_analytics.api.db.model import ActionLog
 from fuel_analytics.api.errors import DateExtractionError
 from fuel_analytics.api.resources.csv_exporter import archive_dir
 from fuel_analytics.api.resources.csv_exporter import extract_date
+from fuel_analytics.api.resources.csv_exporter import get_action_logs_query
 from fuel_analytics.api.resources.csv_exporter import get_from_date
 from fuel_analytics.api.resources.csv_exporter import get_inst_structures_query
 from fuel_analytics.api.resources.csv_exporter import get_oswls_query
 from fuel_analytics.api.resources.csv_exporter import get_resources_types
 from fuel_analytics.api.resources.csv_exporter import get_to_date
 from fuel_analytics.api.resources.csv_exporter import save_all_reports
+from fuel_analytics.api.resources.utils.stats_to_csv import ActionLogInfo
+from fuel_analytics.api.resources.utils.stats_to_csv import StatsToCsv
 
 
 class CsvExporterTest(OswlTest, DbTest):
@@ -192,3 +197,83 @@ class CsvExporterTest(OswlTest, DbTest):
                 os.unlink(archive.filename)
         finally:
             shutil.rmtree(tmp_dir)
+
+    def test_get_action_logs_query(self):
+        action_name = StatsToCsv.NETWORK_VERIFICATION_ACTION
+        action_logs = [
+            ActionLog(
+                master_node_uid='ids_order',
+                external_id=200,
+                body={'cluster_id': 1,
+                      'end_timestamp': datetime.utcnow().isoformat(),
+                      'action_type': 'nailgun_task',
+                      'action_name': action_name,
+                      'additional_info': {'ended_with_status': 'error'}}
+            ),
+            ActionLog(
+                master_node_uid='ids_order',
+                external_id=1,
+                body={'cluster_id': 1,
+                      'end_timestamp': datetime.utcnow().isoformat(),
+                      'action_type': 'nailgun_task',
+                      'action_name': action_name,
+                      'additional_info': {'ended_with_status': 'ready'}}
+            ),
+            ActionLog(
+                master_node_uid='normal',
+                external_id=200,
+                body={'cluster_id': 1,
+                      'end_timestamp': datetime.utcnow().isoformat(),
+                      'action_type': 'nailgun_task',
+                      'action_name': action_name,
+                      'additional_info': {'ended_with_status': 'ready'}}
+            ),
+            ActionLog(
+                master_node_uid='yesterday',
+                external_id=1,
+                body={'cluster_id': 1,
+                      'end_timestamp': (datetime.utcnow() -
+                                        timedelta(days=-1)).isoformat(),
+                      'action_type': 'nailgun_task',
+                      'action_name': action_name,
+                      'additional_info': {'ended_with_status': 'ready'}}
+            ),
+            ActionLog(
+                master_node_uid='wrong_name',
+                external_id=1,
+                body={'cluster_id': 1,
+                      'end_timestamp': (datetime.utcnow() -
+                                        timedelta(days=-1)).isoformat(),
+                      'action_type': 'nailgun_task',
+                      'action_name': 'fake_name',
+                      'additional_info': {'ended_with_status': 'ready'}}
+            ),
+            ActionLog(
+                master_node_uid='no_end_ts',
+                external_id=1,
+                body={'cluster_id': 1, 'action_type': 'nailgun_task',
+                      'action_name': action_name,
+                      'additional_info': {'ended_with_status': 'ready'}}
+            ),
+        ]
+        for action_log in action_logs:
+            db.session.add(action_log)
+        db.session.commit()
+        to_date = from_date = datetime.utcnow().date()
+        action_logs = list(get_action_logs_query(from_date, to_date))
+
+        # Checking no old and no_end_ts action logs
+        for action_log in action_logs:
+            al = ActionLogInfo(*action_log)
+            self.assertNotIn(al.master_node_uid, ('no_end_ts', 'yesterday'))
+
+        # Checking selected right action logs
+        # self.assertEqual(2, len(action_logs))
+        for action_log in action_logs:
+            al = ActionLogInfo(*action_log)
+            self.assertIn(al.master_node_uid, ('normal', 'ids_order'), al)
+
+        # Checking last action log is selected
+        for action_log in action_logs:
+            al = ActionLogInfo(*action_log)
+            self.assertEqual(200, al.external_id, al)

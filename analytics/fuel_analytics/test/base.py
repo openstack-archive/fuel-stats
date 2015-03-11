@@ -18,6 +18,7 @@ from unittest2.case import TestCase
 
 from fuel_analytics.api.app import app
 from fuel_analytics.api.app import db
+from fuel_analytics.api.db.model import ActionLog
 from fuel_analytics.api.db.model import InstallationStructure
 from fuel_analytics.api.db.model import OpenStackWorkloadStats
 from fuel_analytics.api.log import init_logger
@@ -56,6 +57,7 @@ class DbTest(BaseTest):
         # Cleaning DB
         OpenStackWorkloadStats.query.delete()
         InstallationStructure.query.delete()
+        ActionLog.query.delete()
         db.session.commit()
 
     def tearDown(self):
