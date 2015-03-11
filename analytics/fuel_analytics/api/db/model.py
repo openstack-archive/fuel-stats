@@ -37,3 +37,11 @@ class InstallationStructure(db.Model):
     structure = db.Column(JSON)
     creation_date = db.Column(db.DateTime)
     modification_date = db.Column(db.DateTime)
+
+
+class ActionLog(db.Model):
+    __tablename__ = 'action_logs'
+    id = db.Column(db.Integer, primary_key=True)
+    master_node_uid = db.Column(db.String, nullable=False)
+    external_id = db.Column(db.Integer, nullable=False)
+    body = db.Column(JSON)
