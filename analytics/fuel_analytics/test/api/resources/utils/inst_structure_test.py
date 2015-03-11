@@ -17,6 +17,7 @@
 from datetime import datetime
 from datetime import timedelta
 import random
+import six
 import uuid
 
 from fuel_analytics.test.base import BaseTest
@@ -79,14 +80,12 @@ class InstStructureTest(BaseTest):
             'attributes': {
                 'libvirt_type': random.choice(libvirt_names),
                 'heat': random.choice((True, False)),
-            },
-            'network_configuration': {
-                'segmentation_type': random.choice(segmentation_types)
             }
         }
         network_configuration = self.generate_network_configuration()
         cluster.update(network_configuration)
-        for _ in xrange(nodes_num):
+        cluster['installed_plugins'] = self.generate_installed_plugins()
+        for _ in six.moves.range(nodes_num):
             cluster['nodes'].append(self.generate_node())
         return cluster
 
@@ -106,6 +105,19 @@ class InstStructureTest(BaseTest):
             {'network_configuration': {}},
             {}
         ))
+
+    def generate_installed_plugins(
+            self,
+            plugins_num_range=(0, 5),
+            plugins_names=('fuel-plugin-gluster-fs', 'fuel-plugin-vpnaas')
+    ):
+        plugins_info = []
+        for i in six.moves.range(random.randint(*plugins_num_range)):
+            plugins_info.append({
+                'id': i,
+                'name': random.choice(plugins_names)
+            })
+        return plugins_info
 
     def generate_structure(self, clusters_num_range=(0, 10),
                            unallocated_nodes_num_range=(0, 20)):
