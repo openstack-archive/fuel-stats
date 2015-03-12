@@ -15,6 +15,7 @@
 #    under the License.
 
 import csv
+from datetime import datetime
 import flask
 import mock
 import six
@@ -25,6 +26,10 @@ from fuel_analytics.test.api.resources.utils.inst_structure_test import \
 from fuel_analytics.test.base import DbTest
 
 from fuel_analytics.api.app import app
+from fuel_analytics.api.app import db
+from fuel_analytics.api.db.model import ActionLog
+from fuel_analytics.api.resources.csv_exporter import get_action_logs
+from fuel_analytics.api.resources.csv_exporter import get_inst_structures
 from fuel_analytics.api.resources.utils import export_utils
 from fuel_analytics.api.resources.utils.stats_to_csv import StatsToCsv
 
@@ -53,7 +58,7 @@ class StatsToCsvExportTest(InstStructureTest, DbTest):
         structure_paths, cluster_paths, csv_paths = \
             exporter.get_cluster_keys_paths()
         flatten_clusters = exporter.get_flatten_clusters(
-            structure_paths, cluster_paths, inst_structures)
+            structure_paths, cluster_paths, inst_structures, [])
         self.assertTrue(isinstance(flatten_clusters, types.GeneratorType))
         for flatten_cluster in flatten_clusters:
             self.assertEquals(len(csv_paths), len(flatten_cluster))
@@ -67,7 +72,7 @@ class StatsToCsvExportTest(InstStructureTest, DbTest):
         structure_paths, cluster_paths, csv_paths = \
             exporter.get_cluster_keys_paths()
         flatten_clusters = exporter.get_flatten_clusters(
-            structure_paths, cluster_paths, inst_structures)
+            structure_paths, cluster_paths, inst_structures, [])
         self.assertTrue(isinstance(flatten_clusters, types.GeneratorType))
         result = export_utils.flatten_data_as_csv(csv_paths, flatten_clusters)
         self.assertTrue(isinstance(result, types.GeneratorType))
@@ -94,7 +99,7 @@ class StatsToCsvExportTest(InstStructureTest, DbTest):
         structure_paths, cluster_paths, csv_paths = \
             exporter.get_cluster_keys_paths()
         flatten_clusters = exporter.get_flatten_clusters(
-            structure_paths, cluster_paths, inst_structures)
+            structure_paths, cluster_paths, inst_structures, [])
         flatten_clusters = list(flatten_clusters)
         flatten_clusters[1][0] = u'эюя'
         list(export_utils.flatten_data_as_csv(csv_paths, flatten_clusters))
@@ -104,7 +109,7 @@ class StatsToCsvExportTest(InstStructureTest, DbTest):
         inst_structures = self.get_saved_inst_structures(
             installations_num=installations_num)
         exporter = StatsToCsv()
-        result = exporter.export_clusters(inst_structures)
+        result = exporter.export_clusters(inst_structures, [])
         self.assertTrue(isinstance(result, types.GeneratorType))
 
     def test_filter_by_date(self):
@@ -116,9 +121,63 @@ class StatsToCsvExportTest(InstStructureTest, DbTest):
             inst_structures = self.get_saved_inst_structures(
                 installations_num=num)
             # Filtering installation structures
-            result = exporter.export_clusters(inst_structures)
+            result = exporter.export_clusters(inst_structures, [])
             self.assertTrue(isinstance(result, types.GeneratorType))
             output = six.StringIO(list(result))
             reader = csv.reader(output)
             for _ in reader:
                 pass
+
+    def test_network_verification_status(self):
+        num = 2
+        inst_structures = self.get_saved_inst_structures(
+            installations_num=num, clusters_num_range=(2, 2))
+        inst_structure = inst_structures[0]
+        clusters = inst_structure.structure['clusters']
+        exporter = StatsToCsv()
+        expected_als = [
+            ActionLog(
+                master_node_uid=inst_structure.master_node_uid,
+                external_id=1,
+                body={'cluster_id': clusters[0]['id'],
+                      'end_timestamp': datetime.utcnow().isoformat(),
+                      'action_type': 'nailgun_task',
+                      'action_name': exporter.NETWORK_VERIFICATION_ACTION,
+                      'additional_info': {'ended_with_status': 'error'}}
+            ),
+            ActionLog(
+                master_node_uid=inst_structure.master_node_uid,
+                external_id=2,
+                body={'cluster_id': clusters[1]['id'],
+                      'end_timestamp': datetime.utcnow().isoformat(),
+                      'action_type': 'nailgun_task',
+                      'action_name': exporter.NETWORK_VERIFICATION_ACTION,
+                      'additional_info': {'ended_with_status': 'ready'}}
+            )
+        ]
+        for action_log in expected_als:
+            db.session.add(action_log)
+        db.session.commit()
+
+        with app.test_request_context():
+            action_logs = get_action_logs()
+            inst_structures = get_inst_structures()
+            structure_keys_paths, cluster_keys_paths, csv_keys_paths = \
+                exporter.get_cluster_keys_paths()
+            flatten_clusters = list(exporter.get_flatten_clusters(
+                structure_keys_paths, cluster_keys_paths,
+                inst_structures, action_logs))
+            self.assertIn([exporter.NETWORK_VERIFICATION_COLUMN],
+                          csv_keys_paths)
+            nv_column_pos = csv_keys_paths.index(
+                [exporter.NETWORK_VERIFICATION_COLUMN])
+
+            # Checking cluster network verification statuses
+            for al_pos, expected_al in enumerate(expected_als):
+                self.assertEqual(
+                    expected_al.body['additional_info']['ended_with_status'],
+                    flatten_clusters[al_pos][nv_column_pos]
+                )
+            # Checking empty network verification status
+            for flatten_cluster in flatten_clusters[2:]:
+                self.assertIsNone(flatten_cluster[nv_column_pos])

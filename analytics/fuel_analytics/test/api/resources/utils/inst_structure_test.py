@@ -93,7 +93,7 @@ class InstStructureTest(BaseTest):
         return random.choice((
             {'network_configuration': {
                 'segmentation_type': random.choice(("gre", "vlan")),
-                'net_l23_provider': random.choice(("ovw", "nsx")),
+                'net_l23_provider': random.choice(("ovs", "nsx")),
             }},
             {'network_configuration': {
                 'net_manager': random.choice(('FlatDHCPManager',
@@ -149,10 +149,12 @@ class InstStructureTest(BaseTest):
 
     def generate_inst_structures(self, installations_num=100,
                                  creation_date_range=(1, 10),
-                                 modification_date_range=(1, 10)):
+                                 modification_date_range=(1, 10),
+                                 clusters_num_range=(0, 10)):
         for _ in xrange(installations_num):
             mn_uid = '{}'.format(uuid.uuid4())
-            structure = self.generate_structure()
+            structure = self.generate_structure(
+                clusters_num_range=clusters_num_range)
             creation_date = datetime.utcnow() - timedelta(
                 days=random.randint(*creation_date_range))
             modification_date = datetime.utcnow() - timedelta(

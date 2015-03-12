@@ -22,6 +22,7 @@ import os
 import shutil
 from sqlalchemy import distinct
 from sqlalchemy import or_
+from sqlalchemy import sql
 import tempfile
 import zipfile
 
@@ -74,6 +75,9 @@ def get_inst_structures_query(from_date=None, to_date=None):
         query = query.filter(or_(IS.creation_date >= from_date,
                                  IS.modification_date >= from_date))
     if to_date is not None:
+        # modification_date is datetime field, so we need to
+        # increase to_date for right filtering
+        to_date += timedelta(days=1)
         query = query.filter(or_(IS.creation_date <= to_date,
                                  IS.modification_date <= to_date))
     return query.order_by(IS.id)
@@ -87,12 +91,43 @@ def get_inst_structures():
                                      to_date=to_date).yield_per(yield_per)
 
 
+def get_action_logs_query(from_date, to_date):
+    """Selecting only last network verification task for master node cluster
+    :param from_date: filter from creation or modification date
+    :param to_date: filter to creation or modification date
+    :return: SQLAlchemy query
+    """
+    query = "SELECT DISTINCT ON (master_node_uid, body->>'cluster_id') " \
+            "external_id, master_node_uid, body->'cluster_id' cluster_id, " \
+            "body->'additional_info'->'ended_with_status' status, " \
+            "to_timestamp(body->>'end_timestamp', 'YYYY-MM-DD')::TIMESTAMP " \
+            "WITHOUT TIME ZONE end_timestamp, " \
+            "body->>'action_name' action_name " \
+            "FROM action_logs " \
+            "WHERE body->>'action_type'='nailgun_task' " \
+            "AND body->>'action_name'='verify_networks' " \
+            "AND to_timestamp(body->>'end_timestamp', 'YYYY-MM-DD')::" \
+            "TIMESTAMP WITHOUT TIME ZONE >= :from_date " \
+            "AND to_timestamp(body->>'end_timestamp', 'YYYY-MM-DD')::" \
+            "TIMESTAMP WITHOUT TIME ZONE <= :to_date " \
+            "ORDER BY master_node_uid, body->>'cluster_id', external_id DESC"
+    return db.session.execute(
+        sql.text(query), {'from_date': from_date, 'to_date': to_date})
+
+
+def get_action_logs():
+    from_date = get_from_date()
+    to_date = get_to_date()
+    return get_action_logs_query(from_date, to_date)
+
+
 @bp.route('/clusters', methods=['GET'])
 def clusters_to_csv():
     app.logger.debug("Handling clusters_to_csv get request")
     inst_structures = get_inst_structures()
+    action_logs = get_action_logs()
     exporter = StatsToCsv()
-    result = exporter.export_clusters(inst_structures)
+    result = exporter.export_clusters(inst_structures, action_logs)
 
     # NOTE: result - is generator, but streaming can not work with some
     # WSGI middlewares: http://flask.pocoo.org/docs/0.10/patterns/streaming/
@@ -177,7 +212,9 @@ def save_all_reports(tmp_dir):
     with open(os.path.join(tmp_dir, 'clusters.csv'), mode='w') as f:
         app.logger.debug("Getting installation structures started")
         inst_strucutres = get_inst_structures()
-        clusters = stats_exporter.export_clusters(inst_strucutres)
+        action_logs = get_action_logs()
+        clusters = stats_exporter.export_clusters(inst_strucutres,
+                                                  action_logs)
         f.writelines(clusters)
         app.logger.debug("Getting installation structures finished")
 

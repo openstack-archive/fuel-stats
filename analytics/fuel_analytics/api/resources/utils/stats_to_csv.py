@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import collections
 from six.moves import range
 
 from fuel_analytics.api.app import app
@@ -20,10 +21,19 @@ from fuel_analytics.api.resources.utils.skeleton import \
     INSTALLATION_INFO_SKELETON
 
 
+ActionLogInfo = collections.namedtuple(
+    'ActionLogInfo', ['external_id', 'master_node_uid', 'cluster_id',
+                      'status', 'end_datetime', 'action_name'])
+
+
 class StatsToCsv(object):
 
     MANUFACTURERS_NUM = 3
     PLATFORM_NAMES_NUM = 3
+
+    ACTION_LOG_INDEX_FIELDS = ('master_node_uid', 'cluster_id', 'action_name')
+    NETWORK_VERIFICATION_COLUMN = 'verify_networks_status'
+    NETWORK_VERIFICATION_ACTION = 'verify_networks'
 
     def get_cluster_keys_paths(self):
         app.logger.debug("Getting cluster keys paths")
@@ -59,19 +69,33 @@ class StatsToCsv(object):
         result_key_paths.extend(enumerated_field_keys('nodes_platform_name',
                                                       self.PLATFORM_NAMES_NUM))
 
+        # Handling network verification check
+        result_key_paths.append([self.NETWORK_VERIFICATION_COLUMN])
         app.logger.debug("Cluster keys paths got")
         return structure_key_paths, cluster_key_paths, result_key_paths
 
+    def build_action_logs_idx(self, action_logs):
+        app.logger.debug("Building action logs index started")
+        action_logs_idx = {}
+        for action_log in action_logs:
+            idx = export_utils.get_index(
+                action_log, *self.ACTION_LOG_INDEX_FIELDS)
+            action_logs_idx[idx] = ActionLogInfo(*action_log)
+        app.logger.debug("Building action logs index finished")
+        return action_logs_idx
+
     def get_flatten_clusters(self, structure_keys_paths, cluster_keys_paths,
-                             inst_structures):
+                             inst_structures, action_logs):
         """Gets flatten clusters data form installation structures collection
         :param structure_keys_paths: list of keys paths in the
         installation structure
         :param cluster_keys_paths: list of keys paths in the cluster
-        :param structures: list of installation structures
+        :param inst_structures: list of installation structures
+        :param action_logs: list of action logs
         :return: list of flatten clusters info
         """
         app.logger.debug("Getting flatten clusters info is started")
+        action_logs_idx = self.build_action_logs_idx(action_logs)
 
         def extract_nodes_fields(field, nodes):
             """Extracts fields values from nested nodes dicts
@@ -109,16 +133,28 @@ class StatsToCsv(object):
                 platform_names = extract_nodes_platform_name(nodes)
                 flatten_cluster += export_utils.align_enumerated_field_values(
                     platform_names, self.PLATFORM_NAMES_NUM)
+
+                # Adding network verification status
+                idx = export_utils.get_index(
+                    {'master_node_uid': inst_structure.master_node_uid,
+                     'cluster_id': cluster['id'],
+                     'action_name': self.NETWORK_VERIFICATION_ACTION},
+                    *self.ACTION_LOG_INDEX_FIELDS
+                )
+                al_info = action_logs_idx.get(idx)
+                nv_status = None if al_info is None else al_info.status
+                flatten_cluster.append(nv_status)
                 yield flatten_cluster
 
         app.logger.debug("Flatten clusters info is got")
 
-    def export_clusters(self, inst_structures):
+    def export_clusters(self, inst_structures, action_logs):
         app.logger.info("Export clusters info into CSV started")
         structure_keys_paths, cluster_keys_paths, csv_keys_paths = \
             self.get_cluster_keys_paths()
         flatten_clusters = self.get_flatten_clusters(
-            structure_keys_paths, cluster_keys_paths, inst_structures)
+            structure_keys_paths, cluster_keys_paths,
+            inst_structures, action_logs)
         result = export_utils.flatten_data_as_csv(
             csv_keys_paths, flatten_clusters)
         app.logger.info("Export clusters info into CSV finished")
