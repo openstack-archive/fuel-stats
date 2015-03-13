@@ -74,6 +74,22 @@ class StatsToCsv(object):
         app.logger.debug("Cluster keys paths got")
         return structure_key_paths, cluster_key_paths, result_key_paths
 
+    def get_plugin_keys_paths(self):
+        app.logger.debug("Getting plugin keys paths")
+        structure_skeleton = INSTALLATION_INFO_SKELETON
+        clusters = structure_skeleton['structure']['clusters']
+        plugin_skeleton = clusters[0]['installed_plugins'][0]
+        plugin_skeleton.pop('releases', None)
+
+        plugin_key_paths = export_utils.get_keys_paths(plugin_skeleton)
+        structure_key_paths = [['master_node_uid']]
+        cluster_key_paths = [['cluster_id']]
+        result_key_paths = plugin_key_paths + cluster_key_paths + \
+            structure_key_paths
+        app.logger.debug("Plugin keys paths got")
+        return structure_key_paths, cluster_key_paths, \
+            plugin_key_paths, result_key_paths
+
     def build_action_logs_idx(self, action_logs):
         app.logger.debug("Building action logs index started")
         action_logs_idx = {}
@@ -119,6 +135,7 @@ class StatsToCsv(object):
                 structure_keys_paths, inst_structure)
 
             for cluster in clusters:
+                cluster.pop('installed_plugins', None)
                 flatten_cluster = export_utils.get_flatten_data(
                     cluster_keys_paths, cluster)
                 flatten_cluster.extend(flatten_structure)
@@ -148,6 +165,38 @@ class StatsToCsv(object):
 
         app.logger.debug("Flatten clusters info is got")
 
+    def get_flatten_plugins(self, structure_keys_paths, cluster_keys_paths,
+                            plugin_keys_paths, inst_structures):
+        """Gets flatten plugins data form clusters from installation
+        structures collection
+        :param structure_keys_paths: list of keys paths in the
+        installation structure
+        :param cluster_keys_paths: list of keys paths in the cluster
+        :param plugin_keys_paths: list of keys paths in the plugin
+        :param inst_structures: list of installation structures
+        :return: list of flatten plugins info
+        """
+        app.logger.debug("Getting flatten plugins info started")
+
+        for inst_structure in inst_structures:
+            structure = inst_structure.structure
+            clusters = structure.pop('clusters', [])
+            flatten_structure = export_utils.get_flatten_data(
+                structure_keys_paths, inst_structure)
+
+            for cluster in clusters:
+                cluster['cluster_id'] = cluster['id']
+                flatten_cluster = export_utils.get_flatten_data(
+                    cluster_keys_paths, cluster)
+                plugins = cluster.pop('installed_plugins', [])
+                for plugin in plugins:
+                    flatten_plugin = export_utils.get_flatten_data(
+                        plugin_keys_paths, plugin)
+                    flatten_plugin.extend(flatten_cluster)
+                    flatten_plugin.extend(flatten_structure)
+                    yield flatten_plugin
+        app.logger.debug("Getting flatten plugins info finished")
+
     def export_clusters(self, inst_structures, action_logs):
         app.logger.info("Export clusters info into CSV started")
         structure_keys_paths, cluster_keys_paths, csv_keys_paths = \
@@ -158,4 +207,16 @@ class StatsToCsv(object):
         result = export_utils.flatten_data_as_csv(
             csv_keys_paths, flatten_clusters)
         app.logger.info("Export clusters info into CSV finished")
+        return result
+
+    def export_plugins(self, inst_structures):
+        app.logger.info("Export plugins info into CSV started")
+        (structure_keys_paths, cluster_keys_paths,
+         plugin_keys_paths, csv_keys_paths) = self.get_plugin_keys_paths()
+        flatten_plugins = self.get_flatten_plugins(
+            structure_keys_paths, cluster_keys_paths,
+            plugin_keys_paths, inst_structures)
+        result = export_utils.flatten_data_as_csv(
+            csv_keys_paths, flatten_plugins)
+        app.logger.info("Export plugins info into CSV finished")
         return result

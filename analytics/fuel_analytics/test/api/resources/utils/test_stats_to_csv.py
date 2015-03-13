@@ -39,16 +39,15 @@ class StatsToCsvExportTest(InstStructureTest, DbTest):
     def test_get_cluster_keys_paths(self):
         exporter = StatsToCsv()
         _, _, csv_keys_paths = exporter.get_cluster_keys_paths()
-        self.assertIn(['nodes_platform_name_gt3'], csv_keys_paths)
-        self.assertIn(['nodes_platform_name_0'], csv_keys_paths)
-        self.assertIn(['nodes_platform_name_1'], csv_keys_paths)
-        self.assertIn(['nodes_platform_name_2'], csv_keys_paths)
-        self.assertIn(['nodes_manufacturer_gt3'], csv_keys_paths)
-        self.assertIn(['nodes_manufacturer_0'], csv_keys_paths)
-        self.assertIn(['nodes_manufacturer_1'], csv_keys_paths)
-        self.assertIn(['nodes_manufacturer_2'], csv_keys_paths)
-        self.assertIn(['attributes', 'heat'], csv_keys_paths)
-        self.assertIn(['installed_plugins', 'name'], csv_keys_paths)
+        self.assertTrue(['nodes_platform_name_gt3' in csv_keys_paths])
+        self.assertTrue(['nodes_platform_name_0' in csv_keys_paths])
+        self.assertTrue(['nodes_platform_name_1' in csv_keys_paths])
+        self.assertTrue(['nodes_platform_name_2' in csv_keys_paths])
+        self.assertTrue(['manufacturer_gt3' in csv_keys_paths])
+        self.assertTrue(['manufacturer_0' in csv_keys_paths])
+        self.assertTrue(['manufacturer_1' in csv_keys_paths])
+        self.assertTrue(['manufacturer_2' in csv_keys_paths])
+        self.assertTrue(['attributes', 'heat'] in csv_keys_paths)
 
     def test_get_flatten_clusters(self):
         installations_num = 200

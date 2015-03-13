@@ -84,14 +84,21 @@ INSTALLATION_INFO_SKELETON = {
                     'fixed_network_size': None,
                     'fixed_networks_amount': None
                 },
-                'installed_plugins': {
-                    'id': None,
-                    'name': None,
-                    'version': None,
-                    'releases': None,
-                    'fuel_version': None,
-                    'package_version': None,
-                },
+                'installed_plugins': [
+                    {
+                        'name': None,
+                        'version': None,
+                        'releases': [{
+                            'deployment_scripts_path': None,
+                            'repository_path': None,
+                            'mode': [],
+                            'os': None,
+                            'version': None,
+                        }],
+                        'fuel_version': None,
+                        'package_version': None,
+                    }
+                ],
                 'release': {'name': None, 'os': None, 'version': None},
                 'status': None
             }
