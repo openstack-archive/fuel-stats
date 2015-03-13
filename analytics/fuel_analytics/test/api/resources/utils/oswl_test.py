@@ -36,7 +36,8 @@ class OswlTest(BaseTest):
         consts.OSWL_RESOURCE_TYPES.flavor,
         consts.OSWL_RESOURCE_TYPES.volume,
         consts.OSWL_RESOURCE_TYPES.image,
-        consts.OSWL_RESOURCE_TYPES.tenant
+        consts.OSWL_RESOURCE_TYPES.tenant,
+        consts.OSWL_RESOURCE_TYPES.keystone_user
     )
 
     RESOURCE_GENERATORS = {
@@ -50,6 +51,8 @@ class OswlTest(BaseTest):
                                            'generate_modified_images'),
         consts.OSWL_RESOURCE_TYPES.tenant: ('generate_tenants',
                                             'generate_modified_tenants'),
+        consts.OSWL_RESOURCE_TYPES.keystone_user: (
+            'generate_keystone_users', 'generate_modified_keystone_users')
     }
 
     def generate_removed_resources(self, num, gen_func):
@@ -209,6 +212,28 @@ class OswlTest(BaseTest):
 
     def generate_modified_tenants(self, num, modifs_num_range=(1, 3),
                                   enabled_flag_values=(True, False)):
+        result = []
+        for i in range(num):
+            for _ in range(random.randint(*modifs_num_range)):
+                result.append({
+                    'id': i,
+                    'time': datetime.utcnow().time().isoformat(),
+                    'enabled_flag': random.choice(enabled_flag_values)
+                })
+        return result
+
+    def generate_keystone_users(self, num, enabled_flag_values=(True, False)):
+        result = []
+        for i in range(num):
+            result.append({
+                'id': i,
+                'enabled_flag': random.choice(enabled_flag_values),
+                'tenatn_id': six.text_type(uuid.uuid4())
+            })
+        return result
+
+    def generate_modified_keystone_users(self, num, modifs_num_range=(1, 3),
+                                         enabled_flag_values=(True, False)):
         result = []
         for i in range(num):
             for _ in range(random.randint(*modifs_num_range)):
