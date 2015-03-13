@@ -115,6 +115,7 @@ class StatsToCsv(object):
         for inst_structure in inst_structures:
             structure = inst_structure.structure
             clusters = structure.pop('clusters', [])
+            print "### clusters", clusters
             flatten_structure = export_utils.get_flatten_data(
                 structure_keys_paths, inst_structure)
 
@@ -123,14 +124,17 @@ class StatsToCsv(object):
                     cluster_keys_paths, cluster)
                 flatten_cluster.extend(flatten_structure)
                 nodes = cluster.get('nodes', [])
+                print "### nodes", nodes
 
                 # Adding enumerated manufacturers
                 manufacturers = extract_nodes_manufacturers(nodes)
+                print "### manufacturers", manufacturers
                 flatten_cluster += export_utils.align_enumerated_field_values(
                     manufacturers, self.MANUFACTURERS_NUM)
 
                 # Adding enumerated platforms
                 platform_names = extract_nodes_platform_name(nodes)
+                print "### platform_names", platform_names
                 flatten_cluster += export_utils.align_enumerated_field_values(
                     platform_names, self.PLATFORM_NAMES_NUM)
 
