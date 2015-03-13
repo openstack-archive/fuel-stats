@@ -48,7 +48,6 @@ class StatsToCsvExportTest(InstStructureTest, DbTest):
         self.assertTrue(['manufacturer_1' in csv_keys_paths])
         self.assertTrue(['manufacturer_2' in csv_keys_paths])
         self.assertTrue(['attributes', 'heat'] in csv_keys_paths)
-        self.assertTrue(['installed_plugins', 'name'] in csv_keys_paths)
 
     def test_get_flatten_clusters(self):
         installations_num = 200

@@ -138,6 +138,22 @@ def clusters_to_csv():
     return Response(result, mimetype='text/csv', headers=headers)
 
 
+@bp.route('/plugins', methods=['GET'])
+def plugins_to_csv():
+    app.logger.debug("Handling plugins_to_csv get request")
+    inst_structures = get_inst_structures()
+    exporter = StatsToCsv()
+    result = exporter.export_plugins(inst_structures)
+
+    # NOTE: result - is generator, but streaming can not work with some
+    # WSGI middlewares: http://flask.pocoo.org/docs/0.10/patterns/streaming/
+    app.logger.debug("Get request for plugins_to_csv handled")
+    headers = {
+        'Content-Disposition': 'attachment; filename=plugins.csv'
+    }
+    return Response(result, mimetype='text/csv', headers=headers)
+
+
 def get_oswls_query(resource_type, from_date=None, to_date=None):
     """Composes query for fetching oswls with installation
     info creation and update dates with ordering by created_date
@@ -209,14 +225,20 @@ def save_all_reports(tmp_dir):
     oswl_exporter = OswlStatsToCsv()
 
     resources_types = get_resources_types()
+    inst_strucutres = get_inst_structures()
     with open(os.path.join(tmp_dir, 'clusters.csv'), mode='w') as f:
         app.logger.debug("Getting installation structures started")
-        inst_strucutres = get_inst_structures()
         action_logs = get_action_logs()
         clusters = stats_exporter.export_clusters(inst_strucutres,
                                                   action_logs)
         f.writelines(clusters)
         app.logger.debug("Getting installation structures finished")
+
+    with open(os.path.join(tmp_dir, 'plugins.csv'), mode='w') as f:
+        app.logger.debug("Getting plugins started")
+        plugins = stats_exporter.export_plugins(inst_strucutres)
+        f.writelines(plugins)
+        app.logger.debug("Getting plugins finished")
 
     for resource_type in resources_types:
         app.logger.debug("Getting resource '%s' started", resource_type)
