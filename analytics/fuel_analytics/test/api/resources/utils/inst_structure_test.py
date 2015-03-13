@@ -63,8 +63,7 @@ class InstStructureTest(BaseTest):
             release_versions=('6.0 TechPreview', '6.0 GA', '6.1'),
             cluster_statuses=('new', 'deployment', 'stopped', 'operational',
                               'error', 'remove', 'update', 'update_error'),
-            libvirt_names=('qemu', 'kvm', 'vCenter'),
-            segmentation_types=('vlan', 'gre')
+            libvirt_names=('qemu', 'kvm', 'vCenter')
     ):
         nodes_num = random.randint(*nodes_range)
         cluster = {
