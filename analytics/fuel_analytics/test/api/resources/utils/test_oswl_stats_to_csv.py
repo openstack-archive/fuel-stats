@@ -34,6 +34,7 @@ from fuel_analytics.api.resources.csv_exporter import get_oswls
 from fuel_analytics.api.resources.csv_exporter import get_oswls_query
 from fuel_analytics.api.resources.utils import export_utils
 from fuel_analytics.api.resources.utils.oswl_stats_to_csv import OswlStatsToCsv
+from fuel_analytics.api.resources.utils.skeleton import OSWL_SKELETONS
 
 
 class OswlStatsToCsvTest(OswlTest, DbTest):
@@ -440,3 +441,14 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
                                          datetime(2015, 2, 24).date())
                 # Not only column names in result
                 self.assertEqual(1 + 2, len(list(result)))
+
+    def test_resource_data_structure(self):
+        num = 20
+        for resource_type in self.RESOURCE_TYPES:
+            oswls = self.get_saved_oswls(num, resource_type)
+            for oswl in oswls:
+                for res_data in oswl.resource_data['current']:
+                    self.assertItemsEqual(
+                        six.iterkeys(OSWL_SKELETONS[resource_type]),
+                        six.iterkeys(res_data)
+                    )

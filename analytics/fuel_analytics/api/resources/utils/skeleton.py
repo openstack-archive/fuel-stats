@@ -172,5 +172,10 @@ OSWL_SKELETONS = {
     consts.OSWL_RESOURCE_TYPES.tenant: {
         'id': None,
         'enabled_flag': None,
+    },
+    consts.OSWL_RESOURCE_TYPES.keystone_user: {
+        'id': None,
+        'enabled_flag': None,
+        'tenant_id': None
     }
 }
