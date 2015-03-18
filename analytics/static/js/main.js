@@ -1,5 +1,6 @@
 requirejs.config({
     baseUrl: "js",
+    waitSeconds: 60,
     urlArgs: '_=' + (new Date()).getTime(),
     paths: {
         jquery: 'libs/jquery',
