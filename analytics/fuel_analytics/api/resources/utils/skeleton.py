@@ -165,8 +165,12 @@ OSWL_SKELETONS = {
         'size': None,
         'host': None,
         'snapshot_id': None,
-        'attachments': None,
         'tenant_id': None
+    },
+    'volume_attachment': {
+        "device": None,
+        "server_id": None,
+        "id": None
     },
     consts.OSWL_RESOURCE_TYPES.image: {
         'id': None,
