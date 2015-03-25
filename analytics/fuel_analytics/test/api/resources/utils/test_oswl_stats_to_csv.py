@@ -106,7 +106,14 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
                     resource_id in modified_ids,
                     resource_id in removed_ids
                 ]
-                actual = exporter.get_additional_resource_info(resource, oswl)
+                # In case of CSV_VOLUME_ATTACHMENTS_NUM > 0
+                # additional info of volume will be extended by attachments
+                # info. Attachments handling is tested in the method
+                # test_volumes_attachments
+                with mock.patch.dict(app.config,
+                                     {'CSV_VOLUME_ATTACHMENTS_NUM': 0}):
+                    actual = exporter.get_additional_resource_info(
+                        resource, oswl)
                 self.assertListEqual(expected, actual)
 
     def test_export(self):
@@ -448,7 +455,37 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
             oswls = self.get_saved_oswls(num, resource_type)
             for oswl in oswls:
                 for res_data in oswl.resource_data['current']:
-                    self.assertItemsEqual(
-                        six.iterkeys(OSWL_SKELETONS[resource_type]),
-                        six.iterkeys(res_data)
-                    )
+                    # Checking all required for report data is in resource data
+                    for key in six.iterkeys(OSWL_SKELETONS[resource_type]):
+                        self.assertIn(key, res_data)
+
+    def test_volumes_attachments(self):
+        exporter = OswlStatsToCsv()
+        num = 100
+        resource_type = consts.OSWL_RESOURCE_TYPES.volume
+        with app.test_request_context():
+            oswls_saved = self.get_saved_oswls(
+                num, resource_type, current_num_range=(1, 1),
+                removed_num_range=(0, 0))
+
+            # Saving installation structures for proper oswls filtering
+            self.get_saved_inst_structs(oswls_saved)
+
+            oswls = list(get_oswls(resource_type).all())
+            oswl_keys_paths, vm_keys_paths, csv_keys_paths = \
+                exporter.get_resource_keys_paths(resource_type)
+            flatten_volumes = exporter.get_flatten_resources(
+                resource_type, oswl_keys_paths, vm_keys_paths, oswls)
+            flatten_volumes = list(flatten_volumes)
+
+            csv_att_num = app.config['CSV_VOLUME_ATTACHMENTS_NUM']
+            gt_field_pos = csv_keys_paths.index([
+                resource_type, 'volume_attachment_gt_{}'.format(csv_att_num)])
+            for idx, fv in enumerate(flatten_volumes):
+                oswl = oswls[idx]
+                # Checking CSV fields alignment
+                self.assertEqual(len(csv_keys_paths), len(fv))
+                # Checking gt field calculation
+                volume = oswl.resource_data['current'][0]
+                self.assertEqual(fv[gt_field_pos],
+                                 len(volume['attachments']) > csv_att_num)

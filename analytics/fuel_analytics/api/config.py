@@ -31,6 +31,8 @@ class Production(object):
         'postgresql://collector:*****@localhost/collector'
     CSV_DEFAULT_FROM_DATE_DAYS = 90
     CSV_DB_YIELD_PER = 1000
+    # Number of attachments included into volumes CSV report
+    CSV_VOLUME_ATTACHMENTS_NUM = 3
 
 
 class Testing(Production):
