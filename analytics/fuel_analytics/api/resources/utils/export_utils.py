@@ -131,8 +131,44 @@ def align_enumerated_field_values(values, number):
     empty values positions and bool value on the first place. Bool value
     is True if len(values) > number
     """
-    return ([len(values) > number] +
-            (values + [None] * (number - len(values)))[:number])
+    if number > 0:
+        return ([len(values) > number] +
+                (values + [None] * (number - len(values)))[:number])
+    else:
+        return []
+
+
+def get_enumerated_keys_paths(resource_type, skeleton_name,
+                              nested_data_skeleton, enum_length):
+    """Gets enumerated keys paths for nested data lists or tuples in the
+    skeleton. For example volume contains list of attachments. Only enum_length
+    of them will be shown in report. The first element of result is the column
+    for showing if number of elements in resource greater or not than
+    enum_length.
+    :param resource_type: name of resource type. used for column names
+    generation
+    :param skeleton_name: name of skeleton. used for generation of the first
+    column name in result
+    :param nested_data_skeleton: skeleton of nested structure
+    :param enum_length: number of enumerated nested elements
+    :return: list of enumerated column names
+    """
+    app.logger.debug("Getting additional enumerated keys paths for: "
+                     "%s, skeleton: %s", resource_type, skeleton_name)
+    result = []
+    gt_field_name = '{}_gt_{}'.format(skeleton_name, enum_length)
+    result.append([resource_type, gt_field_name])
+    skel_keys_paths = get_keys_paths(nested_data_skeleton)
+
+    for i in six.moves.xrange(enum_length):
+        attachment_key_paths = [resource_type, skeleton_name,
+                                six.text_type(i)]
+        for key_path in skel_keys_paths:
+            result.append(attachment_key_paths + key_path)
+    app.logger.debug("Additional enumerated keys paths for: "
+                     "%s, skeleton: %s are: %s", resource_type,
+                     skeleton_name, result)
+    return result
 
 
 def flatten_data_as_csv(keys_paths, flatten_data):

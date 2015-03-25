@@ -130,14 +130,27 @@ class OswlTest(BaseTest):
                 })
         return result
 
+    def _generate_volume_attachments(self, num, volume_id):
+        result = []
+        for i in six.moves.range(num):
+            result.append({
+                'device': '/dev/vdb{}'.format(i),
+                'server_id': six.text_type(uuid.uuid4()),
+                'volume_id': volume_id,
+                'host_name': six.text_type(uuid.uuid4()),
+                'id': six.text_type(uuid.uuid4()),
+            })
+        return result
+
     def generate_volumes(self, num, avail_zones=('zone_0', 'zone_1', 'zone_2'),
                          statuses=('available', 'error'),
                          volume_types=('test_0', 'test_1'),
                          size_range=(1, 1024),
-                         attachments=(None, 'att_0', 'att_1')
-                         ):
+                         attachments_range=(1, 3)):
         result = []
         for i in range(num):
+            attachments = self._generate_volume_attachments(
+                random.randint(*attachments_range), i)
             result.append({
                 'id': i,
                 'availability_zone': random.choice(avail_zones),
@@ -149,7 +162,7 @@ class OswlTest(BaseTest):
                 'host': six.text_type(uuid.uuid4()),
                 'snapshot_id': random.choice((
                     None, six.text_type(uuid.uuid4()))),
-                'attachments': random.choice(attachments),
+                'attachments': attachments,
                 'tenant_id': six.text_type(uuid.uuid4())
             })
         return result
