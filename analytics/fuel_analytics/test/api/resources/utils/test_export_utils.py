@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import six
+
 from fuel_analytics.test.base import BaseTest
 
 from fuel_analytics.api.resources.utils import export_utils
@@ -142,7 +144,7 @@ class ExportUtilsTest(BaseTest):
     def test_align_enumerated_field_values(self):
         # Data for checks in format (source, num, expected)
         checks = [
-            ([], 0, [False]),
+            ([], 0, []),
             ([], 1, [False, None]),
             (['a'], 1, [False, 'a']),
             (['a'], 2, [False, 'a', None]),
@@ -170,3 +172,23 @@ class ExportUtilsTest(BaseTest):
         ]
         for obj, fields, idx in checks:
             self.assertTupleEqual(idx, export_utils.get_index(obj, *fields))
+
+    def test_get_enumerated_keys_paths(self):
+        resource_type = 'res_type'
+        skeleton_name = 'test_skel'
+        enum_num = 2
+        skeleton = {'id': None, 'attr': None, 'value': None}
+        # with mock.patch.dict(OSWL_SKELETONS,
+        #                      {skeleton_name: skeleton}):
+        keys_paths = export_utils.get_enumerated_keys_paths(
+            resource_type, skeleton_name, skeleton, enum_num)
+        # Checking gt field in keys paths
+        self.assertEqual(len(keys_paths), enum_num * len(skeleton) + 1)
+        self.assertEqual(keys_paths[0],
+                         ['res_type', 'test_skel_gt_{}'.format(enum_num)])
+        # Checking all keys paths present
+        for key in six.iterkeys(skeleton):
+            for i in six.moves.range(enum_num):
+                keys_path = [resource_type, skeleton_name,
+                             six.text_type(i), key]
+                self.assertIn(keys_path, keys_paths)
