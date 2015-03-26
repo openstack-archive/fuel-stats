@@ -13,6 +13,7 @@
 #    under the License.
 
 import collections
+import copy
 from six.moves import range
 
 from fuel_analytics.api.app import app
@@ -37,14 +38,15 @@ class StatsToCsv(object):
 
     def get_cluster_keys_paths(self):
         app.logger.debug("Getting cluster keys paths")
-        structure_skeleton = INSTALLATION_INFO_SKELETON
+        structure_skeleton = copy.deepcopy(INSTALLATION_INFO_SKELETON)
+        clusters = structure_skeleton['structure'].pop('clusters')
         structure_key_paths = export_utils.get_keys_paths(structure_skeleton)
-        clusters = structure_skeleton['structure']['clusters']
         cluster_skeleton = clusters[0]
 
         # Removing lists of dicts from cluster skeleton
         cluster_skeleton.pop('nodes', None)
         cluster_skeleton.pop('node_groups', None)
+        cluster_skeleton.pop('installed_plugins', None)
         cluster_key_paths = export_utils.get_keys_paths(cluster_skeleton)
 
         result_key_paths = cluster_key_paths + structure_key_paths
@@ -76,9 +78,9 @@ class StatsToCsv(object):
 
     def get_plugin_keys_paths(self):
         app.logger.debug("Getting plugin keys paths")
-        structure_skeleton = INSTALLATION_INFO_SKELETON
+        structure_skeleton = copy.deepcopy(INSTALLATION_INFO_SKELETON)
         clusters = structure_skeleton['structure']['clusters']
-        plugin_skeleton = clusters[0]['installed_plugins'][0]
+        plugin_skeleton = dict(clusters[0]['installed_plugins'][0])
         plugin_skeleton.pop('releases', None)
 
         plugin_key_paths = export_utils.get_keys_paths(plugin_skeleton)
