@@ -48,6 +48,22 @@ class StatsToCsvExportTest(InstStructureTest, DbTest):
         self.assertIn(['nodes_manufacturer_1'], csv_keys_paths)
         self.assertIn(['nodes_manufacturer_2'], csv_keys_paths)
         self.assertIn(['attributes', 'heat'], csv_keys_paths)
+        self.assertIn(['attributes', 'auto_assign_floating_ip'],
+                      csv_keys_paths)
+        self.assertIn(['attributes', 'corosync_verified'], csv_keys_paths)
+        self.assertIn(['attributes', 'external_mongo_replset'], csv_keys_paths)
+        self.assertIn(['attributes', 'external_ntp_list'], csv_keys_paths)
+        self.assertIn(['attributes', 'mongo'], csv_keys_paths)
+        self.assertIn(['attributes', 'nova_quota'], csv_keys_paths)
+        self.assertIn(['attributes', 'repos'], csv_keys_paths)
+        self.assertIn(['attributes', 'resume_guests_state_on_host_boot'],
+                      csv_keys_paths)
+        self.assertIn(['attributes', 'workloads_collector_enabled'],
+                      csv_keys_paths)
+        self.assertIn(['vmware_attributes', 'vmware_az_cinder_enable'],
+                      csv_keys_paths)
+        self.assertIn(['vmware_attributes', 'vmware_az_nova_computes_num'],
+                      csv_keys_paths)
         self.assertNotIn(['structure', 'clusters'], csv_keys_paths)
         self.assertNotIn(['installed_plugins'], csv_keys_paths)
 
