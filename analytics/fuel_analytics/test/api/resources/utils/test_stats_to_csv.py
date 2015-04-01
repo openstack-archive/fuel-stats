@@ -223,3 +223,11 @@ class StatsToCsvExportTest(InstStructureTest, DbTest):
         flatten_cluster = list(flatten_clusters)[0]
         pos = csv_keys_paths.index(['nodes_platform_name_gt3'])
         self.assertEqual(True, flatten_cluster[pos])
+
+    def test_vmware_attributes(self):
+        exporter = StatsToCsv()
+        inst_structures = self.generate_inst_structures(
+            clusters_num_range=(1, 1))
+        result = exporter.export_clusters(inst_structures, [])
+        for _ in result:
+            pass
