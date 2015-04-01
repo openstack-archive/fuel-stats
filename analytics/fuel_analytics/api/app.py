@@ -24,8 +24,10 @@ db = flask_sqlalchemy.SQLAlchemy(app)
 
 # Registering blueprints
 from fuel_analytics.api.resources.csv_exporter import bp as csv_exporter_bp
+from fuel_analytics.api.resources.json_exporter import bp as json_exporter_bp
 
 app.register_blueprint(csv_exporter_bp, url_prefix='/api/v1/csv')
+app.register_blueprint(json_exporter_bp, url_prefix='/api/v1/json')
 
 
 @app.errorhandler(DateExtractionError)
