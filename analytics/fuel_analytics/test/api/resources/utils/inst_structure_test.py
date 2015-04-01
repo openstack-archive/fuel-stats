@@ -79,6 +79,9 @@ class InstStructureTest(BaseTest):
             'attributes': {
                 'libvirt_type': random.choice(libvirt_names),
                 'heat': random.choice((True, False)),
+            },
+            'vmware_attributes': {
+                'vmware_az_cinder_enable': [True, False],
             }
         }
         network_configuration = self.generate_network_configuration()

@@ -53,7 +53,7 @@ def get_flatten_data(keys_paths, data):
             if d is None:
                 break
         if isinstance(d, (list, tuple)):
-            flatten_data.append(' '.join(d))
+            flatten_data.append(' '.join(map(six.text_type, d)))
         else:
             flatten_data.append(d)
     return flatten_data
