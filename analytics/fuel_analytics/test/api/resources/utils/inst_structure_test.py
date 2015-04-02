@@ -23,6 +23,7 @@ import uuid
 from fuel_analytics.test.base import BaseTest
 
 from fuel_analytics.api.app import db
+from fuel_analytics.api.db.model import ActionLog
 from fuel_analytics.api.db.model import InstallationStructure
 
 
@@ -169,11 +170,56 @@ class InstStructureTest(BaseTest):
             )
             yield obj
 
-    def get_saved_inst_structures(self, *args, **kwargs):
-        inst_structs = self.generate_inst_structures(*args, **kwargs)
+    def _get_saved_objs(self, generator_func, *args, **kwargs):
+        objs = generator_func(*args, **kwargs)
         result = []
-        for inst_struct in inst_structs:
-            db.session.add(inst_struct)
-            result.append(inst_struct)
+        for obj in objs:
+            db.session.add(obj)
+            result.append(obj)
         db.session.commit()
         return result
+
+    def get_saved_inst_structures(self, *args, **kwargs):
+        return self._get_saved_objs(self.generate_inst_structures,
+                                    *args, **kwargs)
+
+    def generate_action_logs(
+            self, inst_sturctures, num_per_struct_range=(1, 100),
+            action_types=('nailgun_task',),
+            action_groups=('cluster_changes', 'cluster_checking',
+                           'operations'),
+            action_names=('deploy', 'deployment', 'provision',
+                          'stop_deployment', 'reset_environment',
+                          'update', 'node_deletion', 'cluster_deletion',
+                          'check_before_deployment', 'check_networks',
+                          'verify_networks')):
+        for struct in inst_sturctures:
+            for idx in six.moves.range(random.randint(*num_per_struct_range)):
+                action_type = random.choice(action_types)
+                action_name = random.choice(action_names)
+                body = {
+                    "id": idx,
+                    "actor_id": six.text_type(uuid.uuid4()),
+                    "action_group": random.choice(action_groups),
+                    "action_name": random.choice(action_names),
+                    "action_type": action_type,
+                    "start_timestamp": datetime.utcnow().isoformat(),
+                    "end_timestamp": datetime.utcnow().isoformat(),
+                    "additional_info": {
+                        "parent_task_id": None,
+                        "subtasks_ids": [],
+                        "operation": action_name
+                    },
+                    "is_sent": False,
+                    "cluster_id": idx
+                }
+                obj = ActionLog(
+                    master_node_uid=struct.master_node_uid,
+                    external_id=idx,
+                    body=body
+                )
+                yield obj
+
+    def get_saved_action_logs(self, *args, **kwargs):
+        return self._get_saved_objs(self.generate_action_logs,
+                                    *args, **kwargs)
