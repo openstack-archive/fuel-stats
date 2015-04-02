@@ -18,6 +18,7 @@ import flask_sqlalchemy
 import six
 
 from fuel_analytics.api.errors import DateExtractionError
+from sqlalchemy.orm.exc import NoResultFound
 
 app = Flask(__name__)
 db = flask_sqlalchemy.SQLAlchemy(app)
@@ -33,3 +34,8 @@ app.register_blueprint(json_exporter_bp, url_prefix='/api/v1/json')
 @app.errorhandler(DateExtractionError)
 def date_parsing_error(error):
     return make_response(six.text_type(error), 400)
+
+
+@app.errorhandler(NoResultFound)
+def db_object_not_found(error):
+    return make_response(six.text_type(error), 404)

@@ -14,55 +14,51 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from flask import request
-import mock
-
-from fuel_analytics.test.base import BaseTest
+from fuel_analytics.test.api.resources.utils.inst_structure_test import \
+    InstStructureTest
+from fuel_analytics.test.api.resources.utils.oswl_test import \
+    OswlTest
+from fuel_analytics.test.base import DbTest
 
 from fuel_analytics.api.app import app
-from fuel_analytics.api.resources import json_exporter
 
 
-class JsonExporterTest(BaseTest):
+class JsonExporterTest(InstStructureTest, OswlTest, DbTest):
 
-    def test_get_dict_param(self):
-        # Pairs of param_name, param_value, expected
-        name = 'param_name'
-        variants = (
-            ('wrong_name', {}, {}),
-            (name, {}, {}), (name, None, {}), (name, 'a', {}),
-            (name, 1, {}), (name, [], {}), (name, (), {}),
-            (name, {'a': 'b'}, {'a': 'b'})
-        )
+    def test_get_installation_info_not_found(self):
         with app.test_request_context():
-            for param_name, param_value, expected in variants:
-                with mock.patch.object(request, 'args',
-                                       {param_name: param_value}):
-                    self.assertDictEqual(
-                        json_exporter.get_dict_param(name),
-                        expected
-                    )
+            resp = self.client.get('/api/v1/json/installation_info/xxxx')
+            self.check_response_error(resp, 404)
 
-    def test_get_paging_params(self):
-        name = 'paging_params'
-        limit_default = app.config.get('JSON_DB_DEFAULT_LIMIT')
-        variants = (
-            (name, {}, {'limit': limit_default, 'offset': 0}),
-            (name, [], {'limit': limit_default, 'offset': 0}),
-            (name, 4, {'limit': limit_default, 'offset': 0}),
-            ('wrong_name', 4, {'limit': limit_default, 'offset': 0}),
-            (name, {'trash': 'x'}, {'limit': limit_default, 'offset': 0}),
-            (name, {'limit': limit_default + 1}, {'limit': limit_default + 1,
-                                                  'offset': 0}),
-            (name, {'limit': limit_default + 1, 'offset': 50},
-             {'limit': limit_default + 1, 'offset': 50}),
-        )
-
+    def test_get_installation_info(self):
+        structs = self.get_saved_inst_structures(installations_num=10)
         with app.test_request_context():
-            for param_name, param_value, expected in variants:
-                with mock.patch.object(request, 'args',
-                                       {param_name: param_value}):
-                    self.assertDictEqual(
-                        json_exporter.get_paging_params(),
-                        expected
-                    )
+            for struct in structs:
+                url = '/api/v1/json/installation_info/{}'.format(
+                    struct.master_node_uid)
+                resp = self.client.get(url)
+                self.check_response_ok(resp)
+
+    def test_get_oswls(self):
+        num = 10
+        for resource_type in self.RESOURCE_TYPES:
+            oswls = self.get_saved_oswls(num, resource_type)
+            structs = self.get_saved_inst_structs(oswls)
+            with app.test_request_context():
+                for struct in structs:
+                    url = '/api/v1/json/oswls/{}'.format(
+                        struct.master_node_uid)
+                    resp = self.client.get(url)
+                    self.check_response_ok(resp)
+
+    def test_get_oswls_by_resource_type(self):
+        num = 10
+        for resource_type in self.RESOURCE_TYPES:
+            oswls = self.get_saved_oswls(num, resource_type)
+            structs = self.get_saved_inst_structs(oswls)
+            with app.test_request_context():
+                for struct in structs:
+                    url = '/api/v1/json/oswls/{}/{}'.format(
+                        struct.master_node_uid, resource_type)
+                    resp = self.client.get(url)
+                    self.check_response_ok(resp)
