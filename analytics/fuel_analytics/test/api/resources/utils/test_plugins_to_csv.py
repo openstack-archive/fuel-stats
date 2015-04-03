@@ -72,3 +72,25 @@ class PluginsToCsvExportTest(InstStructureTest, DbTest):
             reader = csv.reader(output)
             for _ in reader:
                 pass
+
+    def test_plugin_invalid_data(self):
+        exporter = StatsToCsv()
+        num = 10
+        inst_structures = self.get_saved_inst_structures(
+            installations_num=num, clusters_num_range=(1, 1),
+            plugins_num_range=(1, 1))
+
+        with app.test_request_context():
+            # get_flatten_data 3 times called inside get_flatten_plugins
+            side_effect = [[]] * num * 3
+            side_effect[num / 2] = Exception
+            with mock.patch('fuel_analytics.api.resources.utils.'
+                            'export_utils.get_flatten_data',
+                            side_effect=side_effect):
+                structure_paths, cluster_paths, plugins_paths, csv_paths = \
+                    exporter.get_plugin_keys_paths()
+                flatten_plugins = exporter.get_flatten_plugins(
+                    structure_paths, cluster_paths,
+                    plugins_paths, inst_structures)
+                # Checking only invalid data is not exported
+                self.assertEqual(num - 1, len(list(flatten_plugins)))
