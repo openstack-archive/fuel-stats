@@ -231,3 +231,22 @@ class StatsToCsvExportTest(InstStructureTest, DbTest):
         result = exporter.export_clusters(inst_structures, [])
         for _ in result:
             pass
+
+    def test_cluster_invalid_data(self):
+        exporter = StatsToCsv()
+        num = 10
+        inst_structures = self.get_saved_inst_structures(
+            installations_num=num, clusters_num_range=(1, 1))
+
+        with app.test_request_context():
+            # get_flatten_data 2 times called inside get_flatten_plugins
+            side_effect = [[]] * num * 2
+            side_effect[num / 2] = Exception
+            with mock.patch('fuel_analytics.api.resources.utils.'
+                            'export_utils.get_flatten_data',
+                            side_effect=side_effect):
+                structure_paths, cluster_paths, csv_paths = \
+                    exporter.get_cluster_keys_paths()
+                flatten_clusters = exporter.get_flatten_clusters(
+                    structure_paths, cluster_paths, inst_structures, [])
+                self.assertEqual(num - 1, len(list(flatten_clusters)))

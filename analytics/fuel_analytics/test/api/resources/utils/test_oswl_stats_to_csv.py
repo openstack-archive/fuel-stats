@@ -489,3 +489,29 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
                 volume = oswl.resource_data['current'][0]
                 self.assertEqual(fv[gt_field_pos],
                                  len(volume['attachments']) > csv_att_num)
+
+    def test_oswl_invalid_data(self):
+        exporter = OswlStatsToCsv()
+        num = 10
+        for resource_type in self.RESOURCE_TYPES:
+            oswls_saved = self.get_saved_oswls(
+                num, resource_type, current_num_range=(1, 1),
+                removed_num_range=(0, 0), added_num_range=(0, 0),
+                modified_num_range=(0, 0))
+            # Saving installation structures for proper oswls filtering
+            self.get_saved_inst_structs(oswls_saved)
+
+            with app.test_request_context():
+                oswls = get_oswls(resource_type).all()
+                oswl_keys_paths, vm_keys_paths, csv_keys_paths = \
+                    exporter.get_resource_keys_paths(resource_type)
+
+                side_effect = [[]] * num
+                side_effect[num / 2] = Exception
+                with mock.patch.object(exporter,
+                                       'get_additional_resource_info',
+                                       side_effect=side_effect):
+                    flatten_resources = exporter.get_flatten_resources(
+                        resource_type, oswl_keys_paths, vm_keys_paths, oswls)
+                    # Checking only invalid data is not exported
+                    self.assertEqual(num - 1, len(list(flatten_resources)))

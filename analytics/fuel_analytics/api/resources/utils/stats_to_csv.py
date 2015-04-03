@@ -15,6 +15,7 @@
 import collections
 import copy
 from six.moves import range
+import six
 
 from fuel_analytics.api.app import app
 from fuel_analytics.api.resources.utils import export_utils
@@ -131,39 +132,46 @@ class StatsToCsv(object):
             return extract_nodes_fields('platform_name', nodes)
 
         for inst_structure in inst_structures:
-            structure = inst_structure.structure
-            clusters = structure.pop('clusters', [])
-            flatten_structure = export_utils.get_flatten_data(
-                structure_keys_paths, inst_structure)
+            try:
+                structure = inst_structure.structure
+                clusters = structure.pop('clusters', [])
+                flatten_structure = export_utils.get_flatten_data(
+                    structure_keys_paths, inst_structure)
 
-            for cluster in clusters:
-                cluster.pop('installed_plugins', None)
-                flatten_cluster = export_utils.get_flatten_data(
-                    cluster_keys_paths, cluster)
-                flatten_cluster.extend(flatten_structure)
-                nodes = cluster.get('nodes', [])
+                for cluster in clusters:
+                    cluster.pop('installed_plugins', None)
+                    flatten_cluster = export_utils.get_flatten_data(
+                        cluster_keys_paths, cluster)
+                    flatten_cluster.extend(flatten_structure)
+                    nodes = cluster.get('nodes', [])
 
-                # Adding enumerated manufacturers
-                manufacturers = extract_nodes_manufacturers(nodes)
-                flatten_cluster += export_utils.align_enumerated_field_values(
-                    manufacturers, self.MANUFACTURERS_NUM)
+                    # Adding enumerated manufacturers
+                    manufacturers = extract_nodes_manufacturers(nodes)
+                    flatten_cluster += export_utils.\
+                        align_enumerated_field_values(manufacturers,
+                                                      self.MANUFACTURERS_NUM)
 
-                # Adding enumerated platforms
-                platform_names = extract_nodes_platform_name(nodes)
-                flatten_cluster += export_utils.align_enumerated_field_values(
-                    platform_names, self.PLATFORM_NAMES_NUM)
+                    # Adding enumerated platforms
+                    platform_names = extract_nodes_platform_name(nodes)
+                    flatten_cluster += export_utils.\
+                        align_enumerated_field_values(platform_names,
+                                                      self.PLATFORM_NAMES_NUM)
 
-                # Adding network verification status
-                idx = export_utils.get_index(
-                    {'master_node_uid': inst_structure.master_node_uid,
-                     'cluster_id': cluster['id'],
-                     'action_name': self.NETWORK_VERIFICATION_ACTION},
-                    *self.ACTION_LOG_INDEX_FIELDS
-                )
-                al_info = action_logs_idx.get(idx)
-                nv_status = None if al_info is None else al_info.status
-                flatten_cluster.append(nv_status)
-                yield flatten_cluster
+                    # Adding network verification status
+                    idx = export_utils.get_index(
+                        {'master_node_uid': inst_structure.master_node_uid,
+                         'cluster_id': cluster['id'],
+                         'action_name': self.NETWORK_VERIFICATION_ACTION},
+                        *self.ACTION_LOG_INDEX_FIELDS
+                    )
+                    al_info = action_logs_idx.get(idx)
+                    nv_status = None if al_info is None else al_info.status
+                    flatten_cluster.append(nv_status)
+                    yield flatten_cluster
+            except Exception, e:
+                # Generation of report should be reliable
+                app.logger.error("Getting flatten cluster data failed: %s",
+                                 six.text_type(e))
 
         app.logger.debug("Flatten clusters info is got")
 
@@ -181,22 +189,28 @@ class StatsToCsv(object):
         app.logger.debug("Getting flatten plugins info started")
 
         for inst_structure in inst_structures:
-            structure = inst_structure.structure
-            clusters = structure.pop('clusters', [])
-            flatten_structure = export_utils.get_flatten_data(
-                structure_keys_paths, inst_structure)
+            try:
+                structure = inst_structure.structure
+                clusters = structure.pop('clusters', [])
+                flatten_structure = export_utils.get_flatten_data(
+                    structure_keys_paths, inst_structure)
 
-            for cluster in clusters:
-                cluster['cluster_id'] = cluster['id']
-                flatten_cluster = export_utils.get_flatten_data(
-                    cluster_keys_paths, cluster)
-                plugins = cluster.pop('installed_plugins', [])
-                for plugin in plugins:
-                    flatten_plugin = export_utils.get_flatten_data(
-                        plugin_keys_paths, plugin)
-                    flatten_plugin.extend(flatten_cluster)
-                    flatten_plugin.extend(flatten_structure)
-                    yield flatten_plugin
+                for cluster in clusters:
+                    cluster['cluster_id'] = cluster['id']
+                    flatten_cluster = export_utils.get_flatten_data(
+                        cluster_keys_paths, cluster)
+                    plugins = cluster.pop('installed_plugins', [])
+                    for plugin in plugins:
+                        flatten_plugin = export_utils.get_flatten_data(
+                            plugin_keys_paths, plugin)
+                        flatten_plugin.extend(flatten_cluster)
+                        flatten_plugin.extend(flatten_structure)
+                        yield flatten_plugin
+            except Exception, e:
+                # Generation of report should be reliable
+                app.logger.error("Getting flatten plugin data failed: %s",
+                                 six.text_type(e))
+
         app.logger.debug("Getting flatten plugins info finished")
 
     def export_clusters(self, inst_structures, action_logs):

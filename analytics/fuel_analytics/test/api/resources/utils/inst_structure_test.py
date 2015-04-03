@@ -63,7 +63,8 @@ class InstStructureTest(BaseTest):
             release_versions=('6.0 TechPreview', '6.0 GA', '6.1'),
             cluster_statuses=('new', 'deployment', 'stopped', 'operational',
                               'error', 'remove', 'update', 'update_error'),
-            libvirt_names=('qemu', 'kvm', 'vCenter')
+            libvirt_names=('qemu', 'kvm', 'vCenter'),
+            plugins_num_range=(0, 5)
     ):
         nodes_num = random.randint(*nodes_range)
         cluster = {
@@ -86,7 +87,8 @@ class InstStructureTest(BaseTest):
         }
         network_configuration = self.generate_network_configuration()
         cluster.update(network_configuration)
-        cluster['installed_plugins'] = self.generate_installed_plugins()
+        cluster['installed_plugins'] = self.generate_installed_plugins(
+            plugins_num_range=plugins_num_range)
         for _ in six.moves.range(nodes_num):
             cluster['nodes'].append(self.generate_node())
         return cluster
@@ -122,7 +124,8 @@ class InstStructureTest(BaseTest):
         return plugins_info
 
     def generate_structure(self, clusters_num_range=(0, 10),
-                           unallocated_nodes_num_range=(0, 20)):
+                           unallocated_nodes_num_range=(0, 20),
+                           plugins_num_range=(0, 5)):
         clusters_num = random.randint(*clusters_num_range)
         fuel_release = {
             'release': random.choice(("6.0-techpreview", "6.0-ga")),
@@ -144,7 +147,8 @@ class InstStructureTest(BaseTest):
         }
 
         for _ in xrange(clusters_num):
-            cluster = self.generate_cluster()
+            cluster = self.generate_cluster(
+                plugins_num_range=plugins_num_range)
             structure['clusters'].append(cluster)
             structure['allocated_nodes_num'] += cluster['nodes_num']
         return structure
@@ -152,11 +156,13 @@ class InstStructureTest(BaseTest):
     def generate_inst_structures(self, installations_num=100,
                                  creation_date_range=(1, 10),
                                  modification_date_range=(1, 10),
-                                 clusters_num_range=(0, 10)):
+                                 clusters_num_range=(0, 10),
+                                 plugins_num_range=(0, 5)):
         for _ in xrange(installations_num):
             mn_uid = '{}'.format(uuid.uuid4())
             structure = self.generate_structure(
-                clusters_num_range=clusters_num_range)
+                clusters_num_range=clusters_num_range,
+                plugins_num_range=plugins_num_range)
             creation_date = datetime.utcnow() - timedelta(
                 days=random.randint(*creation_date_range))
             modification_date = datetime.utcnow() - timedelta(

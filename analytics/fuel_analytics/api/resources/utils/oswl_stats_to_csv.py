@@ -106,19 +106,24 @@ class OswlStatsToCsv(object):
         """
         app.logger.debug("Getting flatten %s info started", resource_type)
         for oswl in oswls:
-            flatten_oswl = export_utils.get_flatten_data(oswl_keys_paths,
-                                                         oswl)
-            resource_data = oswl.resource_data
-            current = resource_data.get('current', [])
-            removed = resource_data.get('removed', [])
-            # Filtering id, time only data
-            removed = filter(lambda x: len(x) > 2, removed)
-            for resource in itertools.chain(current, removed):
-                flatten_resource = export_utils.get_flatten_data(
-                    resource_keys_paths, {resource_type: resource})
-                additional_info = self.get_additional_resource_info(
-                    resource, oswl)
-                yield flatten_oswl + flatten_resource + additional_info
+            try:
+                flatten_oswl = export_utils.get_flatten_data(oswl_keys_paths,
+                                                             oswl)
+                resource_data = oswl.resource_data
+                current = resource_data.get('current', [])
+                removed = resource_data.get('removed', [])
+                # Filtering id, time only data
+                removed = filter(lambda x: len(x) > 2, removed)
+                for resource in itertools.chain(current, removed):
+                    flatten_resource = export_utils.get_flatten_data(
+                        resource_keys_paths, {resource_type: resource})
+                    additional_info = self.get_additional_resource_info(
+                        resource, oswl)
+                    yield flatten_oswl + flatten_resource + additional_info
+            except Exception, e:
+                # Generation of report should be reliable
+                app.logger.error("Getting flatten data failed: %s",
+                                 six.text_type(e))
         app.logger.debug("Getting flatten %s info finished", resource_type)
 
     def get_last_sync_datetime(self, oswl):
