@@ -12,11 +12,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import datetime
 from flask import Blueprint
 from flask import request
 from flask import Response
 import json
-import six
 from sqlalchemy import and_
 
 from fuel_analytics.api.app import app
@@ -28,9 +28,20 @@ from fuel_analytics.api.db.model import OpenStackWorkloadStats as OSWL
 bp = Blueprint('dto', __name__)
 
 
-def row_as_dict(row):
-    return {c.name: six.text_type(getattr(row, c.name))
-            for c in row.__table__.columns}
+def row_as_serializable_dict(row):
+    """Converts SqlAlchemy object to dict serializable to json
+    :param row: SqlAlchemy object
+    :return: dict serializable to json
+    """
+    result = {}
+    for c in row.__table__.columns:
+        name = c.name
+        value = getattr(row, c.name)
+        if isinstance(value, (datetime.datetime, datetime.date,
+                              datetime.time)):
+            value = value.isoformat()
+        result[name] = value
+    return result
 
 
 def get_dict_param(name):
@@ -53,7 +64,7 @@ def get_installation_info(master_node_uid):
     app.logger.debug("Fetching installation info for: %s", master_node_uid)
     result = db.session.query(IS).filter(
         IS.master_node_uid == master_node_uid).one()
-    dict_result = row_as_dict(result)
+    dict_result = row_as_serializable_dict(result)
     app.logger.debug("Installation info for: %s fetched", master_node_uid)
     return Response(json.dumps(dict_result), mimetype='application/json')
 
@@ -71,7 +82,7 @@ def _get_db_objs_data(model, sql_clauses, order_by, paging_params):
         query = query.order_by(order)
     result = query.limit(paging_params['limit']).\
         offset(paging_params['offset']).all()
-    return (row_as_dict(obj) for obj in result)
+    return (row_as_serializable_dict(obj) for obj in result)
 
 
 def _jsonify_collection(collection_iter):
