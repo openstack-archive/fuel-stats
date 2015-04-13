@@ -11,6 +11,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import datetime
 
 from flask import request
 import json
@@ -24,6 +25,7 @@ from fuel_analytics.test.api.resources.utils.oswl_test import \
 from fuel_analytics.test.base import DbTest
 
 from fuel_analytics.api.app import app
+from fuel_analytics.api.db import model
 from fuel_analytics.api.resources import json_exporter
 
 
@@ -135,3 +137,22 @@ class JsonExporterTest(InstStructureTest, OswlTest, DbTest):
                         json_exporter.get_paging_params(),
                         expected
                     )
+
+    def test_row_as_serializable_dict(self):
+        objs = [
+            model.InstallationStructure(
+                id=0, master_node_uid='xx', structure={'a': [], 'b': 'c'},
+                creation_date=datetime.datetime.utcnow(),
+                modification_date=datetime.datetime.utcnow()),
+            model.ActionLog(id=0, master_node_uid='yy', external_id=33,
+                            body={'c': 4}),
+            model.OpenStackWorkloadStats(
+                id=0, master_node_uid='zz', external_id=45, cluster_id=44,
+                created_date=datetime.datetime.utcnow(),
+                updated_time=datetime.time(),
+                resource_type='kk', resource_data={},
+                resource_checksum='chk'
+            )
+        ]
+        for obj in objs:
+            json_exporter.row_as_serializable_dict(obj)
