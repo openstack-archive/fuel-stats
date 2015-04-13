@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import datetime
 from flask import request
 import json
 import mock
@@ -24,6 +25,8 @@ from fuel_analytics.test.api.resources.utils.oswl_test import \
 from fuel_analytics.test.base import DbTest
 
 from fuel_analytics.api.app import app
+from fuel_analytics.api.app import db
+from fuel_analytics.api.db import model
 from fuel_analytics.api.resources import json_exporter
 
 
@@ -135,3 +138,41 @@ class JsonExporterTest(InstStructureTest, OswlTest, DbTest):
                         json_exporter.get_paging_params(),
                         expected
                     )
+
+    def test_row_as_serializable_dict(self):
+        dt_now = datetime.datetime.utcnow()
+        d_now = dt_now.date()
+        t_now = dt_now.time()
+        objs = [
+            model.InstallationStructure(
+                id=0, master_node_uid='xx', structure={'a': [], 'b': 'c'},
+                creation_date=dt_now, modification_date=dt_now),
+            model.ActionLog(id=0, master_node_uid='yy', external_id=33,
+                            body={'c': 4}),
+            model.OpenStackWorkloadStats(
+                id=0, master_node_uid='zz', external_id=45, cluster_id=44,
+                created_date=d_now, updated_time=t_now,
+                resource_type='vm', resource_data={},
+                resource_checksum='chk'
+            )
+        ]
+
+        for expected in objs:
+            # Checking objects to json serialization
+            obj_json = json_exporter.row_as_serializable_dict(expected)
+            json.dumps(obj_json)
+
+            # Checking objects serialized properly
+            actual = expected.__class__(**obj_json)
+
+            # Saving object for proper types conversion
+            db.session.add(actual)
+            db.session.commit()
+
+            # Checking SqlAlchemy objects equality
+            for c in expected.__table__.columns:
+                column_name = c.name
+                self.assertEquals(
+                    getattr(expected, column_name),
+                    getattr(actual, column_name)
+                )
