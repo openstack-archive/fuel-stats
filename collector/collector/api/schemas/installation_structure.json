@@ -18,18 +18,28 @@
                         "properties": {
                             "release": {"type": "string"},
                             "ostf_sha": {"type": "string"},
+                            "fuel-ostf_sha": {"type": "string"},
                             "astute_sha": {"type": "string"},
                             "nailgun_sha": {"type": "string"},
                             "fuellib_sha": {"type": "string"},
+                            "fuel-library_sha": {"type": "string"},
+                            "python-fuelclient_sha": {"type": "string"},
+                            "fuelmain_sha": {"type": "string"},
                             "feature_groups": {
                                 "type": "array",
                                 "items": {"type": "string"}
                             },
                             "api": {"type": "string"}
                         },
-                        "required": ["release", "ostf_sha", "astute_sha",
-                                     "nailgun_sha", "fuellib_sha", "api",
-                                     "feature_groups"]
+                        "required": ["release", "astute_sha",
+                                     "nailgun_sha", "api",
+                                     "feature_groups"],
+                        "oneOf": [
+                          {"required": [
+                            "fuel-ostf_sha", "python-fuelclient_sha",
+                            "fuel-library_sha"]},
+                          {"required": ["ostf_sha", "fuellib_sha"]}
+                        ]
                     },
                     "clusters": {
                         "type": "array",
