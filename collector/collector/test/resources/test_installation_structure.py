@@ -140,3 +140,50 @@ class TestInstallationStructure(DbTest):
         self.assertDictEqual(struct, obj_upd.structure)
         self.assertIsNotNone(obj_upd.creation_date)
         self.assertIsNotNone(obj_upd.modification_date)
+
+    def test_valid_fuel_release_content(self):
+        master_node_uid = 'x'
+        structs = [
+            {
+                'master_node_uid': master_node_uid,
+                'fuel_release': {
+                    'release': 'r',
+                    'ostf_sha': 'o_sha',
+                    'astute_sha': 'a_sha',
+                    'nailgun_sha': 'n_sha',
+                    'fuellib_sha': 'fl_sha',
+                    'feature_groups': ['experimental'],
+                    'api': 'v1'
+                },
+                'allocated_nodes_num': 4,
+                'unallocated_nodes_num': 4,
+                'clusters_num': 2,
+                'clusters': []
+            },
+            {
+                # ostf_sha renamed, python-fuelclient_sha added
+                'master_node_uid': master_node_uid,
+                'fuel_release': {
+                    'release': 'r',
+                    'fuel-ostf_sha': 'f-o_sha',
+                    'python-fuelclient_sha': 'p-fc_sha',
+                    'astute_sha': 'a_sha',
+                    'fuelmain_sha': 'a_sha',
+                    'nailgun_sha': 'n_sha',
+                    'fuel-library_sha': 'fl_sha',
+                    'feature_groups': ['experimental'],
+                    'api': 'v1'
+                },
+                'allocated_nodes_num': 4,
+                'unallocated_nodes_num': 4,
+                'clusters_num': 2,
+                'clusters': []
+            },
+        ]
+
+        for struct in structs:
+            resp = self.post(
+                '/api/v1/installation_structure/',
+                {'installation_structure': struct}
+            )
+            self.check_response_ok(resp, codes=(200, 201))

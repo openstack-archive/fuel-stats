@@ -124,19 +124,41 @@ class InstStructureTest(BaseTest):
             })
         return plugins_info
 
-    def generate_structure(self, clusters_num_range=(0, 10),
-                           unallocated_nodes_num_range=(0, 20),
-                           plugins_num_range=(0, 5)):
-        clusters_num = random.randint(*clusters_num_range)
-        fuel_release = {
-            'release': random.choice(("6.0-techpreview", "6.0-ga")),
+    def _fuel_release_gen(self, releases):
+        return {
+            'release': random.choice(releases),
             'api': 1,
-            'nailgun_sha': "Unknown build",
-            'astute_sha': "Unknown build",
-            'fuellib_sha': "Unknown build",
-            'ostf_sha': "Unknown build",
+            'nailgun_sha': "Unknown build nailgun",
+            'astute_sha': "Unknown build astute",
+            'fuellib_sha': "Unknown build fuellib",
+            'ostf_sha': "Unknown build ostf",
+            'fuelmain_sha': "Unknown build fuelmain",
             'feature_groups': ['experimental', 'mirantis']
         }
+
+    def _fuel_release_gen_2015_04(self, releases):
+        return {
+            'release': random.choice(releases),
+            'api': 1,
+            'nailgun_sha': "Unknown build nailgun",
+            'astute_sha': "Unknown build astute astute",
+            'fuel-ostf_sha': "Unknown build fuel-ostf",
+            'python-fuelclient_sha': "Unknown build python-fuelclient",
+            'fuel-library_sha': "Unknown build fuel-library",
+            'fuelmain_sha': "Unknown build fuelmain",
+            'feature_groups': ['experimental', 'mirantis']
+        }
+
+    def generate_structure(self, clusters_num_range=(0, 10),
+                           unallocated_nodes_num_range=(0, 20),
+                           plugins_num_range=(0, 5),
+                           release_generators=('_fuel_release_gen',
+                                               '_fuel_release_gen_2015_04'),
+                           releases=("6.0-techpreview", "6.0-ga")):
+        clusters_num = random.randint(*clusters_num_range)
+
+        release_generator = random.choice(release_generators)
+        fuel_release = getattr(self, release_generator)(releases)
 
         structure = {
             'fuel_release': fuel_release,
@@ -154,16 +176,19 @@ class InstStructureTest(BaseTest):
             structure['allocated_nodes_num'] += cluster['nodes_num']
         return structure
 
-    def generate_inst_structures(self, installations_num=100,
-                                 creation_date_range=(1, 10),
-                                 modification_date_range=(1, 10),
-                                 clusters_num_range=(0, 10),
-                                 plugins_num_range=(0, 5)):
+    def generate_inst_structures(
+            self, installations_num=100, creation_date_range=(1, 10),
+            modification_date_range=(1, 10), clusters_num_range=(0, 10),
+            plugins_num_range=(0, 5), releases=("6.0-techpreview", "6.0-ga"),
+            release_generators=('_fuel_release_gen',
+                                '_fuel_release_gen_2015_04')):
         for _ in xrange(installations_num):
             mn_uid = '{}'.format(uuid.uuid4())
             structure = self.generate_structure(
                 clusters_num_range=clusters_num_range,
-                plugins_num_range=plugins_num_range)
+                plugins_num_range=plugins_num_range,
+                releases=releases,
+                release_generators=release_generators)
             creation_date = datetime.utcnow() - timedelta(
                 days=random.randint(*creation_date_range))
             modification_date = datetime.utcnow() - timedelta(
