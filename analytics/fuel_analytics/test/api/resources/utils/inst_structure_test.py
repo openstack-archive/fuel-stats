@@ -134,9 +134,13 @@ class InstStructureTest(BaseTest):
             'nailgun_sha': "Unknown build",
             'astute_sha': "Unknown build",
             'fuellib_sha': "Unknown build",
-            'ostf_sha': "Unknown build",
             'feature_groups': ['experimental', 'mirantis']
         }
+        if random.choice((True, False)):
+            fuel_release['ostf_sha'] = "Unknown build"
+        else:
+            fuel_release['fuel-ostf_sha'] = "Unknown build"
+            fuel_release['python-fuelclient_sha'] = "Unknown build"
 
         structure = {
             'fuel_release': fuel_release,

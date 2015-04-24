@@ -64,6 +64,12 @@ class StatsToCsvExportTest(InstStructureTest, DbTest):
                       csv_keys_paths)
         self.assertIn(['vmware_attributes', 'vmware_az_nova_computes_num'],
                       csv_keys_paths)
+        self.assertIn(['structure', 'fuel_release', 'ostf_sha'],
+                      csv_keys_paths)
+        self.assertIn(['structure', 'fuel_release', 'fuel-ostf_sha'],
+                      csv_keys_paths)
+        self.assertIn(['structure', 'fuel_release', 'python-fuelclient_sha'],
+                      csv_keys_paths)
         self.assertNotIn(['structure', 'clusters'], csv_keys_paths)
         self.assertNotIn(['installed_plugins'], csv_keys_paths)
 
@@ -231,6 +237,28 @@ class StatsToCsvExportTest(InstStructureTest, DbTest):
         result = exporter.export_clusters(inst_structures, [])
         for _ in result:
             pass
+
+    def test_fuel_release_modified(self):
+        exporter = StatsToCsv()
+        inst_structures = self.generate_inst_structures()
+        structure_keys_paths, cluster_keys_paths, csv_keys_paths = \
+            exporter.get_cluster_keys_paths()
+        flatten_clusters = exporter.get_flatten_clusters(
+            structure_keys_paths, cluster_keys_paths,
+            inst_structures, [])
+        ostf_pos = csv_keys_paths.index(['structure', 'fuel_release',
+                                         'ostf_sha'])
+        f_ostf_pos = csv_keys_paths.index(['structure', 'fuel_release',
+                                           'fuel-ostf_sha'])
+        f_cli_pos = csv_keys_paths.index(['structure', 'fuel_release',
+                                          'python-fuelclient_sha'])
+        for flatten_cluster in flatten_clusters:
+            if flatten_cluster[ostf_pos]:
+                self.assertIsNone(flatten_cluster[f_ostf_pos])
+                self.assertIsNone(flatten_cluster[f_cli_pos])
+            else:
+                self.assertIsNotNone(flatten_cluster[f_ostf_pos])
+                self.assertIsNotNone(flatten_cluster[f_cli_pos])
 
     def test_cluster_invalid_data(self):
         exporter = StatsToCsv()

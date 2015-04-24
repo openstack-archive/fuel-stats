@@ -127,6 +127,8 @@ INSTALLATION_INFO_SKELETON = {
             'fuelmain_sha': None,
             'nailgun_sha': None,
             'ostf_sha': None,
+            'fuel-ostf_sha': None,
+            'python-fuelclient_sha': None,
             'production': None,
             'release': None
         },
