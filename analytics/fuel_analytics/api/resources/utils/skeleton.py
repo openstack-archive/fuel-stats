@@ -124,9 +124,12 @@ INSTALLATION_INFO_SKELETON = {
             'build_number': None,
             'feature_groups': [{}],
             'fuellib_sha': None,
+            'fuel-library_sha': None,
             'fuelmain_sha': None,
             'nailgun_sha': None,
             'ostf_sha': None,
+            'fuel-ostf_sha': None,
+            'python-fuelclient_sha': None,
             'production': None,
             'release': None
         },
