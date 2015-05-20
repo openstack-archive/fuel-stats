@@ -47,3 +47,4 @@ def init_logger():
     if not os.path.exists(log_dir):
         os.mkdir(log_dir, 0o750)
     app.logger.addHandler(get_file_handler())
+    app.logger.setLevel(app.config.get('LOG_LEVEL'))

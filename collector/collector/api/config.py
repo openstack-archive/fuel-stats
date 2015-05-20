@@ -25,6 +25,22 @@ class Production(object):
     LOGGER_NAME = 'collector'
     SQLALCHEMY_DATABASE_URI = \
         'postgresql://collector:*****@localhost/collector'
+    # If you need to filter releases please fill FILTERING_RULES
+    # Example of FILTERING_RULES:
+    # {'6.1':
+    #    {
+    #        # 6.1 build 2015-04-13_234_13-12-31 became not filtered only
+    #        # after 2015-04-30T23:00:18 UTC
+    #        '2015-04-13_234_13-12-31': '2015-04-30T23:00:18',
+    #
+    #        # 6.1 build 2015-04-13_06-18-10 not filtered
+    #        '2015-04-13_06-18-10': None
+    #  },
+    #  '6.1.1': {},  # All builds of 6.1.1 filtered
+    #  '7.0': None   # All builds of 7.0 not filtered
+    # }
+    # If you don't need any filtration, please set FILTERING_RULES = None
+    FILTERING_RULES = None
 
 
 class Testing(Production):

@@ -37,6 +37,7 @@ class InstallationStructure(db.Model):
     structure = db.Column(JSON)
     creation_date = db.Column(db.DateTime)
     modification_date = db.Column(db.DateTime)
+    is_filtered = db.Column(db.Boolean)
 
 
 class ActionLog(db.Model):
