@@ -25,6 +25,7 @@
                             "fuel-library_sha": {"type": "string"},
                             "python-fuelclient_sha": {"type": "string"},
                             "fuelmain_sha": {"type": "string"},
+                            "build_id": {"type": "string"},
                             "feature_groups": {
                                 "type": "array",
                                 "items": {"type": "string"}

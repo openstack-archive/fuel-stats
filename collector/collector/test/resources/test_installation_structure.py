@@ -12,10 +12,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import datetime
+import mock
+
 from collector.test.base import DbTest
 
+from collector.api.app import app
 from collector.api.app import db
 from collector.api.db.model import InstallationStructure
+from collector.api.resources.installation_structure import _is_filtered
 
 
 class TestInstallationStructure(DbTest):
@@ -187,3 +192,133 @@ class TestInstallationStructure(DbTest):
                 {'installation_structure': struct}
             )
             self.check_response_ok(resp, codes=(200, 201))
+
+    def test_is_not_filtered(self):
+        release = '6.1'
+        build_id = '2014-10-30_14-51-06'
+        struct = {
+            'fuel_release': {
+                'release': release,
+                'build_id': build_id
+            }
+        }
+
+        # No rules
+        with mock.patch.dict(app.config, {'FILTERING_RULES': None}):
+            self.assertFalse(_is_filtered(struct))
+
+        # No build_ids
+        with mock.patch.dict(app.config,
+                             {'FILTERING_RULES': {release: None}}):
+            self.assertFalse(_is_filtered(struct))
+
+        # Have build id, no from_dt
+        with mock.patch.dict(
+                app.config, {'FILTERING_RULES': {release: {build_id: None}}}):
+            self.assertFalse(_is_filtered(struct))
+
+        # Have build id, from_dt in past
+        dt = datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        dt_str = dt.isoformat()
+        with mock.patch.dict(
+                app.config,
+                {'FILTERING_RULES': {release: {build_id: dt_str}}}):
+            self.assertFalse(_is_filtered(struct))
+
+    def test_is_filtered(self):
+        release = '6.1_filtered'
+        build_id = '2014-10-30_14-51-06_filtered'
+        struct = {
+            'fuel_release': {
+                'release': release,
+                'build_id': build_id
+            }
+        }
+
+        # release not found in rules
+        with mock.patch.dict(app.config, {'FILTERING_RULES': {}}):
+            self.assertTrue(_is_filtered(struct))
+
+        # build_id not found in rules
+        with mock.patch.dict(app.config,
+                             {'FILTERING_RULES': {release: {}}}):
+            self.assertTrue(_is_filtered(struct))
+
+        # from_dt in future
+        dt = datetime.datetime.utcnow() + datetime.timedelta(days=1)
+        dt_str = dt.isoformat()
+        with mock.patch.dict(
+                app.config,
+                {'FILTERING_RULES': {release: {build_id: dt_str}}}):
+            self.assertTrue(_is_filtered(struct))
+
+    def test_is_filtered_check_from_dt_formats(self):
+        release = 'release_dt_format'
+        build_id = 'build_id_dt_format'
+        struct = {
+            'fuel_release': {
+                'release': release,
+                'build_id': build_id
+            }
+        }
+        dates = (
+            '2015-05-19T11:55:06.369745',
+            '2015-05-19T11:55:06',
+            '2015-05-19T11:55',
+            '2015-05-19T11',
+            '2015-05-19T',
+            '2015-05-19',
+        )
+        for from_dt in dates:
+            with mock.patch.dict(
+                    app.config,
+                    {'FILTERING_RULES': {release: {build_id: from_dt}}}):
+                _is_filtered(struct)
+
+    def test_not_filtered_saved_in_db(self):
+        master_node_uid = 'xx'
+        struct = {
+            'master_node_uid': master_node_uid,
+            'allocated_nodes_num': 0,
+            'unallocated_nodes_num': 0,
+            'clusters_num': 0,
+            'clusters': [],
+            'fuel-release': {
+                'build_id': 'build_id_not_filtered',
+                'release': 'release_not_filtered'
+            }
+        }
+        with mock.patch.dict(app.config, {'FILTERING_RULES': None}):
+            resp = self.post(
+                '/api/v1/installation_structure/',
+                {'installation_structure': struct}
+            )
+            self.check_response_ok(resp, codes=(201,))
+
+            obj = db.session.query(InstallationStructure).filter(
+                InstallationStructure.master_node_uid == master_node_uid).one()
+            self.assertFalse(obj.is_filtered)
+
+    def test_filtered_saved_in_db(self):
+        master_node_uid = 'xx'
+        struct = {
+            'master_node_uid': master_node_uid,
+            'allocated_nodes_num': 0,
+            'unallocated_nodes_num': 0,
+            'clusters_num': 0,
+            'clusters': [],
+            'fuel-release': {
+                'build_id': 'build_id_not_filtered',
+                'release': 'release_not_filtered'
+            }
+        }
+        with mock.patch.dict(app.config, {'FILTERING_RULES': {}}):
+            resp = self.post(
+                '/api/v1/installation_structure/',
+                {'installation_structure': struct}
+            )
+            self.check_response_ok(resp, codes=(201,))
+
+        obj = db.session.query(InstallationStructure).filter(
+            InstallationStructure.master_node_uid == master_node_uid).one()
+        self.assertTrue(obj.is_filtered)

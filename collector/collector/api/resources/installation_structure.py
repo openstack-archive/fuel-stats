@@ -13,6 +13,7 @@
 #    under the License.
 
 from datetime import datetime
+from dateutil import parser
 from flask import Blueprint
 from flask import json
 from flask import request
@@ -50,6 +51,52 @@ def post():
         app.logger.debug("Updating structure {}".format(obj.id))
         obj.modification_date = datetime.utcnow()
         status_code = 200
+    obj.is_filtered = _is_filtered(structure)
     obj.structure = json.dumps(structure)
     db.session.add(obj)
     return status_code, {'status': 'ok'}
+
+
+def _is_filtered(structure):
+    """Checks is structure should be filtered or not.
+    For filtering uses rules defined at app.config['FILTERING_RULES']
+    :param structure: dict with installation info structure data
+    :return: bool
+    """
+    rules = app.config.get('FILTERING_RULES')
+    # No rules specified
+    if rules is None:
+        return False
+
+    # Extracting data from structure
+    fuel_release = structure.get('fuel_release', {})
+    release = fuel_release.get('release')
+    build_id = structure.get('fuel_release', {}).get('build_id')
+
+    # Release not in rules
+    if release not in rules:
+        return True
+
+    release_rules = rules.get(release)
+
+    # No build_ids specified
+    if release_rules is None:
+        return False
+
+    # build_id not found in list
+    if build_id not in release_rules:
+        return True
+
+    build_rules = release_rules.get(build_id)
+
+    # No from_dt specified
+    if build_rules is None:
+        return False
+
+    # from_dt in the past
+    from_dt = parser.parse(build_rules)
+    cur_dt = datetime.utcnow()
+    if from_dt <= cur_dt:
+        return False
+
+    return True
