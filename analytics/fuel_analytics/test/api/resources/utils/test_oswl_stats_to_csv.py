@@ -515,3 +515,10 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
                         resource_type, oswl_keys_paths, vm_keys_paths, oswls)
                     # Checking only invalid data is not exported
                     self.assertEqual(num - 1, len(list(flatten_resources)))
+
+    def test_volume_host_not_in_keys_paths(self):
+        exporter = OswlStatsToCsv()
+        resource_type = consts.OSWL_RESOURCE_TYPES.volume
+        oswl_keys_paths, resource_keys_paths, csv_keys_paths = \
+            exporter.get_resource_keys_paths(resource_type)
+        self.assertNotIn(['volume', 'host'], csv_keys_paths)
