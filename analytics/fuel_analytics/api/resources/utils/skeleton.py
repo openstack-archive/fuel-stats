@@ -179,7 +179,6 @@ OSWL_SKELETONS = {
         'status': None,
         'volume_type': None,
         'size': None,
-        'host': None,
         'snapshot_id': None,
         'tenant_id': None
     },
