@@ -94,7 +94,6 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
 
             # Saving data for true JSON loading from DB object
             db.session.add(oswl)
-            db.session.commit()
             resource_data = oswl.resource_data
             added_ids = set(d['id'] for d in resource_data['added'])
             modified_ids = set(d['id'] for d in resource_data['modified'])
@@ -154,7 +153,6 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
             inst_sturcts = self.get_saved_inst_structs(oswls_saved)
             inst_struct = inst_sturcts[0]
             inst_struct.modification_date = None
-            db.session.commit()
 
             oswls = get_oswls_query(resource_type).all()
             oswl = oswls[0]
@@ -164,7 +162,6 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
             )
 
             inst_struct.modification_date = datetime.utcnow()
-            db.session.commit()
             oswls = get_oswls_query(resource_type).all()
             oswl = oswls[0]
             self.assertEquals(
@@ -221,7 +218,6 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
             # Checking only one record is present
             inst_struct.modification_date = None
             db.session.add(inst_struct)
-            db.session.commit()
             oswls = get_oswls_query(resource_type).all()
             oswl = oswls[0]
             self.assertIsNotNone(oswl.installation_created_date)
@@ -234,7 +230,6 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
             # Checking record is duplicated
             inst_struct.modification_date = datetime.utcnow()
             db.session.add(inst_struct)
-            db.session.commit()
 
             oswls = get_oswls_query(resource_type).all()
             oswl = oswls[0]
@@ -315,7 +310,6 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
                     )
                     db.session.add(oswl)
                     oswls_saved.append(oswl)
-                db.session.commit()
                 self.get_saved_inst_structs(oswls_saved,
                                             creation_date_range=(0, 0))
             # Checking all resources in seamless oswls
@@ -382,7 +376,6 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
         for oswl in oswls_saved:
             db.session.add(oswl)
         self.get_saved_inst_structs(oswls_saved, creation_date_range=(0, 0))
-        db.session.commit()
 
         with app.test_request_context():
             oswls = get_oswls(resource_type)
@@ -420,7 +413,6 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
         )
         db.session.add(oswl)
         self.get_saved_inst_structs([oswl], creation_date_range=(0, 0))
-        db.session.commit()
 
         with app.test_request_context():
             with mock.patch.object(flask.request, 'args',
@@ -441,7 +433,8 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
                 # Only column names in result
                 self.assertEqual(1, len(list(result)))
             with mock.patch.object(flask.request, 'args',
-                                   {'to_date': '2015-02-24'}):
+                                   {'from_date': '2015-02-21',
+                                    'to_date': '2015-02-24'}):
                 oswls = list(get_oswls(resource_type))
                 self.assertEqual(1, len(oswls))
                 result = exporter.export(resource_type, oswls,

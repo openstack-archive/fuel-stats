@@ -58,7 +58,7 @@ class DbTest(BaseTest):
         OpenStackWorkloadStats.query.delete()
         InstallationStructure.query.delete()
         ActionLog.query.delete()
-        db.session.commit()
+        db.session.flush()
 
     def tearDown(self):
         # rollback - everything that happened with the

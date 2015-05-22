@@ -70,6 +70,10 @@ def get_installation_info(master_node_uid):
     return Response(json.dumps(dict_result), mimetype='application/json')
 
 
+def _get_db_objs_count(model, sql_clauses):
+    return db.session.query(model).filter(and_(*sql_clauses)).count()
+
+
 def _get_db_objs_data(model, sql_clauses, order_by, paging_params):
     """Gets DB objects by sql_clauses
     :param model: DB model
@@ -104,6 +108,17 @@ def _jsonify_collection(collection_iter):
         yield ']'
 
 
+def _jsonify_paged_collection(collection_iter, paging_params, total):
+
+    page_info = paging_params.copy()
+    page_info['total'] = total
+
+    yield '{{"paging_params": {0}, "objs": '.format(json.dumps(page_info))
+    for item in _jsonify_collection(collection_iter):
+        yield item
+    yield '}'
+
+
 @bp.route('/oswls/<master_node_uid>', methods=['GET'])
 def get_oswls(master_node_uid):
     paging_params = get_paging_params()
@@ -112,7 +127,9 @@ def get_oswls(master_node_uid):
     sql_clauses = (OSWL.master_node_uid == master_node_uid,)
     oswls_data = _get_db_objs_data(OSWL, sql_clauses,
                                    (OSWL.id.asc(),), paging_params)
-    jsons_data = _jsonify_collection(oswls_data)
+    oswls_count = _get_db_objs_count(OSWL, sql_clauses)
+    jsons_data = _jsonify_paged_collection(oswls_data, paging_params,
+                                           oswls_count)
     app.logger.debug("Oswl info for: %s, paging params: %s fetched",
                      master_node_uid, paging_params)
     return Response(jsons_data, mimetype='application/json')
@@ -128,7 +145,9 @@ def get_oswls_by_resource_type(master_node_uid, resource_type):
     oswls_data = _get_db_objs_data(
         OSWL, sql_clauses, (OSWL.id.asc(), OSWL.resource_type.asc()),
         paging_params)
-    jsons_data = _jsonify_collection(oswls_data)
+    oswls_total = _get_db_objs_count(OSWL, sql_clauses)
+    jsons_data = _jsonify_paged_collection(oswls_data, paging_params,
+                                           oswls_total)
     app.logger.debug("Oswl info for: %s, %s, paging prams: %s fetched",
                      master_node_uid, resource_type, paging_params)
     return Response(jsons_data, mimetype='application/json')
@@ -142,7 +161,24 @@ def get_action_logs(master_node_uid):
     sql_clauses = (AL.master_node_uid == master_node_uid,)
     action_logs_data = _get_db_objs_data(AL, sql_clauses,
                                          (AL.id.asc(),), paging_params)
-    jsons_data = _jsonify_collection(action_logs_data)
+    action_logs_total = _get_db_objs_count(AL, sql_clauses)
+    jsons_data = _jsonify_paged_collection(action_logs_data, paging_params,
+                                           action_logs_total)
     app.logger.debug("Action_logs for: %s, paging params: %s fetched",
                      master_node_uid, paging_params)
+    return Response(jsons_data, mimetype='application/json')
+
+
+@bp.route('/installation_infos/filtered', methods=['GET'])
+def get_filtered_installation_infos():
+    paging_params = get_paging_params()
+    app.logger.debug("Fetching filtered installation_info, paging params: %s",
+                     paging_params)
+    sql_clauses = (IS.is_filtered == bool(1),)  # Workaround for PEP8 E712
+    inst_infos = _get_db_objs_data(IS, sql_clauses, (IS.id.asc(),),
+                                   paging_params)
+    inst_infos_total = _get_db_objs_count(IS, sql_clauses)
+    jsons_data = _jsonify_paged_collection(inst_infos, paging_params,
+                                           inst_infos_total)
+    app.logger.debug("Filtered installation_info: %s fetched", paging_params)
     return Response(jsons_data, mimetype='application/json')
