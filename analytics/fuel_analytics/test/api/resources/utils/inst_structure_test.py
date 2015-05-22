@@ -207,7 +207,6 @@ class InstStructureTest(BaseTest):
         for obj in objs:
             db.session.add(obj)
             result.append(obj)
-        db.session.commit()
         return result
 
     def get_saved_inst_structures(self, *args, **kwargs):

@@ -86,7 +86,8 @@ class JsonExporterTest(InstStructureTest, OswlTest, DbTest):
                     json.loads(resp.data)
 
     def test_get_action_logs(self):
-        structs = self.get_saved_inst_structures(installations_num=10)
+        total_num = 10
+        structs = self.get_saved_inst_structures(installations_num=total_num)
         self.get_saved_action_logs(structs)
         with app.test_request_context():
             for struct in structs:
@@ -176,3 +177,21 @@ class JsonExporterTest(InstStructureTest, OswlTest, DbTest):
                     getattr(expected, column_name),
                     getattr(actual, column_name)
                 )
+
+    def test_get_filtered_installation_info(self):
+        total_num = 10
+        filtered_num = 4
+        structs = self.get_saved_inst_structures(installations_num=total_num)
+        for struct in structs[:filtered_num]:
+            struct.is_filtered = True
+        db.session.flush()
+
+        with app.test_request_context():
+            url = '/api/v1/json/installation_info/filtered'
+            resp = self.client.get(url)
+            self.check_response_ok(resp)
+            result = json.loads(resp.data)
+
+            self.assertEquals(filtered_num, result['paging_params']['total'])
+            for struct in result['objs']:
+                self.assertTrue(struct['is_filtered'])
