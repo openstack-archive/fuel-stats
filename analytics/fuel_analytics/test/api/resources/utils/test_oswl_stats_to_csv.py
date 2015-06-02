@@ -406,14 +406,16 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
             stats_on_date = o.stats_on_date
 
     def test_dates_filtering(self):
+        updated_at = datetime.utcnow()
+        base_date = updated_at.date() - timedelta(days=1)
         exporter = OswlStatsToCsv()
         resource_type = consts.OSWL_RESOURCE_TYPES.vm
         oswl = OpenStackWorkloadStats(
             master_node_uid='x',
             external_id=1,
             cluster_id=1,
-            created_date=datetime(2015, 2, 23).date(),
-            updated_time=datetime.utcnow().time(),
+            created_date=base_date,
+            updated_time=updated_at.time(),
             resource_type=resource_type,
             resource_checksum='',
             resource_data={'current': [{'id': 444, 'status': 'ACTIVE'}]}
@@ -423,29 +425,53 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
         db.session.commit()
 
         with app.test_request_context():
-            with mock.patch.object(flask.request, 'args',
-                                   {'from_date': '2015-02-21',
-                                    'to_date': '2015-02-22'}):
+            with mock.patch.object(
+                flask.request,
+                'args',
+                {
+                    'from_date': (base_date - timedelta(days=2)).isoformat(),
+                    'to_date': (base_date - timedelta(days=1)).isoformat()
+                }
+            ):
                 oswls = list(get_oswls(resource_type))
                 self.assertEqual(0, len(oswls))
-                result = exporter.export(resource_type, oswls,
-                                         datetime(2015, 2, 22).date())
+                result = exporter.export(
+                    resource_type,
+                    oswls,
+                    (base_date - timedelta(days=1))
+                )
                 # Only column names in result
                 self.assertEqual(1, len(list(result)))
-            with mock.patch.object(flask.request, 'args',
-                                   {'to_date': '2015-02-22'}):
+            with mock.patch.object(
+                flask.request,
+                'args',
+                {
+                    'to_date': (base_date - timedelta(days=1)).isoformat()
+                }
+            ):
                 oswls = list(get_oswls(resource_type))
                 self.assertEqual(0, len(oswls))
-                result = exporter.export(resource_type, oswls,
-                                         datetime(2015, 2, 22).date())
+                result = exporter.export(
+                    resource_type,
+                    oswls,
+                    base_date - timedelta(days=1)
+                )
                 # Only column names in result
                 self.assertEqual(1, len(list(result)))
-            with mock.patch.object(flask.request, 'args',
-                                   {'to_date': '2015-02-24'}):
+            with mock.patch.object(
+                flask.request,
+                'args',
+                {
+                    'to_date': base_date.isoformat()
+                }
+            ):
                 oswls = list(get_oswls(resource_type))
                 self.assertEqual(1, len(oswls))
-                result = exporter.export(resource_type, oswls,
-                                         datetime(2015, 2, 24).date())
+                result = exporter.export(
+                    resource_type,
+                    oswls,
+                    base_date + timedelta(days=1)
+                )
                 # Not only column names in result
                 self.assertEqual(1 + 2, len(list(result)))
 
