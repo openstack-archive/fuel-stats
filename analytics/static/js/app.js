@@ -16,7 +16,8 @@ function($, d3, D3pie, d3tip, nv, elasticsearch) {
     var releases = [
         {name: 'All', filter: ''},
         {name: '6.0 Technical Preview', filter: '6.0-techpreview'},
-        {name: '6.0 GA', filter: '6.0'}
+        {name: '6.0 GA', filter: '6.0'},
+        {name: '6.1', filter: '6.1'}
     ];
     var currentRelease = releases[0].filter;
 
