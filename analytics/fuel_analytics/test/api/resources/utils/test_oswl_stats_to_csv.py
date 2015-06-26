@@ -540,3 +540,26 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
         oswl_keys_paths, resource_keys_paths, csv_keys_paths = \
             exporter.get_resource_keys_paths(resource_type)
         self.assertNotIn(['volume', 'host'], csv_keys_paths)
+
+    def test_is_filtered_oswls_export(self):
+        for resource_type in self.RESOURCE_TYPES:
+            # Creating filtered OSWLs
+            filtered_num = 15
+            filtered_oswls = self.get_saved_oswls(
+                filtered_num,
+                resource_type, current_num_range=(1, 1))
+            self.get_saved_inst_structs(filtered_oswls,
+                                        is_filtered_values=(True,))
+            # Creating not filtered OSWLs
+            not_filtered_num = 10
+            not_filtered_oswls = self.get_saved_oswls(
+                not_filtered_num,
+                resource_type, current_num_range=(1, 1))
+            self.get_saved_inst_structs(not_filtered_oswls)
+
+            # Checking only not filtered resources fetched
+            with app.test_request_context():
+                oswls = get_oswls_query(resource_type).all()
+                self.assertEqual(not_filtered_num, len(oswls))
+                for oswl in oswls:
+                    self.assertIn(oswl.is_filtered, (False, None))
