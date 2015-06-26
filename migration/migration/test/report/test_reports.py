@@ -69,13 +69,34 @@ class Reports(ElasticTest):
         self.assertDictEqual(expected_distr, actual_distr)
 
     def test_installations_number(self):
+        # Generating not filtered data
         installations_num = 150
-        installations = self.generate_data(installations_num=installations_num)
+        installations = self.generate_data(
+            installations_num=installations_num,
+            is_filtered_values=(None, False)
+        )
+        # Generating filtered data
+        self.generate_data(
+            installations_num=70,
+            is_filtered_values=(True,)
+        )
         release = "6.0-ga"
         query = {
             "query": {
-                "terms": {
-                    "fuel_release.release": [release]
+                "filtered": {
+                    "filter": {
+                        "bool": {
+                            "should": [
+                                {"term": {"is_filtered": False}},
+                                {"missing": {"field": "is_filtered"}},
+                            ],
+                            "must": {
+                                "terms": {
+                                    "fuel_release.release": [release]
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -143,11 +164,8 @@ class Reports(ElasticTest):
             sum(d['doc_count'] for d in libvirt_types['buckets'])
         )
 
-    def test_filtration_by_releases(self):
-        installations_num = 100
-        self.generate_data(installations_num=installations_num)
-
-        # Fetching available releases
+    def _get_releases_data(self):
+        # Fetching available releases info
         query = {
             "size": 0,
             "aggs": {
@@ -161,44 +179,30 @@ class Reports(ElasticTest):
         resp = self.es.search(index=config.INDEX_FUEL,
                               doc_type=config.DOC_TYPE_STRUCTURE,
                               body=query)
-        releases_data = dict([(d['key'], d['doc_count']) for d in
-                              resp['aggregations']['releases']['buckets']])
+        return dict([(d['key'], d['doc_count']) for d in
+                     resp['aggregations']['releases']['buckets']])
 
-        # Adding filtration by the releases into libvirt distribution query
+    def _query_libvirt_distribution(self):
         statuses = ["operational", "error"]
-        filter_by_release = six.iterkeys(releases_data).next()
-        query = {
-            "size": 0,
-            "aggs": {
-                "releases": {
-                    "filter": {
-                        "terms": {
-                            "fuel_release.release": [filter_by_release]
-                        }
-                    },
-
-                    "aggs": {
-                        "clusters": {
-                            "nested": {
-                                "path": "clusters"
-                            },
-                            "aggs": {
-                                "statuses": {
-                                    "filter": {
-                                        "terms": {"status": statuses}
-                                    },
-                                    "aggs": {
-                                        "attributes": {
-                                            "nested": {
-                                                "path": "clusters.attributes"
-                                            },
-                                            "aggs": {
-                                                "libvirt_types": {
-                                                    "terms": {
-                                                        "field": "libvirt_type"
-                                                    }
-                                                }
-                                            }
+        return {
+            "clusters": {
+                "nested": {
+                    "path": "clusters"
+                },
+                "aggs": {
+                    "statuses": {
+                        "filter": {
+                            "terms": {"status": statuses}
+                        },
+                        "aggs": {
+                            "attributes": {
+                                "nested": {
+                                    "path": "clusters.attributes"
+                                },
+                                "aggs": {
+                                    "libvirt_types": {
+                                        "terms": {
+                                            "field": "libvirt_type"
                                         }
                                     }
                                 }
@@ -208,6 +212,46 @@ class Reports(ElasticTest):
                 }
             }
         }
+
+    def _query_filter_by_release(self, releases, query):
+        return {
+            "releases": {
+                "filter": {
+                    "terms": {
+                        "fuel_release.release": releases
+                    }
+                },
+                "aggs": query
+            }
+        }
+
+    def _query_filter_by_is_filtered(self, query):
+        return {
+            "is_filtered": {
+                "filter": {
+                    "bool": {
+                        "should": [
+                            {"term": {"is_filtered": False}},
+                            {"missing": {"field": "is_filtered"}},
+                        ]
+                    }
+                },
+                "aggs": query
+            }
+        }
+
+    def test_filtration_by_releases(self):
+        installations_num = 100
+        self.generate_data(installations_num=installations_num)
+
+        # Adding filtration by the releases into libvirt distribution query
+        releases_data = self._get_releases_data()
+        filter_by_release = six.iterkeys(releases_data).next()
+        query = {
+            "size": 0,
+            "aggs": self._query_filter_by_release(
+                [filter_by_release], self._query_libvirt_distribution())
+        }
         resp = self.es.search(index=config.INDEX_FUEL,
                               doc_type=config.DOC_TYPE_STRUCTURE,
                               body=query)
@@ -216,3 +260,47 @@ class Reports(ElasticTest):
         # checking releases are filtered
         self.assertEquals(releases_data[filter_by_release],
                           filtered_releases['doc_count'])
+
+    def test_filtration_by_is_filtered(self):
+        # Query for fetching libvirt distribution
+        libvirt_query = self._query_libvirt_distribution()
+
+        # Query for filtration by is_filtered
+        query = {
+            "size": 0,
+            "aggs": self._query_filter_by_is_filtered(libvirt_query)
+        }
+
+        # Checking filtered docs aren't fetched
+        filtered_num = 15
+        self.generate_data(installations_num=filtered_num,
+                           is_filtered_values=(True,))
+
+        resp = self.es.search(index=config.INDEX_FUEL,
+                              doc_type=config.DOC_TYPE_STRUCTURE,
+                              body=query)
+        docs = resp['aggregations']['is_filtered']
+        self.assertEqual(0, docs['doc_count'])
+
+        # Checking false filtered docs are fetched
+        not_filtered_num = 20
+        self.generate_data(installations_num=not_filtered_num,
+                           is_filtered_values=(False,))
+
+        resp = self.es.search(index=config.INDEX_FUEL,
+                              doc_type=config.DOC_TYPE_STRUCTURE,
+                              body=query)
+        docs = resp['aggregations']['is_filtered']
+        self.assertEqual(not_filtered_num, docs['doc_count'])
+
+        # Checking None filtered docs are fetched
+        none_filtered_num = 25
+        self.generate_data(installations_num=none_filtered_num,
+                           is_filtered_values=(None,))
+
+        resp = self.es.search(index=config.INDEX_FUEL,
+                              doc_type=config.DOC_TYPE_STRUCTURE,
+                              body=query)
+        docs = resp['aggregations']['is_filtered']
+        self.assertEqual(not_filtered_num + none_filtered_num,
+                         docs['doc_count'])

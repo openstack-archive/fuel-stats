@@ -86,6 +86,7 @@ MAPPING_FUEL = {
             "unallocated_nodes_num": {"type": "long"},
             "creation_date": {"type": "date"},
             "modification_date": {"type": "date"},
+            "is_filtered": {"type": "boolean"},
             "fuel_release": {
                 "type": "object",
                 "properties": {

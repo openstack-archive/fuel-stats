@@ -145,7 +145,8 @@ class ElasticTest(TestCase):
     def generate_structure(
             self,
             clusters_num_range=(0, 10),
-            unallocated_nodes_num_range=(0, 20)
+            unallocated_nodes_num_range=(0, 20),
+            is_filtered_values=(True, False, None)
     ):
         mn_uid = '{}'.format(uuid.uuid4())
         clusters_num = random.randint(*clusters_num_range)
@@ -166,7 +167,8 @@ class ElasticTest(TestCase):
             'clusters': [],
             'unallocated_nodes_num_range': random.randint(
                 *unallocated_nodes_num_range),
-            'allocated_nodes_num': 0
+            'allocated_nodes_num': 0,
+            'is_filtered': random.choice(is_filtered_values)
         }
 
         for _ in xrange(clusters_num):
@@ -175,10 +177,12 @@ class ElasticTest(TestCase):
             structure['allocated_nodes_num'] += cluster['nodes_num']
         return structure
 
-    def generate_data(self, installations_num=100):
+    def generate_data(self, installations_num=100,
+                      is_filtered_values=(True, False, None)):
         structures = []
         for _ in xrange(installations_num):
-            structure = self.generate_structure()
+            structure = self.generate_structure(
+                is_filtered_values=is_filtered_values)
             self.es.index(config.INDEX_FUEL, config.DOC_TYPE_STRUCTURE,
                           body=structure, id=structure['master_node_uid'])
             structures.append(structure)
@@ -191,7 +195,8 @@ class MigrationTest(ElasticTest, DbTest):
     def setUp(self):
         super(MigrationTest, self).setUp()
 
-    def create_dumb_structure(self, set_md=True):
+    def create_dumb_structure(self, set_md=True,
+                              is_filtered_values=(True, False, None)):
         mn_uid = '{}'.format(uuid.uuid4())
         structure = {
             'master_node_uid': mn_uid,
@@ -214,11 +219,13 @@ class MigrationTest(ElasticTest, DbTest):
             m_date = now
         else:
             m_date = None
+        is_filtered = random.choice(is_filtered_values)
         db_session.add(InstallationStructure(master_node_uid=mn_uid,
                                              structure=structure,
                                              creation_date=now,
-                                             modification_date=m_date))
-        db_session.commit()
+                                             modification_date=m_date,
+                                             is_filtered=is_filtered))
+        db_session.flush()
         return mn_uid
 
     def _action_name(self):
