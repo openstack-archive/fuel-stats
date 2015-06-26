@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from sqlalchemy import Boolean
 from sqlalchemy import Column
 from sqlalchemy import DateTime
 from sqlalchemy import Integer
@@ -46,3 +47,4 @@ class InstallationStructure(Base):
     structure = Column(JSON, nullable=False)
     creation_date = Column(DateTime)
     modification_date = Column(DateTime)
+    is_filtered = Column(Boolean)

@@ -191,7 +191,8 @@ class MigrationTest(ElasticTest, DbTest):
     def setUp(self):
         super(MigrationTest, self).setUp()
 
-    def create_dumb_structure(self, set_md=True):
+    def create_dumb_structure(self, set_md=True,
+                              is_filtered_values=(True, False, None)):
         mn_uid = '{}'.format(uuid.uuid4())
         structure = {
             'master_node_uid': mn_uid,
@@ -214,11 +215,13 @@ class MigrationTest(ElasticTest, DbTest):
             m_date = now
         else:
             m_date = None
+        is_filtered = random.choice(is_filtered_values)
         db_session.add(InstallationStructure(master_node_uid=mn_uid,
                                              structure=structure,
                                              creation_date=now,
-                                             modification_date=m_date))
-        db_session.commit()
+                                             modification_date=m_date,
+                                             is_filtered=is_filtered))
+        db_session.flush()
         return mn_uid
 
     def _action_name(self):

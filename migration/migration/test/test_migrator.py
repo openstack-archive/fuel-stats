@@ -20,7 +20,8 @@ from mock import patch
 from migration.test.base import MigrationTest
 
 from migration.migrator import Migrator
-from migration.model import ActionLog
+from migration.model import ActionLog as AL
+from migration.model import InstallationStructure as IS
 
 
 class MigratorTest(MigrationTest):
@@ -155,6 +156,32 @@ class MigratorTest(MigrationTest):
             self.assertIsNotNone(source['creation_date'])
             self.assertIsNone(source['modification_date'])
 
+    def test_filtered_installation_structure_migration(self):
+        docs_num = 100
+        mn_uids = set([self.create_dumb_structure() for _ in xrange(docs_num)])
+
+        migrator = Migrator()
+        is_filtered_variants = set(obj.is_filtered for obj in
+                                   migrator.db_session.query(IS).all())
+        self.assertEqual(set((True, False, None)), is_filtered_variants)
+
+        sync_info = migrator.get_sync_info(config.STRUCTURES_DB_TABLE_NAME)
+        indexed_docs_before = self.get_indexed_docs_num(sync_info)
+
+        migrator.migrate_installation_structure()
+        self.es.indices.refresh(index=config.INDEX_FUEL)
+
+        indexed_docs_after = self.get_indexed_docs_num(sync_info)
+        self.assertEqual(indexed_docs_before + docs_num, indexed_docs_after)
+
+        # checking docs not contains None
+        for mn_uid in mn_uids:
+            doc = self.es.get(sync_info.index_name, mn_uid,
+                              doc_type=sync_info.doc_type_name)
+            # checking datetimes are migrated
+            source = doc['_source']
+            print "#### source", source['is_filtered']
+
     @patch('migration.config.DB_SYNC_CHUNK_SIZE', 2)
     def test_null_modification_date_migration(self):
         docs_num = 5
@@ -209,8 +236,8 @@ class MigratorTest(MigrationTest):
         new_sync_info = migrator.get_sync_info(
             config.ACTION_LOGS_DB_TABLE_NAME)
         time_of_sync = parser.parse(new_sync_info.last_sync_time)
-        last_obj = migrator.db_session.query(ActionLog).order_by(
-            ActionLog.id.desc()).first()
+        last_obj = migrator.db_session.query(AL).order_by(
+            AL.id.desc()).first()
 
         # checking sync time is updated
         self.assertLessEqual(time_before, time_of_sync)
