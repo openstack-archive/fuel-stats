@@ -36,6 +36,7 @@ from fuel_analytics.api.resources.csv_exporter import archive_dir
 from fuel_analytics.api.resources.csv_exporter import extract_date
 from fuel_analytics.api.resources.csv_exporter import get_action_logs_query
 from fuel_analytics.api.resources.csv_exporter import get_from_date
+from fuel_analytics.api.resources.csv_exporter import get_inst_structures
 from fuel_analytics.api.resources.csv_exporter import get_inst_structures_query
 from fuel_analytics.api.resources.csv_exporter import get_oswls_query
 from fuel_analytics.api.resources.csv_exporter import get_resources_types
@@ -154,6 +155,41 @@ class CsvExporterTest(OswlTest, DbTest):
             datetime.utcnow().date(),
             datetime.utcnow().date() - timedelta(days=100)).count()
         self.assertEqual(0, count_after)
+
+    def test_get_inst_structures_query_not_returns_filtered(self):
+        # Fetching inst structures count
+        count_initial = get_inst_structures_query().count()
+
+        # Generating filtered inst structures
+        oswls = self.get_saved_oswls(10, consts.OSWL_RESOURCE_TYPES.vm,
+                                     stats_per_mn_range=(1, 1))
+        self.get_saved_inst_structs(oswls, is_filtered_values=(True,))
+
+        # Checking filtered inst structures don't fetched
+        count_with_filtered = get_inst_structures_query(None, None).count()
+        self.assertEquals(count_initial, count_with_filtered)
+
+        # Generating not filtered inst structures
+        oswls = self.get_saved_oswls(20, consts.OSWL_RESOURCE_TYPES.vm,
+                                     stats_per_mn_range=(1, 1))
+        inst_structures = self.get_saved_inst_structs(
+            oswls, is_filtered_values=(None, False))
+        not_filtered_num = len(inst_structures)
+
+        # Checking not filtered inst structures fetched
+        count_with_not_filtered = get_inst_structures_query(None, None).count()
+        get_inst_structures_query(None, None).all()
+        self.assertEquals(count_initial + not_filtered_num,
+                          count_with_not_filtered)
+
+    def test_no_filtered_structures(self):
+        oswls = self.get_saved_oswls(100, consts.OSWL_RESOURCE_TYPES.vm,
+                                     stats_per_mn_range=(1, 1))
+        self.get_saved_inst_structs(
+            oswls, is_filtered_values=(True, False, None))
+        with app.test_request_context():
+            for inst_structure in get_inst_structures():
+                self.assertNotEqual(True, inst_structure.is_filtered)
 
     def test_get_resources_types(self):
         for resource_type in self.RESOURCE_TYPES:
