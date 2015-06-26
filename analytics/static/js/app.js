@@ -47,11 +47,28 @@ function($, d3, D3pie, d3tip, nv, elasticsearch) {
                 }
             };
         }
+        // adding filtering by is_filtered
+        result = {
+            aggs: {
+                is_filtered: {
+                    filter: {
+                        bool: {
+                            should: [
+                                {term: {is_filtered: false}},
+                                {missing: {field: 'is_filtered'}}
+                            ]
+                        }
+                    },
+                    aggs: result.aggs
+                }
+            }
+        };
         return result;
     };
 
     var getRootData = function(resp) {
-        return currentRelease ? resp.aggregations.releases : resp.aggregations;
+        var root = resp.aggregations.is_filtered;
+        return currentRelease ? root.releases : root;
     };
 
     var elasticSearchHost = function() {
@@ -75,7 +92,25 @@ function($, d3, D3pie, d3tip, nv, elasticsearch) {
 
     var installationsCount = function() {
         var client = new elasticsearch.Client(elasticSearchHost());
-        var request = {query: currentRelease ? {terms: {'fuel_release.release': [currentRelease]}} : {match_all: {}}};
+        var request = {
+            query: {
+                filtered: {
+                    filter: {
+                        bool: {
+                            should: [
+                                {term: {'is_filtered': false}},
+                                {missing: {'field': 'is_filtered'}},
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+        if (currentRelease) {
+            request.query.filtered.filter.bool['must'] = {
+                terms: {'fuel_release.release': [currentRelease]}
+            }
+        }
 
         client.count({
             index: 'fuel',
