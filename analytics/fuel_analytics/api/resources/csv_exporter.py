@@ -74,6 +74,9 @@ def get_inst_structures_query(from_date=None, to_date=None):
     :return: SQLAlchemy query
     """
     query = db.session.query(IS)
+    query = query.filter(or_(
+        IS.is_filtered == bool(False),  # workaround for PEP8 error E712
+        IS.is_filtered.is_(None)))
     if from_date is not None:
         query = query.filter(or_(IS.creation_date >= from_date,
                                  IS.modification_date >= from_date))

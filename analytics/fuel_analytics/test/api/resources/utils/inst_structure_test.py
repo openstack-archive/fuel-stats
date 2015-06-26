@@ -181,7 +181,8 @@ class InstStructureTest(BaseTest):
             modification_date_range=(1, 10), clusters_num_range=(0, 10),
             plugins_num_range=(0, 5), releases=("6.0-techpreview", "6.0-ga"),
             release_generators=('_fuel_release_gen',
-                                '_fuel_release_gen_2015_04')):
+                                '_fuel_release_gen_2015_04'),
+            is_filtered_values=(False, None)):
         for _ in xrange(installations_num):
             mn_uid = '{}'.format(uuid.uuid4())
             structure = self.generate_structure(
@@ -197,7 +198,8 @@ class InstStructureTest(BaseTest):
                 master_node_uid=mn_uid,
                 structure=structure,
                 creation_date=creation_date,
-                modification_date=modification_date
+                modification_date=modification_date,
+                is_filtered=random.choice(is_filtered_values)
             )
             yield obj
 

@@ -57,3 +57,6 @@ target/
 .venv/
 .idea
 *.swp
+analytics/static/bower_components
+analytics/static/node_modules
+analytics/static/js/libs
