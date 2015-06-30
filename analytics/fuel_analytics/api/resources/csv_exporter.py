@@ -67,13 +67,18 @@ def get_to_date():
 
 
 def get_inst_structures_query(from_date=None, to_date=None):
-    """Composes query for fetching installation structures
-    info with filtering by from and to dates and ordering by id
+    """Composes query for fetching not filtered installation
+    structures info with filtering by from and to dates and
+    ordering by id. Installation structure is not filtered
+    if is_filtered is False or None.
     :param from_date: filter from creation or modification date
     :param to_date: filter to creation or modification date
     :return: SQLAlchemy query
     """
     query = db.session.query(IS)
+    query = query.filter(or_(
+        IS.is_filtered == bool(False),  # workaround for PEP8 error E712
+        IS.is_filtered.is_(None)))
     if from_date is not None:
         query = query.filter(or_(IS.creation_date >= from_date,
                                  IS.modification_date >= from_date))
@@ -173,9 +178,11 @@ def get_oswls_query(resource_type, from_date=None, to_date=None):
         OSWS.created_date.label('stats_on_date'),  # for showing in CSV
         OSWS.resource_type, OSWS.resource_data,
         IS.creation_date.label('installation_created_date'),
-        IS.modification_date.label('installation_updated_date')).\
+        IS.modification_date.label('installation_updated_date'),
+        IS.is_filtered).\
         join(IS, IS.master_node_uid == OSWS.master_node_uid).\
-        filter(OSWS.resource_type == resource_type)
+        filter(OSWS.resource_type == resource_type).\
+        filter(or_(IS.is_filtered == bool(False), IS.is_filtered.is_(None)))
     if from_date is not None:
         query = query.filter(OSWS.created_date >= from_date)
     if to_date is not None:
