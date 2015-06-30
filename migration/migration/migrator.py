@@ -138,6 +138,7 @@ class Migrator(object):
             ('master_node_uid',),
             json_fields=('structure',),
             mixed_fields_mapping=(
+                NameMapping(source='is_filtered', dest='is_filtered'),
                 NameMapping(source='creation_date', dest='creation_date'),
                 NameMapping(source='modification_date',
                             dest='modification_date')
