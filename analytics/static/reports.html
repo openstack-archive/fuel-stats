@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="favicon.ico">
+    <title>Fuel Statistics</title>
+    <!-- Bootstrap core CSS -->
+    <link href="js/libs/bootstrap.css" rel="stylesheet">
+    <link href="css/fuel-stat.css" rel="stylesheet">
+    <link rel="stylesheet" href="js/libs/jquery-ui.css">
+    <script src="js/libs/jquery.js"></script>
+    <script src="js/libs/jquery-ui.js"></script>
+    <script src="js/reports.js"></script>
+</head>
+    <body>
+
+        <!-- Start Left Pannel -->
+        <div class="nav-pannel">
+            <div class="logo"><a href="#"></a></div>
+
+            <div class="nav-item"><a href="index.html">
+                <div class="icon-graphs"></div>
+                <div class="nav-item-name">Graphics</div>
+            </a></div>
+
+            <div class="nav-item"><a href="#" class="active">
+                <div class="icon-reports"></div>
+                <div class="nav-item-name">Reports</div>
+            </a></div>
+
+        </div>
+        <!-- End Left Pannel -->
+
+        <!-- Start Base Layout -->
+        <div class="base-box">
+
+            <div class="container-fluid reports titul-graph-box">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="content">
+                            <h3>Reports</h3>
+                            <div class='notice'>Set time period for reporting:</div>
+                            <p>
+                                <label for="from">from</label>
+                                <input type="text" id="from" name="from">
+                                <label for="to">to</label>
+                                <input type="text" id="to" name="to">
+                            </p>
+                            <div class='notice'>Click the link to download report:</div>
+                            <ul>
+                                <li><a class="link" href="#" id="clusters">Istallations info</a></li>
+                                <li><a class="link" href="#" id="plugins">Plugins</a></li>
+                                <li><a class="link" href="#" id="flavor">Flavors</a></li>
+                                <li><a class="link" href="#" id="image">Images</a></li>
+                                <li><a class="link" href="#" id="keystone_user">Keystone users</a></li>
+                                <li><a class="link" href="#" id="tenant">Tenants</a></li>
+                                <li><a class="link" href="#" id="vm">Vms</a></li>
+                                <li><a class="link" href="#" id="volume">Volumes</a></li>
+                                <li><a class="link" href="#" id="all">All reports</a> (download can take lot of time, please be patient)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </body>
+</html>
+

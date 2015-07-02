@@ -2,6 +2,7 @@
     "name": "fuel-stats",
     "dependencies": {
         "jquery": "2.1.1",
+        "jquery-ui": "1.11.4",
         "bootstrap": "3.2.0",
         "d3": "3.4.13",
         "d3-tip": "0.6.3",
@@ -22,6 +23,9 @@
                 "dist/css/bootstrap.css.map",
                 "dist/js/bootstrap.js"
             ]
+        },
+        "jquery-ui": {
+            "main": "themes/base/jquery-ui.css"
         }
     },
     "ignore": [
