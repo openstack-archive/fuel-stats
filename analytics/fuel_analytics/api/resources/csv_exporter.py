@@ -179,6 +179,7 @@ def get_oswls_query(resource_type, from_date=None, to_date=None):
         OSWS.resource_type, OSWS.resource_data,
         IS.creation_date.label('installation_created_date'),
         IS.modification_date.label('installation_updated_date'),
+        IS.structure['fuel_release'].label('fuel_release'),
         IS.is_filtered).\
         join(IS, IS.master_node_uid == OSWS.master_node_uid).\
         filter(OSWS.resource_type == resource_type).\

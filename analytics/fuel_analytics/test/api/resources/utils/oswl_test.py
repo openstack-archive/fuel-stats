@@ -316,7 +316,8 @@ class OswlTest(BaseTest):
                               creation_date_range=(2, 10),
                               modification_date_range=(2, 5),
                               is_modified_date_nullable=True,
-                              is_filtered_values=(False, None)):
+                              is_filtered_values=(False, None),
+                              releases=('6.0', '6.1')):
 
         mn_uids = set()
         for oswl in oswls:
@@ -330,12 +331,17 @@ class OswlTest(BaseTest):
                     modification_date = (datetime.utcnow() - timedelta(
                         days=random.randint(*modification_date_range))).\
                         date().isoformat()
+                structure = {
+                    'fuel_release': {
+                        'release': random.choice(releases)
+                    }
+                }
                 obj = InstallationStructure(
                     master_node_uid=oswl.master_node_uid,
                     creation_date=creation_date,
                     modification_date=modification_date,
                     is_filtered=random.choice(is_filtered_values),
-                    structure={},
+                    structure=structure,
                 )
                 mn_uids.add(oswl.master_node_uid)
                 yield obj
