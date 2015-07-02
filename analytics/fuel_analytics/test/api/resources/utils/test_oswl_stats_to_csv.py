@@ -44,12 +44,13 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
             exporter = OswlStatsToCsv()
             oswl_keys_paths, resource_keys_paths, csv_keys_paths = \
                 exporter.get_resource_keys_paths(resource_type)
-            self.assertFalse(['external_id'] in oswl_keys_paths)
-            self.assertFalse(['updated_time'] in oswl_keys_paths)
-            self.assertTrue([resource_type, 'id'] in resource_keys_paths)
-            self.assertTrue([resource_type, 'is_added'] in csv_keys_paths)
-            self.assertTrue([resource_type, 'is_modified'] in csv_keys_paths)
-            self.assertTrue([resource_type, 'is_removed'] in csv_keys_paths)
+            self.assertNotIn(['external_id'], oswl_keys_paths)
+            self.assertNotIn(['updated_time'], oswl_keys_paths)
+            self.assertIn(['release'], oswl_keys_paths)
+            self.assertIn([resource_type, 'id'], resource_keys_paths)
+            self.assertIn([resource_type, 'is_added'], csv_keys_paths)
+            self.assertIn([resource_type, 'is_modified'], csv_keys_paths)
+            self.assertIn([resource_type, 'is_removed'], csv_keys_paths)
 
     def test_get_flatten_resources(self):
         for resource_type in self.RESOURCE_TYPES:
@@ -563,3 +564,26 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
                 self.assertEqual(not_filtered_num, len(oswls))
                 for oswl in oswls:
                     self.assertIn(oswl.is_filtered, (False, None))
+
+    def test_release_info_in_oswl(self):
+        exporter = OswlStatsToCsv()
+        releases = ('6.0', '6.1', None)
+        num = 30
+
+        for resource_type in self.RESOURCE_TYPES:
+            # Creating  OSWLs
+            oswls = self.get_saved_oswls(num, resource_type)
+            self.get_saved_inst_structs(oswls, releases=releases)
+
+            with app.test_request_context():
+                oswls = get_oswls_query(resource_type).all()
+                oswl_keys_paths, resource_keys_paths, csv_keys_paths = \
+                    exporter.get_resource_keys_paths(resource_type)
+
+                # Checking release value in flatten resources
+                release_pos = csv_keys_paths.index(['release'])
+                flatten_resources = exporter.get_flatten_resources(
+                    resource_type, oswl_keys_paths, resource_keys_paths, oswls)
+                for flatten_resource in flatten_resources:
+                    release = flatten_resource[release_pos]
+                    self.assertIn(release, releases)

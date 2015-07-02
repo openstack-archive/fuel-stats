@@ -107,6 +107,8 @@ class OswlStatsToCsv(object):
         app.logger.debug("Getting OSWL flatten %s info started", resource_type)
         for oswl in oswls:
             try:
+                fuel_release = oswl.fuel_release or {}
+                setattr(oswl, 'release', fuel_release.get('release'))
                 flatten_oswl = export_utils.get_flatten_data(oswl_keys_paths,
                                                              oswl)
                 resource_data = oswl.resource_data
