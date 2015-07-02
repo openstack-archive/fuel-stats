@@ -255,3 +255,36 @@ svg text {
 #release-filter {
 	margin: 10px 0 0 13px;
 }
+
+.reports .content {
+	padding: 20px;
+}
+
+.reports ul {
+	list-style-type: none;
+	margin: 0;
+	padding: 0;
+}
+
+.reports ul li {
+	font-size: 14px;
+	margin-top: 10px;
+}
+
+.reports .notice {
+	font-size: 18px;
+	margin: 20px 0 10px 0;
+	color: gray;
+}
+
+.reports ul, .reports .row {
+	margin-left: 20px;
+}
+
+.reports label {
+	font-weight: normal;
+}
+
+.reports input {
+	margin-bottom: 3px;
+}
