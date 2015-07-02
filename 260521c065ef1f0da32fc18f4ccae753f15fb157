@@ -1,0 +1,11 @@
+Verified+2: Jenkins
+Code-Review+2: Dmitry Pyzhov <dpyzhov+gerrit@mirantis.com>
+Verified+1: Fuel CI <fuel-ci-bot@mirantis.com>
+Code-Review+2: Alexander Kislitsky <akislitsky@mirantis.com>
+Workflow+1: Alexander Kislitsky <akislitsky@mirantis.com>
+Code-Review+1: Andrew Maksimov <amaksimov@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Thu, 02 Jul 2015 15:34:38 +0000
+Reviewed-on: https://review.openstack.org/198005
+Project: stackforge/fuel-stats
+Branch: refs/heads/master
