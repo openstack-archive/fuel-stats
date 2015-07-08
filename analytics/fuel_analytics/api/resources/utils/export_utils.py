@@ -194,7 +194,6 @@ def flatten_data_as_csv(keys_paths, flatten_data):
         return data
 
     for d in itertools.chain((names,), flatten_data):
-        app.logger.debug("Writing row %s", d)
         encoded_d = [s.encode("utf-8") if isinstance(s, unicode) else s
                      for s in d]
         writer.writerow(encoded_d)
