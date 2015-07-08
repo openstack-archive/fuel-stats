@@ -63,24 +63,24 @@ class OswlStatsToCsv(object):
                          result_key_paths)
         return oswl_key_paths, resource_key_paths, result_key_paths
 
-    def get_additional_resource_info(self, resource, oswl):
+    def get_additional_resource_info(self, resource, resource_type,
+                                     added_ids, modified_ids, removed_ids):
         """Gets additional info about operations with resource
         :param resource: resource info
-        :param oswl: OpenStack workload
+        :param resource_type: resource type
+        :param added_ids: set of added ids from oswl
+        :param modified_ids: set of modified ids from oswl
+        :param removed_ids: set of removed ids from oswl
         :return: list of integer flags: is_added, is_removed, is_modified
         """
-        resource_data = oswl.resource_data
-        added = resource_data.get('added', [])
-        removed = resource_data.get('removed', [])
-        modified = resource_data.get('modified', [])
         id_val = resource.get('id')
-        is_added = id_val in set(item['id'] for item in added)
-        is_modified = id_val in set(item['id'] for item in modified)
-        is_removed = id_val in set(item['id'] for item in removed)
+        is_added = id_val in added_ids
+        is_modified = id_val in modified_ids
+        is_removed = id_val in removed_ids
         result = [is_added, is_modified, is_removed]
 
         # Handling nested lists and tuples
-        if oswl.resource_type == consts.OSWL_RESOURCE_TYPES.volume:
+        if resource_type == consts.OSWL_RESOURCE_TYPES.volume:
             flatten_attachments = []
             skeleton = OSWL_SKELETONS['volume_attachment']
             enum_length = (app.config['CSV_VOLUME_ATTACHMENTS_NUM'] *
@@ -106,6 +106,8 @@ class OswlStatsToCsv(object):
         """
         app.logger.debug("Getting OSWL flatten %s info started", resource_type)
         for oswl in oswls:
+            app.logger.debug("Processing oswl type: %s, id: %s",
+                             oswl.resource_type, oswl.id)
             try:
                 fuel_release = oswl.fuel_release or {}
                 setattr(oswl, 'release', fuel_release.get('release'))
@@ -113,14 +115,28 @@ class OswlStatsToCsv(object):
                                                              oswl)
                 resource_data = oswl.resource_data
                 current = resource_data.get('current', [])
+                app.logger.debug("Oswl %s current resources lum: %s",
+                                 oswl.id, len(current))
                 removed = resource_data.get('removed', [])
+                app.logger.debug("Oswl %s removed resources num: %s",
+                                 oswl.id, len(removed))
                 # Filtering id, time only data
-                removed = filter(lambda x: len(x) > 2, removed)
+                removed = itertools.ifilter(lambda x: len(x) > 2, removed)
+
+                # Extracting ids or oswl resources
+                added_ids = set(item['id'] for item in
+                                resource_data.get('added', []))
+                modified_ids = set(item['id'] for item in
+                                   resource_data.get('removed', []))
+                removed_ids = set(item['id'] for item in
+                                  resource_data.get('modified', []))
+
                 for resource in itertools.chain(current, removed):
                     flatten_resource = export_utils.get_flatten_data(
                         resource_keys_paths, {resource_type: resource})
                     additional_info = self.get_additional_resource_info(
-                        resource, oswl)
+                        resource, oswl.resource_type,
+                        added_ids, modified_ids, removed_ids)
                     yield flatten_oswl + flatten_resource + additional_info
             except Exception as e:
                 # Generation of report should be reliable
@@ -191,6 +207,8 @@ class OswlStatsToCsv(object):
             if last_date != oswl.created_date:
                 # Filling gaps in created_dates of oswls
                 while last_date != oswl.created_date:
+                    app.logger.debug("Filling gap on date: %s for oswl: %s",
+                                     last_date, oswl.id)
                     for content in self.stream_horizon_content(
                             horizon, last_date):
                         yield content

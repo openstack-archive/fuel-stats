@@ -112,8 +112,16 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
                 # test_volumes_attachments
                 with mock.patch.dict(app.config,
                                      {'CSV_VOLUME_ATTACHMENTS_NUM': 0}):
+                    added_ids = set(item['id'] for item in
+                                    resource_data.get('added', []))
+                    modified_ids = set(item['id'] for item in
+                                       resource_data.get('removed', []))
+                    removed_ids = set(item['id'] for item in
+                                      resource_data.get('modified', []))
+
                     actual = exporter.get_additional_resource_info(
-                        resource, oswl)
+                        resource, oswl.resource_type,
+                        added_ids, modified_ids, removed_ids)
                 self.assertListEqual(expected, actual)
 
     def test_export(self):

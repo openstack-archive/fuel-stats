@@ -273,7 +273,7 @@ def archive_dir(dir_path):
     """
     app.logger.debug("Dir '%s' archiving started", dir_path)
     tmp_file = tempfile.NamedTemporaryFile(delete=False)
-    with zipfile.ZipFile(tmp_file, 'w', zipfile.ZIP_DEFLATED) as archive:
+    with zipfile.ZipFile(tmp_file, 'w', zipfile.ZIP_STORED) as archive:
         for root, dirs, files in os.walk(dir_path):
             for f in files:
                 archive.write(os.path.join(root, f), arcname=f)
