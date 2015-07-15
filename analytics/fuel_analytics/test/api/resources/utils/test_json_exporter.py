@@ -26,6 +26,7 @@ from fuel_analytics.test.base import DbTest
 
 from fuel_analytics.api.app import app
 from fuel_analytics.api.app import db
+from fuel_analytics.api.common import consts
 from fuel_analytics.api.db import model
 from fuel_analytics.api.resources import json_exporter
 
@@ -194,3 +195,27 @@ class JsonExporterTest(InstStructureTest, OswlTest, DbTest):
             self.assertEquals(filtered_num, result['paging_params']['total'])
             for struct in result['objs']:
                 self.assertTrue(struct['is_filtered'])
+
+    def test_get_db_summary(self):
+        oswls = self.get_saved_oswls(100, consts.OSWL_RESOURCE_TYPES.volume)
+        inst_infos = self.get_saved_inst_structs(
+            oswls, is_filtered_values=(True, False, None))
+        not_filtered_num = len(filter(lambda x: x.is_filtered is False,
+                                      inst_infos))
+        filtered_num = len(inst_infos) - not_filtered_num
+        action_logs = self.get_saved_action_logs(inst_infos)
+        expected = {
+            'oswl_stats': {'total': len(oswls)},
+            'installation_structures': {
+                'total': len(inst_infos),
+                'filtered': filtered_num,
+                'not_filtered': not_filtered_num
+            },
+            'action_logs': {'total': len(action_logs)}
+        }
+        with app.test_request_context():
+            url = '/api/v1/json/summary'
+            resp = self.client.get(url)
+            self.check_response_ok(resp)
+            actual = json.loads(resp.data)
+            self.assertEqual(expected, actual)

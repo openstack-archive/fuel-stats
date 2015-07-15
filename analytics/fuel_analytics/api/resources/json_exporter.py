@@ -14,11 +14,12 @@
 
 import datetime
 import json
+from sqlalchemy import and_
+from sqlalchemy import func
 
 from flask import Blueprint
 from flask import request
 from flask import Response
-from sqlalchemy import and_
 
 from fuel_analytics.api.app import app
 from fuel_analytics.api.app import db
@@ -182,3 +183,28 @@ def get_filtered_installation_infos():
                                            inst_infos_total)
     app.logger.debug("Filtered installation_info: %s fetched", paging_params)
     return Response(jsons_data, mimetype='application/json')
+
+
+@bp.route('/summary', methods=['GET'])
+def get_db_summary():
+    app.logger.debug("Getting db summary")
+    summary = {}
+    for model in (IS, AL, OSWL):
+        count = db.session.query(model).count()
+        summary[model.__tablename__] = {'total': count}
+
+    # Counting filtered installation info
+    filtered_summary = db.session.query(
+        IS.is_filtered, func.count(IS.id)).group_by(IS.is_filtered).all()
+    filtered_num = 0
+    not_filtered_num = 0
+    for is_filtered, count in filtered_summary:
+        if is_filtered is False:
+            not_filtered_num += count
+        else:
+            filtered_num += count
+    summary[IS.__tablename__]['not_filtered'] = not_filtered_num
+    summary[IS.__tablename__]['filtered'] = filtered_num
+
+    app.logger.debug("Db summary got")
+    return Response(json.dumps(summary), mimetype='application/json')
