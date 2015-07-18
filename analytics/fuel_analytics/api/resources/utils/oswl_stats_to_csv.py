@@ -198,12 +198,13 @@ class OswlStatsToCsv(object):
         """
         app.logger.debug("Filling gaps in oswls started")
         horizon = {}
-        last_date = oswls[0].created_date if oswls else None
+        last_date = None
 
         # Filling horizon of oswls on last date. Oswls are ordered by
         # created_date so, then last_date is changed we can assume horizon
         # of oswls is filled and can be shown
         for oswl in oswls:
+            last_date = last_date or oswl.created_date
             if last_date != oswl.created_date:
                 # Filling gaps in created_dates of oswls
                 while last_date != oswl.created_date:
