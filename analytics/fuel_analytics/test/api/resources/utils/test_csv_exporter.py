@@ -16,6 +16,7 @@
 
 from datetime import datetime
 from datetime import timedelta
+import flask
 from flask import request
 import itertools
 import mock
@@ -206,6 +207,27 @@ class CsvExporterTest(OswlTest, DbTest):
         try:
             with app.test_request_context():
                 save_all_reports(tmp_dir)
+            files = itertools.chain(('clusters', ), self.RESOURCE_TYPES)
+            for f in files:
+                path = os.path.join(tmp_dir, '{}.csv'.format(f))
+                self.assertTrue(os.path.isfile(path), path)
+        finally:
+            shutil.rmtree(tmp_dir)
+
+    def test_save_all_reports_with_future_dates(self):
+        oswls = []
+        for resource_type in self.RESOURCE_TYPES:
+            oswls.extend(self.get_saved_oswls(10, resource_type))
+        self.get_saved_inst_structs(oswls)
+        tmp_dir = tempfile.mkdtemp()
+        try:
+            to_date = datetime.utcnow() + timedelta(days=7)
+            to_data_str = to_date.strftime('%Y-%m-%d')
+
+            with app.test_request_context(), mock.patch.object(
+                    flask.request, 'args', {'to_date': to_data_str}):
+                save_all_reports(tmp_dir)
+
             files = itertools.chain(('clusters', ), self.RESOURCE_TYPES)
             for f in files:
                 path = os.path.join(tmp_dir, '{}.csv'.format(f))
