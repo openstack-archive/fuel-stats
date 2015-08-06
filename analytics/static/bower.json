@@ -22,12 +22,21 @@
                 "dist/css/bootstrap.css",
                 "dist/css/bootstrap.css.map",
                 "dist/js/bootstrap.js"
-            ]
+            ],
+            "normalize": {
+                "css": ["*.css", "*.map"]
+            }
         },
         "jquery-ui": {
             "main": [
+                "themes/base/*",
+                "themes/base/images/*",
                 "jquery-ui.js"
-            ]
+            ],
+            "normalize": {
+                "css": ["*.css"],
+                "css/images": ["*.png"]
+            }
         }
     },
     "ignore": [

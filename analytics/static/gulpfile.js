@@ -2,6 +2,7 @@ var gulp = require('gulp');
 var jshint = require('gulp-jshint');
 var bower = require('gulp-bower');
 var bowerMainFiles = require('main-bower-files');
+var bowerNormalizer = require('gulp-bower-normalize');
 var jscs = require('gulp-jscs');
 var lintspaces = require('gulp-lintspaces');
 
@@ -101,7 +102,7 @@ gulp.task('bower-build', function() {
 gulp.task('bower', ['bower-build'], function() {
     return gulp.src(bowerMainFiles({
            checkExistence: true
-       })
-    )
-    .pipe(gulp.dest('js/libs/'));
+        }), {base: './bower_components'})
+        .pipe(bowerNormalizer({bowerJson: './bower.json'}))
+        .pipe(gulp.dest('./js/libs/'))
 });

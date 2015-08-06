@@ -3,12 +3,12 @@ requirejs.config({
     waitSeconds: 60,
     urlArgs: '_=' + (new Date()).getTime(),
     paths: {
-        jquery: 'libs/jquery',
-        elasticsearch: 'libs/elasticsearch',
-        d3: 'libs/d3',
-        d3pie: 'libs/d3pie',
-        d3tip: 'libs/index',
-        nv: 'libs/nv.d3',
+        jquery: 'libs/jquery/js/jquery',
+        elasticsearch: 'libs/elasticsearch/js/elasticsearch',
+        d3: 'libs/d3/js/d3',
+        d3pie: 'libs/d3pie/js/d3pie',
+        d3tip: 'libs/d3-tip/js/index',
+        nv: 'libs/nvd3/js/nv.d3',
         app: 'app'
     },
     shim: {
