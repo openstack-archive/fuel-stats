@@ -168,7 +168,8 @@ function($, d3, D3pie, d3tip, nv, elasticsearch) {
                     var chart = nv.models.discreteBarChart()
                         .x(function(d) { return d.label;})
                         .y(function(d) { return d.value;})
-                        .margin({top: 30})
+                        .margin({top: 30, bottom: 60})
+                        .staggerLabels(true)
                         .transitionDuration(350);
 
                     chart.xAxis
@@ -176,7 +177,7 @@ function($, d3, D3pie, d3tip, nv, elasticsearch) {
 
                     chart.yAxis
                         .axisLabel('Environments')
-                        .axisLabelDistance(50)
+                        .axisLabelDistance(30)
                         .tickFormat(d3.format('d'));
 
                     chart.tooltipContent(function(key, x, y) {
@@ -225,7 +226,7 @@ function($, d3, D3pie, d3tip, nv, elasticsearch) {
                     var chart = nv.models.multiBarChart()
                         .x(function(d) { return d.label;})
                         .y(function(d) { return d.value;})
-                        .margin({top: 30})
+                        .margin({top: 30, bottom: 60})
                         .transitionDuration(350)
                         .reduceXTicks(false)   //If 'false', every single x-axis tick label will be rendered.
                         .rotateLabels(0)      //Angle to rotate x-axis labels.
@@ -238,7 +239,7 @@ function($, d3, D3pie, d3tip, nv, elasticsearch) {
 
                     chart.yAxis
                         .axisLabel('Installations')
-                        .axisLabelDistance(50)
+                        .axisLabelDistance(30)
                         .tickFormat(d3.format('d'));
 
                     chart.tooltipContent(function(key, x, y) {
@@ -338,7 +339,7 @@ function($, d3, D3pie, d3tip, nv, elasticsearch) {
 
                     chart.yAxis
                         .axisLabel('Environments')
-                        .axisLabelDistance(50)
+                        .axisLabelDistance(30)
                         .tickFormat(d3.format('d'));
 
                     chart.tooltipContent(function(key, x, y) {
