@@ -18,12 +18,7 @@ from datetime import datetime
 from datetime import timedelta
 import flask
 from flask import request
-import itertools
 import mock
-import os
-import shutil
-import tempfile
-import zipfile
 
 from fuel_analytics.test.api.resources.utils.oswl_test import OswlTest
 from fuel_analytics.test.base import DbTest
@@ -33,16 +28,15 @@ from fuel_analytics.api.app import db
 from fuel_analytics.api.common import consts
 from fuel_analytics.api.db.model import ActionLog
 from fuel_analytics.api.errors import DateExtractionError
-from fuel_analytics.api.resources.csv_exporter import archive_dir
+from fuel_analytics.api.resources import csv_exporter as ce
 from fuel_analytics.api.resources.csv_exporter import extract_date
-from fuel_analytics.api.resources.csv_exporter import get_action_logs_query
+from fuel_analytics.api.resources.csv_exporter import get_action_logs
 from fuel_analytics.api.resources.csv_exporter import get_from_date
 from fuel_analytics.api.resources.csv_exporter import get_inst_structures
 from fuel_analytics.api.resources.csv_exporter import get_inst_structures_query
 from fuel_analytics.api.resources.csv_exporter import get_oswls_query
 from fuel_analytics.api.resources.csv_exporter import get_resources_types
 from fuel_analytics.api.resources.csv_exporter import get_to_date
-from fuel_analytics.api.resources.csv_exporter import save_all_reports
 from fuel_analytics.api.resources.utils.stats_to_csv import ActionLogInfo
 from fuel_analytics.api.resources.utils.stats_to_csv import StatsToCsv
 
@@ -198,65 +192,44 @@ class CsvExporterTest(OswlTest, DbTest):
         resources_names = get_resources_types()
         self.assertItemsEqual(self.RESOURCE_TYPES, resources_names)
 
-    def test_save_all_reports(self):
+    def test_get_all_reports_generators(self):
         oswls = []
         for resource_type in self.RESOURCE_TYPES:
             oswls.extend(self.get_saved_oswls(10, resource_type))
         self.get_saved_inst_structs(oswls)
-        tmp_dir = tempfile.mkdtemp()
-        try:
-            with app.test_request_context():
-                save_all_reports(tmp_dir)
-            files = itertools.chain(('clusters', ), self.RESOURCE_TYPES)
-            for f in files:
-                path = os.path.join(tmp_dir, '{}.csv'.format(f))
-                self.assertTrue(os.path.isfile(path), path)
-        finally:
-            shutil.rmtree(tmp_dir)
 
-    def test_save_all_reports_with_future_dates(self):
+        with app.test_request_context():
+            reports_generators = ce.get_all_reports_generators()
+
+        expected_reports = [
+            ce.CLUSTERS_REPORT_FILE,
+            ce.PLUGINS_REPORT_FILE
+        ]
+        for resource_type in self.RESOURCE_TYPES:
+            expected_reports.append('{}.csv'.format(resource_type))
+
+        actual_reports = [name for _, name in reports_generators]
+        self.assertItemsEqual(expected_reports, actual_reports)
+
+    def test_get_all_reports_generators_with_future_dates(self):
         oswls = []
         for resource_type in self.RESOURCE_TYPES:
             oswls.extend(self.get_saved_oswls(10, resource_type))
         self.get_saved_inst_structs(oswls)
-        tmp_dir = tempfile.mkdtemp()
-        try:
-            to_date = datetime.utcnow() + timedelta(days=7)
-            to_data_str = to_date.strftime('%Y-%m-%d')
 
-            with app.test_request_context(), mock.patch.object(
-                    flask.request, 'args', {'to_date': to_data_str}):
-                save_all_reports(tmp_dir)
+        to_date = datetime.utcnow() + timedelta(days=7)
+        to_data_str = to_date.strftime('%Y-%m-%d')
 
-            files = itertools.chain(('clusters', ), self.RESOURCE_TYPES)
-            for f in files:
-                path = os.path.join(tmp_dir, '{}.csv'.format(f))
-                self.assertTrue(os.path.isfile(path), path)
-        finally:
-            shutil.rmtree(tmp_dir)
+        with app.test_request_context(), mock.patch.object(
+                flask.request, 'args', {'to_date': to_data_str}):
+            reports_generators = ce.get_all_reports_generators()
 
-    def test_archive_dir(self):
-        oswls = []
-        for resource_type in self.RESOURCE_TYPES:
-            oswls.extend(self.get_saved_oswls(10, resource_type))
-        self.get_saved_inst_structs(oswls)
-        tmp_dir = tempfile.mkdtemp()
-        try:
-            with app.test_request_context():
-                save_all_reports(tmp_dir)
-            files = itertools.chain(('clusters', ), self.RESOURCE_TYPES)
-            for f in files:
-                path = os.path.join(tmp_dir, '{}.csv'.format(f))
-                self.assertTrue(os.path.isfile(path), path)
-            archive = archive_dir(tmp_dir)
-            try:
-                self.assertTrue(zipfile.is_zipfile(archive.filename))
-            finally:
-                os.unlink(archive.filename)
-        finally:
-            shutil.rmtree(tmp_dir)
+            # Checking no exception raised
+            for report_generator, report_name in reports_generators:
+                for _ in report_generator:
+                    pass
 
-    def test_get_action_logs_query(self):
+    def test_get_action_logs(self):
         action_name = StatsToCsv.NETWORK_VERIFICATION_ACTION
         action_logs = [
             ActionLog(
@@ -317,8 +290,11 @@ class CsvExporterTest(OswlTest, DbTest):
         for action_log in action_logs:
             db.session.add(action_log)
         db.session.commit()
-        to_date = from_date = datetime.utcnow().date()
-        action_logs = list(get_action_logs_query(from_date, to_date))
+        to_date = from_date = datetime.utcnow().date().strftime('%Y-%m-%d')
+        with app.test_request_context():
+            with mock.patch.object(request, 'args', {'from_date': from_date,
+                                                     'to_date': to_date}):
+                action_logs = list(get_action_logs())
 
         # Checking no old and no_end_ts action logs
         for action_log in action_logs:
