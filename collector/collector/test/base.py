@@ -15,7 +15,6 @@
 from alembic.util import CommandError
 from flask import json
 import flask_migrate
-import glob
 import os
 from unittest2.case import TestCase
 
@@ -68,10 +67,6 @@ class BaseTest(TestCase):
 
 class DbTest(BaseTest):
 
-    def _get_number_of_migrations(self, migr_directory):
-        migr_files_path = os.path.join(migr_directory, 'versions', '*.py')
-        return len(glob.glob(migr_files_path))
-
     def setUp(self):
         super(DbTest, self).setUp()
 
@@ -81,12 +76,10 @@ class DbTest(BaseTest):
         # Cleaning DB. It useful in case of tests failure
         directory = os.path.join(os.path.dirname(__file__),
                                  '..', 'api', 'db', 'migrations')
-        self._get_number_of_migrations(directory)
-        revision = '-{0}'.format(self._get_number_of_migrations(directory))
         with app.app_context():
             try:
                 flask_migrate.downgrade(directory=directory,
-                                        revision=revision)
+                                        revision='base')
             except CommandError:
                 # Workaround for the first migration
                 pass
