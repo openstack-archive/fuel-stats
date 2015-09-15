@@ -237,7 +237,8 @@ def get_all_reports(from_date, to_date):
     stats_exporter = StatsToCsv()
     oswl_exporter = OswlStatsToCsv()
 
-    resources_types = get_resources_types()
+    resources_types = sorted(get_resources_types())
+    app.logger.debug("Resources reports list: %s", resources_types)
 
     # OSWLs reports
     for resource_type in resources_types:

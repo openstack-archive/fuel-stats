@@ -106,8 +106,6 @@ class OswlStatsToCsv(object):
         """
         app.logger.debug("Getting OSWL flatten %s info started", resource_type)
         for oswl in oswls:
-            app.logger.debug("Processing oswl type: %s, id: %s",
-                             oswl.resource_type, oswl.id)
             try:
                 fuel_release = oswl.fuel_release or {}
                 setattr(oswl, 'release', fuel_release.get('release'))
@@ -115,11 +113,7 @@ class OswlStatsToCsv(object):
                                                              oswl)
                 resource_data = oswl.resource_data
                 current = resource_data.get('current', [])
-                app.logger.debug("Oswl %s current resources lum: %s",
-                                 oswl.id, len(current))
                 removed = resource_data.get('removed', [])
-                app.logger.debug("Oswl %s removed resources num: %s",
-                                 oswl.id, len(removed))
                 # Filtering id, time only data
                 removed = itertools.ifilter(lambda x: len(x) > 2, removed)
 
