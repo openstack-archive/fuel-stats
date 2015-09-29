@@ -166,7 +166,7 @@ class TestInstallationStructure(DbTest):
                 'clusters': []
             },
             {
-                # ostf_sha renamed, python-fuelclient_sha added
+                # In 7.0 ostf_sha renamed, python-fuelclient_sha added
                 'master_node_uid': master_node_uid,
                 'fuel_release': {
                     'release': 'r',
@@ -175,6 +175,25 @@ class TestInstallationStructure(DbTest):
                     'astute_sha': 'a_sha',
                     'fuelmain_sha': 'a_sha',
                     'nailgun_sha': 'n_sha',
+                    'fuel-library_sha': 'fl_sha',
+                    'feature_groups': ['experimental'],
+                    'api': 'v1'
+                },
+                'allocated_nodes_num': 4,
+                'unallocated_nodes_num': 4,
+                'clusters_num': 2,
+                'clusters': []
+            },
+            {
+                # In 8.0 nailgun_sha renamed to fuel-nailgun_sha
+                'master_node_uid': master_node_uid,
+                'fuel_release': {
+                    'release': 'r',
+                    'fuel-ostf_sha': 'f-o_sha',
+                    'python-fuelclient_sha': 'p-fc_sha',
+                    'astute_sha': 'a_sha',
+                    'fuelmain_sha': 'a_sha',
+                    'fuel-nailgun_sha': 'n_sha',
                     'fuel-library_sha': 'fl_sha',
                     'feature_groups': ['experimental'],
                     'api': 'v1'
