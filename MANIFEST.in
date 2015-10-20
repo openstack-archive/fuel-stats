@@ -1,0 +1,7 @@
+include *.txt
+include collector/collector/test/logs
+graft analytics/static
+graft collector/collector/api/db/migrations
+recursive-include collector/api/schemas *.json
+prune analytics/static/bower_components
+prune analytics/static/node_modules
