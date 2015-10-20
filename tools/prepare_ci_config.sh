@@ -1,0 +1,6 @@
+#!/bin/sh
+
+cat > ${FUELSTAT_CI_CONFIG} <<EOL
+SQLALCHEMY_DATABASE_URI = 'postgresql://${FUELSTAT_DB_USER}:${FUELSTAT_DB_PW}@localhost/${FUELSTAT_DB}'
+SQLALCHEMY_ECHO = False
+EOL

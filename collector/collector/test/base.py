@@ -27,6 +27,7 @@ flask_migrate.Migrate(app, db)
 
 # Configuring app for the test environment
 app.config.from_object('collector.api.config.Testing')
+app.config.from_envvar('COLLECTOR_SETTINGS', silent=True)
 init_logger()
 
 
