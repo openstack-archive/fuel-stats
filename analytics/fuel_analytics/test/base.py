@@ -25,6 +25,7 @@ from fuel_analytics.api.log import init_logger
 
 # Configuring app for the test environment
 app.config.from_object('fuel_analytics.api.config.Testing')
+app.config.from_envvar('ANALYTICS_SETTINGS', silent=True)
 init_logger()
 
 
