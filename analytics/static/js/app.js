@@ -451,7 +451,7 @@ function($, d3, D3pie, d3tip, nv, elasticsearch) {
                     tooltips: {
                         enabled: true,
                         type: 'placeholder',
-                        string: '{label}: {value}, {percentage}%',
+                        string: '{label}: {value} pcs, {percentage}%',
                         styles: {
                             borderRadius: 3,
                             fontSize: 12,
@@ -550,7 +550,7 @@ function($, d3, D3pie, d3tip, nv, elasticsearch) {
                     tooltips: {
                         enabled: true,
                         type: 'placeholder',
-                        string: '{label}: {value}, {percentage}%',
+                        string: '{label}: {value} pcs, {percentage}%',
                         styles: {
                             borderRadius: 3,
                             fontSize: 12,
