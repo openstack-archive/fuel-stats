@@ -226,6 +226,9 @@ class TestInstallationStructure(DbTest):
         with mock.patch.dict(app.config, {'FILTERING_RULES': None}):
             self.assertFalse(_is_filtered(struct))
 
+        with mock.patch.dict(app.config, {'FILTERING_RULES': {}}):
+            self.assertFalse(_is_filtered(struct))
+
         # No build_ids
         with mock.patch.dict(app.config,
                              {'FILTERING_RULES': {release: None}}):
@@ -255,7 +258,7 @@ class TestInstallationStructure(DbTest):
         }
 
         # release not found in rules
-        with mock.patch.dict(app.config, {'FILTERING_RULES': {}}):
+        with mock.patch.dict(app.config, {'FILTERING_RULES': {'xx': None}}):
             self.assertTrue(_is_filtered(struct))
 
         # build_id not found in rules
@@ -331,7 +334,7 @@ class TestInstallationStructure(DbTest):
                 'release': 'release_not_filtered'
             }
         }
-        with mock.patch.dict(app.config, {'FILTERING_RULES': {}}):
+        with mock.patch.dict(app.config, {'FILTERING_RULES': {'xx': None}}):
             resp = self.post(
                 '/api/v1/installation_structure/',
                 {'installation_structure': struct}
