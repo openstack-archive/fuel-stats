@@ -9,3 +9,4 @@ python-dateutil==2.2
 PyYAML==3.11
 six>=1.8.0
 SQLAlchemy==0.9.8
+Werkzeug<0.11

@@ -46,6 +46,7 @@ class Production(object):
     # }
     #
     # If you don't need any filtration, please set FILTERING_RULES = None
+    # or FILTERING_RULES = {}
     FILTERING_RULES = None
 
 
