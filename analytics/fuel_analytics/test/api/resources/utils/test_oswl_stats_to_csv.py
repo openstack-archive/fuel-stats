@@ -17,7 +17,6 @@
 import csv
 from datetime import datetime
 from datetime import timedelta
-import flask
 import mock
 import six
 import types
@@ -336,8 +335,7 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
     def test_filter_by_date(self):
         exporter = OswlStatsToCsv()
         num = 10
-        with app.test_request_context(), mock.patch.object(
-                flask.request, 'args', {'from_date': '2015-02-01'}):
+        with app.test_request_context('/?from_date=2015-02-01'):
             for resource_type in self.RESOURCE_TYPES:
                 # Creating oswls
                 oswls_saved = self.get_saved_oswls(num, resource_type)
@@ -425,56 +423,48 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
         db.session.add(oswl)
         self.get_saved_inst_structs([oswl], creation_date_range=(0, 0))
 
-        with app.test_request_context():
-            with mock.patch.object(
-                flask.request,
-                'args',
-                {
-                    'from_date': (base_date - timedelta(days=2)).isoformat(),
-                    'to_date': (base_date - timedelta(days=1)).isoformat()
-                }
-            ):
-                oswls = list(get_oswls(resource_type))
-                self.assertEqual(0, len(oswls))
-                result = exporter.export(
-                    resource_type,
-                    oswls,
-                    (base_date - timedelta(days=1))
-                )
-                # Only column names in result
-                self.assertEqual(1, len(list(result)))
-            with mock.patch.object(
-                flask.request,
-                'args',
-                {
-                    'to_date': (base_date - timedelta(days=1)).isoformat()
-                }
-            ):
-                oswls = list(get_oswls(resource_type))
-                self.assertEqual(0, len(oswls))
-                result = exporter.export(
-                    resource_type,
-                    oswls,
-                    base_date - timedelta(days=1)
-                )
-                # Only column names in result
-                self.assertEqual(1, len(list(result)))
-            with mock.patch.object(
-                flask.request,
-                'args',
-                {
-                    'to_date': base_date.isoformat()
-                }
-            ):
-                oswls = list(get_oswls(resource_type))
-                self.assertEqual(1, len(oswls))
-                result = exporter.export(
-                    resource_type,
-                    oswls,
-                    base_date + timedelta(days=1)
-                )
-                # Not only column names in result
-                self.assertEqual(1 + 2, len(list(result)))
+        req_params = '/?from_date={0}&to_date={1}'.format(
+            (base_date - timedelta(days=2)).isoformat(),
+            (base_date - timedelta(days=1)).isoformat()
+        )
+        with app.test_request_context(req_params):
+            oswls = list(get_oswls(resource_type))
+            self.assertEqual(0, len(oswls))
+            result = exporter.export(
+                resource_type,
+                oswls,
+                (base_date - timedelta(days=1))
+            )
+            # Only column names in result
+            self.assertEqual(1, len(list(result)))
+
+        req_params = '/?to_date={0}'.format(
+            (base_date - timedelta(days=1)).isoformat()
+        )
+        with app.test_request_context(req_params):
+            oswls = list(get_oswls(resource_type))
+            self.assertEqual(0, len(oswls))
+            result = exporter.export(
+                resource_type,
+                oswls,
+                base_date - timedelta(days=1)
+            )
+            # Only column names in result
+            self.assertEqual(1, len(list(result)))
+
+        req_params = '/?_date={0}'.format(
+            base_date.isoformat()
+        )
+        with app.test_request_context(req_params):
+            oswls = list(get_oswls(resource_type))
+            self.assertEqual(1, len(oswls))
+            result = exporter.export(
+                resource_type,
+                oswls,
+                base_date + timedelta(days=1)
+            )
+            # Not only column names in result
+            self.assertEqual(1 + 2, len(list(result)))
 
     def test_resource_data_structure(self):
         num = 20

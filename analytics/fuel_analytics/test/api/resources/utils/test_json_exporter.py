@@ -13,9 +13,7 @@
 #    under the License.
 
 import datetime
-from flask import request
 import json
-import mock
 import six
 
 from fuel_analytics.test.api.resources.utils.inst_structure_test import \
@@ -107,14 +105,14 @@ class JsonExporterTest(InstStructureTest, OswlTest, DbTest):
             (name, 1, {}), (name, [], {}), (name, (), {}),
             (name, {'a': 'b'}, {'a': 'b'})
         )
-        with app.test_request_context():
-            for param_name, param_value, expected in variants:
-                with mock.patch.object(request, 'args',
-                                       {param_name: param_value}):
-                    self.assertDictEqual(
-                        json_exporter.get_dict_param(name),
-                        expected
-                    )
+        for param_name, param_value, expected in variants:
+            req_params = '/?{0}={1}'.format(
+                param_name, json.dumps(param_value))
+            with app.test_request_context(req_params):
+                self.assertDictEqual(
+                    expected,
+                    json_exporter.get_dict_param(name)
+                )
 
     def test_get_paging_params(self):
         name = 'paging_params'
@@ -131,14 +129,15 @@ class JsonExporterTest(InstStructureTest, OswlTest, DbTest):
              {'limit': limit_default + 1, 'offset': 50}),
         )
 
-        with app.test_request_context():
-            for param_name, param_value, expected in variants:
-                with mock.patch.object(request, 'args',
-                                       {param_name: param_value}):
-                    self.assertDictEqual(
-                        json_exporter.get_paging_params(),
-                        expected
-                    )
+        for param_name, param_value, expected in variants:
+            req_params = '/?{0}={1}'.format(
+                param_name, json.dumps(param_value))
+
+            with app.test_request_context(req_params):
+                self.assertEqual(
+                    expected,
+                    json_exporter.get_paging_params()
+                )
 
     def test_row_as_serializable_dict(self):
         dt_now = datetime.datetime.utcnow()

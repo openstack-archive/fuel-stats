@@ -48,8 +48,13 @@ def row_as_serializable_dict(row):
 
 def get_dict_param(name):
     params = request.args.get(name)
-    if not isinstance(params, dict):
-        params = {}
+    try:
+        params = json.loads(params)
+    except Exception:
+        pass
+    finally:
+        if not isinstance(params, dict):
+            params = {}
     return params
 
 

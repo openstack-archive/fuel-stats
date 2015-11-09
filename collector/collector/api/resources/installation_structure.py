@@ -65,7 +65,7 @@ def _is_filtered(structure):
     """
     rules = app.config.get('FILTERING_RULES')
     # No rules specified
-    if rules is None:
+    if not rules:
         return False
 
     # Extracting data from structure
