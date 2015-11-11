@@ -16,7 +16,6 @@
 
 import csv
 from datetime import datetime
-import flask
 import mock
 import six
 import types
@@ -142,8 +141,8 @@ class StatsToCsvExportTest(InstStructureTest, DbTest):
     def test_filter_by_date(self):
         exporter = StatsToCsv()
         num = 10
-        with app.test_request_context(), mock.patch.object(
-                flask.request, 'args', {'from_date': '2015-02-01'}):
+        with app.test_request_context('/?from_date=2015-02-01'):
+
             # Creating installation structures
             inst_structures = self.get_saved_inst_structures(
                 installations_num=num)
@@ -182,11 +181,12 @@ class StatsToCsvExportTest(InstStructureTest, DbTest):
                       'additional_info': {'ended_with_status': 'ready'}}
             )
         ]
-        for action_log in expected_als:
-            db.session.add(action_log)
-        db.session.commit()
 
         with app.test_request_context():
+            for action_log in expected_als:
+                db.session.add(action_log)
+            db.session.commit()
+
             action_logs = get_action_logs()
             inst_structures = get_inst_structures()
             structure_keys_paths, cluster_keys_paths, csv_keys_paths = \

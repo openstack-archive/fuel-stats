@@ -15,7 +15,6 @@
 #    under the License.
 
 import csv
-import flask
 import mock
 import six
 import types
@@ -60,8 +59,7 @@ class PluginsToCsvExportTest(InstStructureTest, DbTest):
     def test_export_plugins(self):
         installations_num = 100
         exporter = StatsToCsv()
-        with app.test_request_context(), mock.patch.object(
-                flask.request, 'args', {'from_date': '2015-02-01'}):
+        with app.test_request_context('/?from_date=2015-02-01'):
             # Creating installation structures
             inst_structures = self.get_saved_inst_structures(
                 installations_num=installations_num)

@@ -16,8 +16,6 @@
 
 from datetime import datetime
 from datetime import timedelta
-from flask import request
-import mock
 
 from fuel_analytics.test.api.resources.utils.oswl_test import OswlTest
 from fuel_analytics.test.base import DbTest
@@ -64,40 +62,35 @@ class CsvExporterTest(OswlTest, DbTest):
 
     def test_extract_date(self):
         with app.test_request_context():
-            with mock.patch.object(request, 'args', {}):
-                self.assertIsNone(extract_date('fake_name'))
-            with mock.patch.object(request, 'args',
-                                   {'from_date': '2015-02-24'}):
-                self.assertEqual(datetime(2015, 2, 24).date(),
-                                 extract_date('from_date'))
-            with mock.patch.object(request, 'args',
-                                   {'from_date': '20150224'}):
-                self.assertRaises(DateExtractionError, extract_date,
-                                  'from_date')
+            self.assertIsNone(extract_date('fake_name'))
+        with app.test_request_context('/?from_date=2015-02-24'):
+            self.assertEqual(datetime(2015, 2, 24).date(),
+                             extract_date('from_date'))
+        with app.test_request_context('/?from_date=20150224'):
+            self.assertRaises(DateExtractionError, extract_date,
+                              'from_date')
 
     def test_get_from_date(self):
         with app.test_request_context():
-            with mock.patch.object(request, 'args', {}):
-                expected = datetime.utcnow().date() - \
-                    timedelta(days=app.config['CSV_DEFAULT_FROM_DATE_DAYS'])
-                actual = get_from_date()
-                self.assertEqual(expected, actual)
-            with mock.patch.object(request, 'args',
-                                   {'from_date': '2015-02-24'}):
-                expected = datetime(2015, 2, 24).date()
-                actual = get_from_date()
-                self.assertEqual(expected, actual)
+            expected = datetime.utcnow().date() - \
+                timedelta(days=app.config['CSV_DEFAULT_FROM_DATE_DAYS'])
+            actual = get_from_date()
+            self.assertEqual(expected, actual)
+
+        with app.test_request_context('/?from_date=2015-02-24'):
+            expected = datetime(2015, 2, 24).date()
+            actual = get_from_date()
+            self.assertEqual(expected, actual)
 
     def test_to_date(self):
         with app.test_request_context():
-            with mock.patch.object(request, 'args', {}):
-                actual = get_to_date()
-                self.assertEqual(datetime.utcnow().date(), actual)
-            with mock.patch.object(request, 'args',
-                                   {'to_date': '2015-02-25'}):
-                expected = datetime(2015, 2, 25).date()
-                actual = get_to_date()
-                self.assertEqual(expected, actual)
+            actual = get_to_date()
+            self.assertEqual(datetime.utcnow().date(), actual)
+
+        with app.test_request_context('/?to_date=2015-02-25'):
+            expected = datetime(2015, 2, 25).date()
+            actual = get_to_date()
+            self.assertEqual(expected, actual)
 
     def test_get_oswls_query_with_dates(self):
         num = 20
@@ -289,10 +282,10 @@ class CsvExporterTest(OswlTest, DbTest):
             db.session.add(action_log)
         db.session.commit()
         to_date = from_date = datetime.utcnow().date().strftime('%Y-%m-%d')
-        with app.test_request_context():
-            with mock.patch.object(request, 'args', {'from_date': from_date,
-                                                     'to_date': to_date}):
-                action_logs = list(get_action_logs())
+
+        req_params = '/?from_date={0}&to_date={1}'.format(from_date, to_date)
+        with app.test_request_context(req_params):
+            action_logs = list(get_action_logs())
 
         # Checking no old and no_end_ts action logs
         for action_log in action_logs:
