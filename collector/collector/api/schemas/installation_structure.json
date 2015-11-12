@@ -32,17 +32,7 @@
                             },
                             "api": {"type": "string"}
                         },
-                        "required": ["release", "astute_sha", "api",
-                                     "feature_groups"],
-                        "oneOf": [
-                          {"required": [
-                            "fuel-ostf_sha", "python-fuelclient_sha",
-                            "fuel-library_sha", "fuel-nailgun_sha"]},
-                          {"required": [
-                            "fuel-ostf_sha", "python-fuelclient_sha",
-                            "fuel-library_sha", "nailgun_sha"]},
-                          {"required": ["ostf_sha", "fuellib_sha", "nailgun_sha"]}
-                        ]
+                        "required": ["release", "api", "feature_groups"]
                     },
                     "clusters": {
                         "type": "array",

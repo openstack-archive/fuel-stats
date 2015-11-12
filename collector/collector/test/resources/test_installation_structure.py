@@ -203,6 +203,23 @@ class TestInstallationStructure(DbTest):
                 'clusters_num': 2,
                 'clusters': []
             },
+            {
+                # In 8.0 sha checksums removed from the fuel_release
+                'master_node_uid': master_node_uid,
+                'fuel_release': {
+                    'release': 'r',
+                    'feature_groups': ['experimental'],
+                    'api': 'v1'
+                },
+                'fuel_packages': [
+                    'nailgun-8.0.0-1234'
+                ],
+                'allocated_nodes_num': 4,
+                'unallocated_nodes_num': 4,
+                'clusters_num': 2,
+                'clusters': []
+            },
+
         ]
 
         for struct in structs:
