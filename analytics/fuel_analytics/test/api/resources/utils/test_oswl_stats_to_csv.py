@@ -585,3 +585,51 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
                 for flatten_resource in flatten_resources:
                     release = flatten_resource[release_pos]
                     self.assertIn(release, releases)
+
+    def test_duplicated_oswls_skipped(self):
+        exporter = OswlStatsToCsv()
+        # Creating oswls duplicates
+        resource_type = consts.OSWL_RESOURCE_TYPES.vm
+        old_days = 7
+        new_days = 2
+        old_created_date = datetime.utcnow().date() - timedelta(days=old_days)
+        oswls_saved = [
+            OpenStackWorkloadStats(
+                master_node_uid='x',
+                external_id=1,
+                cluster_id=1,
+                created_date=old_created_date,
+                updated_time=datetime.utcnow().time(),
+                resource_type=resource_type,
+                resource_checksum='checksum',
+                resource_data={'current': [{'id': 1}], 'added': [{'id': 1}]}
+            ),
+            OpenStackWorkloadStats(
+                master_node_uid='x',
+                external_id=2,
+                cluster_id=1,
+                created_date=(datetime.utcnow().date() -
+                              timedelta(days=new_days)),
+                updated_time=datetime.utcnow().time(),
+                resource_type=resource_type,
+                resource_checksum='checksum',
+                resource_data={'current': [{'id': 1}], 'added': [{'id': 1}]}
+            ),
+        ]
+        for oswl in oswls_saved:
+            db.session.add(oswl)
+        self.get_saved_inst_structs(oswls_saved, creation_date_range=(0, 0))
+
+        with app.test_request_context():
+            oswls = get_oswls(resource_type)
+        oswls_seamless = list(exporter.fill_date_gaps(
+            oswls, datetime.utcnow().date()))
+
+        # Checking size of seamless report
+        expected_num = old_days + 1  # current date should be in report
+        actual_num = len(oswls_seamless)
+        self.assertEqual(expected_num, actual_num)
+
+        # Checking only old oswl in seamless_oswls
+        for o in oswls_seamless:
+            self.assertEqual(old_created_date, o.created_date)

@@ -181,6 +181,17 @@ class OswlStatsToCsv(object):
                     return_value.resource_data['modified'] = {}
                 yield return_value
 
+    def _add_oswl_to_horizon(self, horizon, oswl):
+        idx = export_utils.get_index(oswl, *self.OSWL_INDEX_FIELDS)
+
+        # We can have duplication of the oswls in the DB with the same
+        # checksum but with different external_id. We shouldn't add
+        # the same oswl into horizon if it already present in it.
+        old_oswl = horizon.get(idx)
+        if old_oswl is None or \
+                old_oswl.resource_checksum != oswl.resource_checksum:
+            horizon[idx] = oswl
+
     def fill_date_gaps(self, oswls, to_date):
         """Fills the gaps of stats info. If masternode sends stats on
         on_date and we haven't oswl on this date - the last one oswl for
@@ -210,8 +221,8 @@ class OswlStatsToCsv(object):
                     last_date += datetime.timedelta(days=1)
                 if last_date > to_date:
                     break
-            idx = export_utils.get_index(oswl, *self.OSWL_INDEX_FIELDS)
-            horizon[idx] = oswl
+
+            self._add_oswl_to_horizon(horizon, oswl)
 
         # Filling gaps if oswls exhausted on date before to_date
         if last_date is not None:

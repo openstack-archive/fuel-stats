@@ -174,7 +174,7 @@ def get_oswls_query(resource_type, from_date=None, to_date=None):
         OSWS.id, OSWS.master_node_uid, OSWS.cluster_id,
         OSWS.created_date,  # for checking if row is duplicated in CSV
         OSWS.created_date.label('stats_on_date'),  # for showing in CSV
-        OSWS.resource_type, OSWS.resource_data,
+        OSWS.resource_type, OSWS.resource_data, OSWS.resource_checksum,
         IS.creation_date.label('installation_created_date'),
         IS.modification_date.label('installation_updated_date'),
         IS.structure['fuel_release'].label('fuel_release'),
