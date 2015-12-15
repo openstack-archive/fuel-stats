@@ -28,6 +28,7 @@ class OpenStackWorkloadStats(db.Model):
     resource_type = db.Column(db.Text)
     resource_data = db.Column(JSON)
     resource_checksum = db.Column(db.Text)
+    version_info = db.Column(JSON)
 
 
 class InstallationStructure(db.Model):
