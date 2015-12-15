@@ -95,6 +95,28 @@ class OswlStatsToCsv(object):
 
         return result
 
+    def handle_empty_version_info(self, oswl):
+        """Handles empty version info in oswl object
+
+        For OSWLs with empty version_info data we compose version_info
+        from InstallationStructure data and assign it to oswl object.
+        If we extract OpenStack release, os, name from
+        InstallationStructure.structure.clusters we have performance
+        degradation on fetching all clusters data in csv_exporter.get_oswls
+        thus only fuel_release will be used in case of empty version_info.
+
+        :param oswl: OSWL DB object
+        :type oswl: fuel_analytics.api.db.model.OpenStackWorkloadStats
+        """
+        if oswl.version_info:
+            return
+
+        fuel_release = oswl.fuel_release_from_inst_info or {}
+        version_info = {
+            'fuel_release': fuel_release.get('release')
+        }
+        setattr(oswl, 'version_info', version_info)
+
     def get_flatten_resources(self, resource_type, oswl_keys_paths,
                               resource_keys_paths, oswls):
         """Gets flatten vms data
@@ -107,8 +129,7 @@ class OswlStatsToCsv(object):
         app.logger.debug("Getting OSWL flatten %s info started", resource_type)
         for oswl in oswls:
             try:
-                fuel_release = oswl.fuel_release or {}
-                setattr(oswl, 'release', fuel_release.get('release'))
+                self.handle_empty_version_info(oswl)
                 flatten_oswl = export_utils.get_flatten_data(oswl_keys_paths,
                                                              oswl)
                 resource_data = oswl.resource_data

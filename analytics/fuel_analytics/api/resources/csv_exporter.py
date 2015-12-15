@@ -175,9 +175,10 @@ def get_oswls_query(resource_type, from_date=None, to_date=None):
         OSWS.created_date,  # for checking if row is duplicated in CSV
         OSWS.created_date.label('stats_on_date'),  # for showing in CSV
         OSWS.resource_type, OSWS.resource_data, OSWS.resource_checksum,
+        OSWS.version_info,
         IS.creation_date.label('installation_created_date'),
         IS.modification_date.label('installation_updated_date'),
-        IS.structure['fuel_release'].label('fuel_release'),
+        IS.structure['fuel_release'].label('fuel_release_from_inst_info'),
         IS.is_filtered).\
         join(IS, IS.master_node_uid == OSWS.master_node_uid).\
         filter(OSWS.resource_type == resource_type).\
