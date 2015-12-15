@@ -45,7 +45,12 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
                 exporter.get_resource_keys_paths(resource_type)
             self.assertNotIn(['external_id'], oswl_keys_paths)
             self.assertNotIn(['updated_time'], oswl_keys_paths)
-            self.assertIn(['release'], oswl_keys_paths)
+            self.assertNotIn(['release'], oswl_keys_paths)
+            self.assertIn(['version_info', 'fuel_release'], oswl_keys_paths)
+            self.assertIn(['version_info', 'openstack_release'],
+                          oswl_keys_paths)
+            self.assertIn(['version_info', 'openstack_name'], oswl_keys_paths)
+            self.assertIn(['version_info', 'openstack_os'], oswl_keys_paths)
             self.assertIn([resource_type, 'id'], resource_keys_paths)
             self.assertIn([resource_type, 'is_added'], csv_keys_paths)
             self.assertIn([resource_type, 'is_modified'], csv_keys_paths)
@@ -579,7 +584,8 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
                     exporter.get_resource_keys_paths(resource_type)
 
                 # Checking release value in flatten resources
-                release_pos = csv_keys_paths.index(['release'])
+                release_pos = csv_keys_paths.index(
+                    ['version_info', 'fuel_release'])
                 flatten_resources = exporter.get_flatten_resources(
                     resource_type, oswl_keys_paths, resource_keys_paths, oswls)
                 for flatten_resource in flatten_resources:
@@ -633,3 +639,68 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
         # Checking only old oswl in seamless_oswls
         for o in oswls_seamless:
             self.assertEqual(old_created_date, o.created_date)
+
+    def test_version_info_in_flatten_resource(self):
+        exporter = OswlStatsToCsv()
+        resource_type = consts.OSWL_RESOURCE_TYPES.vm
+        oswls_saved = [
+            OpenStackWorkloadStats(
+                master_node_uid='x',
+                external_id=1,
+                cluster_id=1,
+                created_date=datetime.utcnow().date(),
+                updated_time=datetime.utcnow().time(),
+                resource_type=resource_type,
+                resource_checksum='no_version_info',
+                resource_data={'current': [{'id': 1}]}
+            ),
+            OpenStackWorkloadStats(
+                master_node_uid='y',
+                external_id=2,
+                cluster_id=2,
+                created_date=datetime.utcnow().date(),
+                updated_time=datetime.utcnow().time(),
+                resource_type=resource_type,
+                resource_checksum='empty_version_info',
+                resource_data={'current': [{'id': 1}]},
+                version_info={}
+            ),
+            OpenStackWorkloadStats(
+                master_node_uid='z',
+                external_id=3,
+                cluster_id=3,
+                created_date=datetime.utcnow().date(),
+                updated_time=datetime.utcnow().time(),
+                resource_type=resource_type,
+                resource_checksum='with_version_info',
+                resource_data={'current': [{'id': 1}]},
+                version_info={
+                    'fuel_release': 'fr',
+                    'openstack_release': 'osr',
+                    'openstack_os': 'osos',
+                    'openstack_name': 'osn',
+                }
+            ),
+        ]
+        for oswl in oswls_saved:
+            db.session.add(oswl)
+        self.get_saved_inst_structs(oswls_saved, creation_date_range=(0, 0))
+
+        with app.test_request_context():
+            oswls = list(get_oswls(resource_type))
+
+        oswl_keys_paths, resource_keys_paths, csv_keys_paths = \
+            exporter.get_resource_keys_paths(resource_type)
+        fuel_release_pos = csv_keys_paths.index(
+            ['version_info', 'fuel_release'])
+        flatten_resources = list(exporter.get_flatten_resources(
+            resource_type, oswl_keys_paths, resource_keys_paths, oswls))
+
+        # Checking all oswls are in flatten resources
+        external_uid_pos = csv_keys_paths.index(['master_node_uid'])
+        expected_uids = set([oswl.master_node_uid for oswl in oswls])
+        actual_uids = set([d[external_uid_pos] for d in flatten_resources])
+        self.assertEqual(expected_uids, actual_uids)
+
+        # Checking every flatten_resources contain fuel_release_info
+        self.assertTrue(all(d[fuel_release_pos] for d in flatten_resources))
