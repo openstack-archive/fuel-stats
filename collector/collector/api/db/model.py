@@ -64,3 +64,4 @@ class OpenStackWorkloadStats(db.Model):
     )
     resource_data = db.Column(JSON, nullable=True)
     resource_checksum = db.Column(db.Text, nullable=False)
+    version_info = db.Column(JSON, nullable=True)

@@ -80,6 +80,26 @@ class TestOswlStats(DbTest):
                     'modified': []
 
                 }
+            },
+            {
+                'master_node_uid': 'x',
+                'cluster_id': 1,
+                'id': 3,
+                'resource_type': consts.OSWL_RESOURCE_TYPES.vm,
+                'resource_checksum': 'xx',
+                'created_date': datetime.utcnow().date().isoformat(),
+                'updated_time': datetime.utcnow().time().isoformat(),
+                'resource_data': {
+                    'added': [{'id': 1, 'time': 343434343}],
+                    'current': [{'id': 'xxx', 'status': 'down'}],
+                    'removed': [],
+                    'modified': []
+
+                },
+                'version_info': {
+                    'fuel_version': '7.0',
+                    'openstack_version': None,
+                }
             }
         ]]
         for oswls in oswls_sets:
@@ -111,6 +131,22 @@ class TestOswlStats(DbTest):
                 }
             }
             for i in xrange(oswls_num)]
+
+    def generate_oswls_with_version_info(self, oswls_num):
+        oswls = self.generate_dumb_oswls(oswls_num)
+        version_info_variants = [
+            {}, {'fuel_version': None}, {'fuel_version': "7.0"},
+            {'release_version': None}, {'release_version': "2015-xx-yy"},
+            {'release_os': None}, {'release_os': "OSos"},
+            {'release_name': None}, {'release_name': "OSname"},
+            {'environment_version': None}, {'environment_version': "OSname"},
+            {'fuel_version': 'w', 'release_version': 'x',
+             'release_name': 'y', 'release_os': 'z',
+             'environment_version': '8.0'}
+        ]
+        for oswl in oswls:
+            oswl['version_info'] = random.choice(version_info_variants)
+        return oswls
 
     def test_existed_oswls_filtering(self):
         oswls_num = 10
@@ -277,3 +313,16 @@ class TestOswlStats(DbTest):
         for oswl_stat in resp_data['oswl_stats']:
             self.assertNotEqual(oswl_stat['status'],
                                 consts.OSWL_STATUSES.failed)
+
+    def test_post_oswls_with_version_info(self):
+        oswls_num = 30
+        expected_oswls = self.generate_oswls_with_version_info(oswls_num)
+        resp = self.post(
+            '/api/v1/oswl_stats/',
+            {'oswl_stats': expected_oswls}
+        )
+        self.check_response_ok(resp)
+        resp_data = json.loads(resp.data)
+        oswls_actual_num = db.session.query(OSWL).count()
+        self.assertEqual(oswls_num, oswls_actual_num)
+        self.assertEqual(len(resp_data['oswl_stats']), oswls_actual_num)

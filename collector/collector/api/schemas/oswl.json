@@ -34,6 +34,16 @@
                             },
                             "required": ["added", "current", "removed", "modified"],
                             "additionalProperties": false
+                        },
+                        "version_info": {
+                            "type": "object",
+                            "properties": {
+                                "fuel_version": {"type": ["string", "null"]},
+                                "release_version": {"type": ["string", "null"]},
+                                "release_name": {"type": ["string", "null"]},
+                                "release_os": {"type": ["string", "null"]},
+                                "environment_version": {"type": ["string", "null"]}
+                            }
                         }
                     },
                     "required": ["master_node_uid", "id", "cluster_id",

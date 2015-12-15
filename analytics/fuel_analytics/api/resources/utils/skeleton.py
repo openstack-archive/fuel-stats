@@ -152,7 +152,13 @@ OSWL_SKELETONS = {
         'cluster_id': None,
         'stats_on_date': None,
         'resource_type': None,
-        'release': None,
+        'version_info': {
+            'fuel_release': None,
+            'release_version': None,
+            'release_os': None,
+            'release_name': None,
+            'environment_version': None
+        }
     },
     consts.OSWL_RESOURCE_TYPES.vm: {
         'id': None,
