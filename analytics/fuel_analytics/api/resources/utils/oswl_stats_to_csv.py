@@ -133,19 +133,27 @@ class OswlStatsToCsv(object):
                                                              oswl)
                 resource_data = oswl.resource_data
                 current = resource_data.get('current', [])
+                added = resource_data.get('added', [])
+                modified = resource_data.get('modified', [])
                 removed = resource_data.get('removed', [])
-                # Filtering id, time only data
-                removed = itertools.ifilter(lambda x: len(x) > 2, removed)
+                # Filtering wrong formatted removed data
+                # delivered by old Fuel versions
+                removed = [res for res in removed if len(res) > 2]
 
                 # Extracting ids or oswl resources
-                added_ids = set(item['id'] for item in
-                                resource_data.get('added', []))
-                modified_ids = set(item['id'] for item in
-                                   resource_data.get('removed', []))
-                removed_ids = set(item['id'] for item in
-                                  resource_data.get('modified', []))
+                added_ids = set(item['id'] for item in added)
+                modified_ids = set(item['id'] for item in modified)
+                removed_ids = set(item['id'] for item in removed)
 
-                for resource in itertools.chain(current, removed):
+                # If resource removed and added several times it would
+                # be present in current and removed. We should exclude
+                # duplicates from flatten resources of the same
+                # resource.
+                current_ids = set(item['id'] for item in current)
+                finally_removed = (res for res in removed
+                                   if res['id'] not in current_ids)
+
+                for resource in itertools.chain(current, finally_removed):
                     flatten_resource = export_utils.get_flatten_data(
                         resource_keys_paths, {resource_type: resource})
                     additional_info = self.get_additional_resource_info(
@@ -206,10 +214,14 @@ class OswlStatsToCsv(object):
 
         # We can have duplication of the oswls in the DB with the same
         # checksum but with different external_id. We shouldn't add
-        # the same oswl into horizon if it already present in it.
+        # the same oswl into horizon if it already present in it and
+        # has different added or modified or removed resources.
         old_oswl = horizon.get(idx)
-        if old_oswl is None or \
-                old_oswl.resource_checksum != oswl.resource_checksum:
+        if (
+            old_oswl is None or
+            old_oswl.resource_checksum != oswl.resource_checksum or
+            old_oswl.resource_data != oswl.resource_data
+        ):
             horizon[idx] = oswl
 
     def fill_date_gaps(self, oswls, to_date):
