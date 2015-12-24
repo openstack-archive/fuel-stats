@@ -420,10 +420,10 @@ function($, d3, D3pie, d3tip, nv, elasticsearch) {
                         titleSubtitlePadding: 9
                     },
                     size: {
-                        canvasWidth: 400,
+                        canvasWidth: 330,
                         canvasHeight: 300,
                         pieInnerRadius: '40%',
-                        pieOuterRadius: '60%'
+                        pieOuterRadius: '55%'
                     },
                     labels: {
                         outer: {
@@ -519,10 +519,10 @@ function($, d3, D3pie, d3tip, nv, elasticsearch) {
                         titleSubtitlePadding: 9
                     },
                     size: {
-                        canvasWidth: 400,
+                        canvasWidth: 330,
                         canvasHeight: 300,
                         pieInnerRadius: '40%',
-                        pieOuterRadius: '60%'
+                        pieOuterRadius: '55%'
                     },
                     labels: {
                         outer: {
