@@ -430,6 +430,10 @@ function($, d3, D3pie, d3tip, nv, elasticsearch) {
                             format: 'label-value2',
                             pieDistance: 10
                         },
+                        inner: {
+                            format: "percentage",
+                            hideWhenLessThanPercentage: 5
+                        },
                         mainLabel: {
                             fontSize: 14
                         },
@@ -528,6 +532,10 @@ function($, d3, D3pie, d3tip, nv, elasticsearch) {
                         outer: {
                             format: 'label-value2',
                             pieDistance: 10
+                        },
+                        inner: {
+                            format: "percentage",
+                            hideWhenLessThanPercentage: 5
                         },
                         mainLabel: {
                             fontSize: 14
