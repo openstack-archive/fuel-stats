@@ -6,7 +6,7 @@
         "bootstrap": "3.2.0",
         "d3": "3.4.13",
         "d3-tip": "0.6.3",
-        "d3pie": "0.1.4",
+        "d3pie": "0.1.9",
         "nvd3": "1.1.15-beta",
         "elasticsearch": "3.0.0",
         "requirejs": "2.1.15"
