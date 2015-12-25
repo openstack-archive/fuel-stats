@@ -1,0 +1,11 @@
+Verified+1: Fuel CI <fuel-ci-bot@mirantis.com>
+Code-Review+1: venkatamahesh <venkatamaheshkotha@gmail.com>
+Code-Review+1: janonymous <jaivish.kothari@nectechnologies.in>
+Code-Review+2: Alexander Kislitsky <akislitsky@mirantis.com>
+Workflow+1: Alexander Kislitsky <akislitsky@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Fri, 25 Dec 2015 10:00:53 +0000
+Reviewed-on: https://review.openstack.org/256774
+Project: openstack/fuel-stats
+Branch: refs/heads/master
