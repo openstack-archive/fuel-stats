@@ -1,0 +1,10 @@
+Verified+1: Fuel CI <fuel-ci-bot@mirantis.com>
+Code-Review+1: Bulat Gaifullin <bgaifullin@mirantis.com>
+Code-Review+2: Aleksey Kasatkin <akasatkin@mirantis.com>
+Workflow+1: Aleksey Kasatkin <akasatkin@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Mon, 28 Dec 2015 09:46:05 +0000
+Reviewed-on: https://review.openstack.org/260429
+Project: openstack/fuel-stats
+Branch: refs/heads/master
