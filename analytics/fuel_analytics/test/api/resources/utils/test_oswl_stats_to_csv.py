@@ -707,3 +707,149 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
 
         # Checking every flatten_resources contain fuel_release_info
         self.assertTrue(all(d[fuel_release_pos] for d in flatten_resources))
+
+    def test_all_resource_statuses_are_shown(self):
+        exporter = OswlStatsToCsv()
+        resource_type = consts.OSWL_RESOURCE_TYPES.vm
+        updated_time_str = datetime.utcnow().time().isoformat()
+        oswls_saved = [
+            OpenStackWorkloadStats(
+                master_node_uid='x',
+                external_id=1,
+                cluster_id=1,
+                created_date=(datetime.utcnow().date() -
+                              timedelta(days=8)),
+                updated_time=datetime.utcnow().time(),
+                resource_type=resource_type,
+                resource_checksum='checksum',
+                resource_data={'current': [{'id': 1, 'status': 'enabled',
+                                            'tenant_id': 'first'}],
+                               'added': [{'id': 1, 'time': updated_time_str}],
+                               'modified': [], 'removed': []}
+            ),
+            # Removing and adding back the same resource.
+            OpenStackWorkloadStats(
+                master_node_uid='x',
+                external_id=2,
+                cluster_id=1,
+                created_date=(datetime.utcnow().date() -
+                              timedelta(days=6)),
+                updated_time=datetime.utcnow().time(),
+                resource_type=resource_type,
+                resource_checksum='checksum',
+                resource_data={
+                    'current': [{'id': 1, 'status': 'enabled',
+                                 'tenant_id': 'second'}],
+                    'added': [{'id': 1, 'time': updated_time_str}],
+                    'modified': [],
+                    'removed': [{'id': 1, 'status': 'enabled',
+                                 'time': updated_time_str,
+                                 'tenant_id': 'second'}]}
+            ),
+            # Changing and restoring back resource
+            OpenStackWorkloadStats(
+                master_node_uid='x',
+                external_id=3,
+                cluster_id=1,
+                created_date=(datetime.utcnow().date() -
+                              timedelta(days=4)),
+                updated_time=datetime.utcnow().time(),
+                resource_type=resource_type,
+                resource_checksum='checksum',
+                resource_data={
+                    'current': [{'id': 1, 'enabled': True,
+                                 'tenant_id': 'third'}],
+                    'added': [],
+                    'modified': [
+                        {'id': 1, 'enabled': False, 'time': updated_time_str},
+                        {'id': 1, 'enabled': True, 'time': updated_time_str},
+                    ],
+                    'removed': []
+                }
+            ),
+            # Resource modified and finally deleted
+            OpenStackWorkloadStats(
+                master_node_uid='x',
+                external_id=4,
+                cluster_id=1,
+                created_date=(datetime.utcnow().date() -
+                              timedelta(days=2)),
+                updated_time=datetime.utcnow().time(),
+                resource_type=resource_type,
+                resource_checksum='another_checksum',
+                resource_data={
+                    'current': [],
+                    'added': [],
+                    'modified': [
+                        {'id': 1, 'enabled': False, 'time': updated_time_str},
+                        {'id': 1, 'enabled': True, 'time': updated_time_str},
+                    ],
+                    'removed': [{'id': 1, 'enabled': True,
+                                 'tenant_id': 'fourth'}]
+                }
+            ),
+        ]
+        for oswl in oswls_saved:
+            db.session.add(oswl)
+        self.get_saved_inst_structs(oswls_saved, creation_date_range=(0, 0))
+
+        with app.test_request_context():
+            oswls = get_oswls(resource_type)
+
+        oswls_seamless = list(exporter.fill_date_gaps(
+            oswls, datetime.utcnow().date()))
+
+        oswl_keys_paths, resource_keys_paths, csv_keys_paths = \
+            exporter.get_resource_keys_paths(resource_type)
+
+        flatten_resources = list(exporter.get_flatten_resources(
+            resource_type, oswl_keys_paths, resource_keys_paths,
+            oswls_seamless))
+
+        # Expected oswls num: 2 for 'first', 2 for 'second', 2 for 'third'
+        # and only one for finally removed 'fourth'
+        expected_oswls_num = 7
+        self.assertEqual(expected_oswls_num, len(flatten_resources))
+
+        is_added_pos = csv_keys_paths.index([resource_type, 'is_added'])
+        is_modified_pos = csv_keys_paths.index([resource_type, 'is_modified'])
+        is_removed_pos = csv_keys_paths.index([resource_type, 'is_removed'])
+        tenant_id_pos = csv_keys_paths.index([resource_type, 'tenant_id'])
+
+        def check_resource_state(resource, tenant_id, is_added,
+                                 is_modified, is_removed):
+            self.assertEquals(is_added, resource[is_added_pos])
+            self.assertEquals(is_modified, resource[is_modified_pos])
+            self.assertEquals(is_removed, resource[is_removed_pos])
+            self.assertEquals(tenant_id, resource[tenant_id_pos])
+
+        # The fist oswl status True only in is_added
+        check_resource_state(flatten_resources[0], 'first',
+                             True, False, False)
+
+        # The first oswl status on the next day is False for
+        # is_added, is_modified, is_removed
+        check_resource_state(flatten_resources[1], 'first',
+                             False, False, False)
+
+        # The second oswl status True in is_added, is_modified
+        check_resource_state(flatten_resources[2], 'second',
+                             True, False, True)
+
+        # The second oswl status on the next day is False for
+        # is_added, is_modified, is_removed
+        check_resource_state(flatten_resources[3], 'second',
+                             False, False, False)
+
+        # The third oswl status True only in is_modified
+        check_resource_state(flatten_resources[4], 'third',
+                             False, True, False)
+
+        # The third oswl status on the next day is False for
+        # is_added, is_modified, is_removed
+        check_resource_state(flatten_resources[5], 'third',
+                             False, False, False)
+
+        # The fourth oswl status True in is_modified, is_deleted
+        check_resource_state(flatten_resources[6], 'fourth',
+                             False, True, True)
