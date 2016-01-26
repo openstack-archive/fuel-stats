@@ -20,6 +20,8 @@ import flask_sqlalchemy
 import os
 from sqlalchemy.exc import IntegrityError
 
+from collector.api.config import index_filtering_rules
+
 
 app = Flask(__name__)
 
@@ -27,6 +29,10 @@ app = Flask(__name__)
 # Registering flask extensions
 app.config['JSONSCHEMA_DIR'] = os.path.join(app.root_path, 'schemas')
 flask_jsonschema.JsonSchema(app)
+
+# We should rebuild packages based keys in the FILTERING_RULES.
+# Sorted tuples built from packages lists are used as keys.
+index_filtering_rules(app)
 
 db = flask_sqlalchemy.SQLAlchemy(app)
 
