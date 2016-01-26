@@ -29,7 +29,17 @@ class Production(object):
     # Filtration is performed by release and build_id from installation
     # info fuel_release data.
     #
-    # Structure of FILTERING_RULES: {release: {build_id: from_dt}}
+    # Structure of FILTERING_RULES for releases < 8.0:
+    #   {release: {build_id: from_dt}}
+    # Structure of FILTERING_RULES for releases >= 8.0:
+    #   {release: {('fuel-nailgun-8.0.0-1.mos8212.noarch',
+    #               'fuel-library8.0-8.0.0-1.mos7718.noarch'): from_dt}}
+    #
+    # PAY ATTENTION: you must use tuples as indexes in the FILTERING_RULES
+    #
+    # If packages and build_id are set simultaneously both conditions
+    # will be checked. Installation info will be filtered if any of build_id
+    # or packages filtered.
     #
     # Example of FILTERING_RULES:
     # {'6.1':
@@ -42,7 +52,9 @@ class Production(object):
     #        '2015-04-13_06-18-10': None
     #  },
     #  '6.1.1': {},  # All builds of 6.1.1 filtered
-    #  '7.0': None   # All builds of 7.0 not filtered
+    #  '7.0': None,   # All builds of 7.0 not filtered
+    #  '8.0': {('fuel-nailgun-8.0.0-1.mos8212.noarch',): '2016-02-01T23:00:18',
+    #          ('fuel-nailgun-8.0.0-2.mos9345.noarch',): '2016-02-10',}
     # }
     #
     # If you don't need any filtration, please set FILTERING_RULES = None
@@ -62,3 +74,22 @@ class Testing(Production):
     SQLALCHEMY_DATABASE_URI = \
         'postgresql://collector:collector@localhost/collector'
     SQLALCHEMY_ECHO = True
+
+
+def index_filtering_rules(app):
+    """Rebuilds packages based keys in FILTERING_RULES.
+
+    For accurate search we need to have sorted packages tuples as indexes
+    in the FILTERING_RULES.
+    """
+
+    filtering_rules = app.config.get('FILTERING_RULES')
+    if not filtering_rules:
+        return
+
+    for release, rules in filtering_rules.iteritems():
+        if rules:
+            for packages, from_dt in rules.iteritems():
+                if isinstance(packages, tuple):
+                    rules[tuple(sorted(packages))] = from_dt
+                    rules.pop(packages)

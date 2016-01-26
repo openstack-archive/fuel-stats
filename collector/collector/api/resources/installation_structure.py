@@ -57,6 +57,41 @@ def post():
     return status_code, {'status': 'ok'}
 
 
+def _is_filtered_by_build_info(build_info, filtering_rules):
+    """Calculates is build_info should be filtered or not.
+
+    :param build_info: build_id or packages from the
+                       installation info structure
+    :param filtering_rules: filtering rules for release
+    """
+
+    # We don't have 'build_id' in structure since release 8.0
+    # and 'packages' before 8.0
+    if build_info is None:
+        return False
+
+    if isinstance(build_info, (list, tuple)):
+        build_info = tuple(sorted(build_info))
+
+    # build_id not found in list
+    if build_info not in filtering_rules:
+        return True
+
+    build_rules = filtering_rules.get(build_info)
+
+    # No from_dt specified
+    if build_rules is None:
+        return False
+
+    # from_dt in the past
+    from_dt = parser.parse(build_rules)
+    cur_dt = datetime.utcnow()
+    if from_dt <= cur_dt:
+        return False
+
+    return True
+
+
 def _is_filtered(structure):
     """Checks is structure should be filtered or not.
     For filtering uses rules defined at app.config['FILTERING_RULES']
@@ -71,32 +106,23 @@ def _is_filtered(structure):
     # Extracting data from structure
     fuel_release = structure.get('fuel_release', {})
     release = fuel_release.get('release')
-    build_id = structure.get('fuel_release', {}).get('build_id')
+    build_id = fuel_release.get('build_id')
+    packages = structure.get('fuel_packages')
 
     # Release not in rules
     if release not in rules:
         return True
 
-    release_rules = rules.get(release)
+    filtering_rules = rules.get(release)
 
-    # No build_ids specified
-    if release_rules is None:
+    # Filtering rules doesn't specified
+    if filtering_rules is None:
         return False
 
-    # build_id not found in list
-    if build_id not in release_rules:
-        return True
+    filtered_by_build_id = _is_filtered_by_build_info(
+        build_id, filtering_rules)
 
-    build_rules = release_rules.get(build_id)
+    filtered_by_packages = _is_filtered_by_build_info(
+        packages, filtering_rules)
 
-    # No from_dt specified
-    if build_rules is None:
-        return False
-
-    # from_dt in the past
-    from_dt = parser.parse(build_rules)
-    cur_dt = datetime.utcnow()
-    if from_dt <= cur_dt:
-        return False
-
-    return True
+    return filtered_by_build_id or filtered_by_packages

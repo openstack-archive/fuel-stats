@@ -34,6 +34,10 @@
                         },
                         "required": ["release", "api", "feature_groups"]
                     },
+                    "fuel_packages": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
                     "clusters": {
                         "type": "array",
                         "items": {
