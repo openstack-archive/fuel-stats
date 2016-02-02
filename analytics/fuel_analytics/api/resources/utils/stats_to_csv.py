@@ -85,7 +85,9 @@ class StatsToCsv(object):
         plugin_skeleton.pop('releases', None)
 
         plugin_key_paths = export_utils.get_keys_paths(plugin_skeleton)
-        structure_key_paths = [['master_node_uid']]
+        structure_key_paths = [['master_node_uid'],
+                               ['structure', 'fuel_packages'],
+                               ['structure', 'fuel_release', 'release']]
         cluster_key_paths = [['cluster_id']]
         result_key_paths = plugin_key_paths + cluster_key_paths + \
             structure_key_paths
