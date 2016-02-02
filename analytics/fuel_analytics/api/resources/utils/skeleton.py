@@ -133,6 +133,7 @@ INSTALLATION_INFO_SKELETON = {
             'production': None,
             'release': None
         },
+        'fuel_packages': [],
         'unallocated_nodes_num': None,
         'user_information': {
             'company': None,
