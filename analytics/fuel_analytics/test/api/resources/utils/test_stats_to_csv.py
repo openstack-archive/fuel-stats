@@ -73,6 +73,7 @@ class StatsToCsvExportTest(InstStructureTest, DbTest):
                       csv_keys_paths)
         self.assertIn(['structure', 'fuel_release', 'fuel-library_sha'],
                       csv_keys_paths)
+        self.assertIn(['structure', 'fuel_packages'], csv_keys_paths)
         self.assertNotIn(['structure', 'clusters'], csv_keys_paths)
         self.assertNotIn(['installed_plugins'], csv_keys_paths)
 
