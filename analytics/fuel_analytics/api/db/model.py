@@ -47,3 +47,7 @@ class ActionLog(db.Model):
     master_node_uid = db.Column(db.String, nullable=False)
     external_id = db.Column(db.Integer, nullable=False)
     body = db.Column(JSON)
+    action_type = db.Column(db.Text)
+    action_name = db.Column(db.Text)
+    db.Index('ix_action_logs_action_name_action_type',
+             'action_name', 'action_type')
