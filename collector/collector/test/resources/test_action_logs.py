@@ -277,3 +277,39 @@ class TestActionLogs(DbTest):
             for r in resp_logs:
                 self.assertEqual(consts.ACTION_LOG_STATUSES.failed,
                                  r['status'])
+
+    def test_action_type_action_name_copied_to_columns(self):
+        action_logs_data = [
+            {
+                'master_node_uid': 'xx',
+                'external_id': 1,
+                'body': {
+                    'id': 1,
+                    'action_name': 'deployment',
+                    'action_type': 'nailgun_task',
+                    'end_timestamp': None
+                }
+            },
+            {
+                'master_node_uid': 'xx',
+                'external_id': 2,
+                'body': {
+                    'id': 2,
+                    'action_name': '',
+                    'action_type': 'http_request',
+                    'end_timestamp': "1"
+                }
+            }
+        ]
+        resp = self.post(
+            '/api/v1/action_logs/',
+            {'action_logs': action_logs_data}
+        )
+        self.check_response_ok(resp)
+
+        action_logs = db.session.query(ActionLog).all()
+        for action_log in action_logs:
+            self.assertEqual(action_log.action_name,
+                             action_log.body['action_name'])
+            self.assertEqual(action_log.action_type,
+                             action_log.body['action_type'])
