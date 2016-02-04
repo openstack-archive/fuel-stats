@@ -165,6 +165,8 @@ class StatsToCsvExportTest(InstStructureTest, DbTest):
             ActionLog(
                 master_node_uid=inst_structure.master_node_uid,
                 external_id=1,
+                action_type='nailgun_task',
+                action_name=exporter.NETWORK_VERIFICATION_ACTION,
                 body={'cluster_id': clusters[0]['id'],
                       'end_timestamp': datetime.utcnow().isoformat(),
                       'action_type': 'nailgun_task',
@@ -174,6 +176,8 @@ class StatsToCsvExportTest(InstStructureTest, DbTest):
             ActionLog(
                 master_node_uid=inst_structure.master_node_uid,
                 external_id=2,
+                action_type='nailgun_task',
+                action_name=exporter.NETWORK_VERIFICATION_ACTION,
                 body={'cluster_id': clusters[1]['id'],
                       'end_timestamp': datetime.utcnow().isoformat(),
                       'action_type': 'nailgun_task',

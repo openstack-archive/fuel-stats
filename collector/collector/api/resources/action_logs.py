@@ -48,6 +48,11 @@ def post():
         objects_info.extend(_extract_objects_info(existed_objs))
         skipped_objs = []
         for obj in action_logs_to_add:
+            # Scan index of JSON fields is slow, thus we are copying
+            # action name and action type to columns of actions_logs.
+            obj['action_type'] = obj['body'].get('action_type')
+            obj['action_name'] = obj['body'].get('action_name')
+
             if obj['body']['action_type'] == 'nailgun_task' and \
                     not obj['body']['end_timestamp']:
                 skipped_objs.append(obj)

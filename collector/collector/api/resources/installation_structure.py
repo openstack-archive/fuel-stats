@@ -15,7 +15,6 @@
 from datetime import datetime
 from dateutil import parser
 from flask import Blueprint
-from flask import json
 from flask import request
 from flask_jsonschema import validate as validate_request
 
@@ -53,7 +52,7 @@ def post():
         obj.modification_date = datetime.utcnow()
         status_code = 200
     obj.is_filtered = _is_filtered(structure)
-    obj.structure = json.dumps(structure)
+    obj.structure = structure
     db.session.add(obj)
     return status_code, {'status': 'ok'}
 
