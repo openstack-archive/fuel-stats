@@ -28,6 +28,8 @@ class ActionLog(db.Model):
     master_node_uid = db.Column(db.String, nullable=False)
     external_id = db.Column(db.Integer, nullable=False)
     body = db.Column(db.Text, nullable=False)
+    action_type = db.Column(db.Text, index=True)
+    action_name = db.Column(db.Text, index=True)
 
 
 class InstallationStructure(db.Model):
@@ -35,10 +37,7 @@ class InstallationStructure(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     master_node_uid = db.Column(db.String, nullable=False, unique=True)
-    # When we use JSON type in the model definition field value
-    # is not deserialized
-    # TODO(akislitsky): found how to use JSON instead db.Text here
-    structure = db.Column(db.Text)
+    structure = db.Column(JSON, nullable=False)
     creation_date = db.Column(db.DateTime)
     modification_date = db.Column(db.DateTime)
     is_filtered = db.Column(db.Boolean, default=False, index=True)

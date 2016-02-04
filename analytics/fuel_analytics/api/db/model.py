@@ -47,3 +47,5 @@ class ActionLog(db.Model):
     master_node_uid = db.Column(db.String, nullable=False)
     external_id = db.Column(db.Integer, nullable=False)
     body = db.Column(JSON)
+    action_type = db.Column(db.Text, index=True)
+    action_name = db.Column(db.Text, index=True)

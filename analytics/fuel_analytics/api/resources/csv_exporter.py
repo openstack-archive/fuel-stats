@@ -109,8 +109,8 @@ def get_action_logs_query():
             "WITHOUT TIME ZONE end_timestamp, " \
             "body->>'action_name' action_name " \
             "FROM action_logs " \
-            "WHERE body->>'action_type'='nailgun_task' " \
-            "AND body->>'action_name'='verify_networks' " \
+            "WHERE action_type='nailgun_task' " \
+            "AND action_name='verify_networks' " \
             "AND to_timestamp(body->>'end_timestamp', 'YYYY-MM-DD')::" \
             "TIMESTAMP WITHOUT TIME ZONE >= :from_date " \
             "AND to_timestamp(body->>'end_timestamp', 'YYYY-MM-DD')::" \
