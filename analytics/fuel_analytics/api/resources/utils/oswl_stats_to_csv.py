@@ -95,25 +95,69 @@ class OswlStatsToCsv(object):
 
         return result
 
-    def handle_empty_version_info(self, oswl):
+    def _add_oswl_to_clusters_versions_cache(self, oswl, clusters_versions):
+        """Adds oswl clusters info into clusters_versions cache.
+
+        :param oswl: OSWL DB object
+        :type oswl: fuel_analytics.api.db.model.OpenStackWorkloadStats
+        :param clusters_versions: cache for saving cluster versions with
+        structure {mn_uid: {cluster_id: fuel_release}}
+        :type clusters_versions: dict
+        """
+
+        mn_uid = oswl.master_node_uid
+
+        # Result of csv_exporter.get_oswls_query contains info about all
+        # clusters in the installation. Thus we need to add clusters data
+        # into the cache only once for specified master_node_uid.
+        if mn_uid in clusters_versions:
+            return
+
+        if oswl.clusters is None:
+            return
+
+        clusters_versions[mn_uid] = {}
+
+        for cluster in oswl.clusters:
+            fuel_release = cluster.get('fuel_release')
+            if fuel_release:
+                clusters_versions[mn_uid][cluster['id']] = fuel_release
+
+    def handle_empty_version_info(self, oswl, clusters_versions):
         """Handles empty version info in oswl object
 
         For OSWLs with empty version_info data we compose version_info
         from InstallationStructure data and assign it to oswl object.
-        If we extract OpenStack release, os, name from
-        InstallationStructure.structure.clusters we have performance
-        degradation on fetching all clusters data in csv_exporter.get_oswls
-        thus only fuel_release will be used in case of empty version_info.
+        We bound InstallationStructure.structure.clusters to the oswl
+        and extract fuel_release from clusters data. If fuel_release
+        info doesn't provided by clusters data then
+        InstallationStructure.structure.fuel_release is used.
 
         :param oswl: OSWL DB object
         :type oswl: fuel_analytics.api.db.model.OpenStackWorkloadStats
+        :param clusters_versions: cache for saving cluster versions with
+        structure {mn_uid: {cluster_id: fuel_release}}
+        :type clusters_versions: dict
         """
         if oswl.version_info:
             return
 
-        fuel_release = oswl.fuel_release_from_inst_info or {}
+        self._add_oswl_to_clusters_versions_cache(oswl, clusters_versions)
+
+        mn_uid = oswl.master_node_uid
+        cluster_id = oswl.cluster_id
+
+        # Fetching fuel_release info from cache
+        fuel_release = clusters_versions.get(mn_uid, {}).get(cluster_id)
+
+        # If clusters data doesn't contain fuel_release info we are using
+        # info from installation info
+        if fuel_release is None:
+            fuel_release = oswl.fuel_release_from_inst_info or {}
+            fuel_release = fuel_release.get('release')
+
         oswl.version_info = {
-            'fuel_release': fuel_release.get('release')
+            'fuel_release': fuel_release
         }
 
     def get_flatten_resources(self, resource_type, oswl_keys_paths,
@@ -126,9 +170,15 @@ class OswlStatsToCsv(object):
         :return: generator on flatten resources info collection
         """
         app.logger.debug("Getting OSWL flatten %s info started", resource_type)
+
+        # Cache for saving cluster versions. Cache is used only if version_info
+        # is not provided in the oswl.
+        # Structure: {mn_uid: {cluster_id: fuel_release}}
+        clusters_versions = {}
+
         for oswl in oswls:
             try:
-                self.handle_empty_version_info(oswl)
+                self.handle_empty_version_info(oswl, clusters_versions)
                 flatten_oswl = export_utils.get_flatten_data(oswl_keys_paths,
                                                              oswl)
                 resource_data = oswl.resource_data

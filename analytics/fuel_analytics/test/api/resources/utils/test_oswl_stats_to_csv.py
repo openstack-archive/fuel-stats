@@ -28,6 +28,7 @@ from fuel_analytics.test.base import DbTest
 from fuel_analytics.api.app import app
 from fuel_analytics.api.app import db
 from fuel_analytics.api.common import consts
+from fuel_analytics.api.db.model import InstallationStructure
 from fuel_analytics.api.db.model import OpenStackWorkloadStats
 from fuel_analytics.api.resources.csv_exporter import get_oswls
 from fuel_analytics.api.resources.csv_exporter import get_oswls_query
@@ -853,3 +854,95 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
         # The fourth oswl status True in is_modified, is_deleted
         check_resource_state(flatten_resources[6], 'fourth',
                              False, True, True)
+
+    def test_fuel_version_from_clusters_data_is_used(self):
+        master_node_uid = 'x'
+        exporter = OswlStatsToCsv()
+        resource_type = consts.OSWL_RESOURCE_TYPES.vm
+        version_from_cluster = '7.0'
+        version_from_version_info = '9.0'
+        version_from_installation_info = '8.0'
+        installation_date = datetime.utcnow().date() - timedelta(days=3)
+
+        # Upgraded Fuel and not upgraded cluster
+        structure = InstallationStructure(
+            master_node_uid=master_node_uid,
+            structure={
+                'fuel_release': {'release': version_from_installation_info},
+                'clusters_num': 2,
+                'clusters': [
+                    {'id': 1, 'fuel_release': version_from_cluster},
+                    {'id': 2}
+                ],
+                'unallocated_nodes_num_range': 0,
+                'allocated_nodes_num': 0
+            },
+            creation_date=installation_date,
+            is_filtered=False
+        )
+        db.session.add(structure)
+
+        oswls = [
+            OpenStackWorkloadStats(
+                master_node_uid=master_node_uid,
+                external_id=1,
+                cluster_id=1,
+                created_date=installation_date,
+                updated_time=datetime.utcnow().time(),
+                resource_type=resource_type,
+                resource_checksum='info_from_cluster',
+                resource_data={'current': [{'id': 1, 'status': 'enabled'}],
+                               'added': [], 'modified': [], 'removed': []},
+                version_info=None
+            ),
+            OpenStackWorkloadStats(
+                master_node_uid=master_node_uid,
+                external_id=3,
+                cluster_id=1,
+                created_date=installation_date + timedelta(days=1),
+                updated_time=datetime.utcnow().time(),
+                resource_type=resource_type,
+                resource_checksum='info_from_version_info',
+                resource_data={'current': [{'id': 1}],
+                               'added': [], 'modified': [], 'removed': []},
+                version_info={'fuel_release': version_from_version_info}
+            ),
+            OpenStackWorkloadStats(
+                master_node_uid=master_node_uid,
+                external_id=2,
+                cluster_id=2,
+                created_date=installation_date + timedelta(days=2),
+                updated_time=datetime.utcnow().time(),
+                resource_type=resource_type,
+                resource_checksum='info_from_installation_info',
+                resource_data={'current': [{'id': 1}],
+                               'added': [], 'modified': [], 'removed': []},
+                version_info=None
+            )
+        ]
+        for oswl in oswls:
+            db.session.add(oswl)
+
+        with app.test_request_context():
+            oswls_data = list(get_oswls(resource_type))
+
+        oswl_keys_paths, resource_keys_paths, csv_keys_paths = \
+            exporter.get_resource_keys_paths(resource_type)
+        fuel_release_pos = csv_keys_paths.index(
+            ['version_info', 'fuel_release'])
+        flatten_resources = list(exporter.get_flatten_resources(
+            resource_type, oswl_keys_paths, resource_keys_paths, oswls_data))
+
+        self.assertEqual(len(oswls), len(flatten_resources))
+
+        # Checking release info fetched from cluster
+        self.assertEqual(version_from_cluster,
+                         flatten_resources[0][fuel_release_pos])
+
+        # Checking release info fetched from oswl.version_info
+        self.assertEqual(version_from_version_info,
+                         flatten_resources[1][fuel_release_pos])
+
+        # Checking release info fetched from installation info
+        self.assertEqual(version_from_installation_info,
+                         flatten_resources[2][fuel_release_pos])

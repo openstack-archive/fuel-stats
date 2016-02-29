@@ -86,9 +86,8 @@ class StatsToCsv(object):
 
         plugin_key_paths = export_utils.get_keys_paths(plugin_skeleton)
         structure_key_paths = [['master_node_uid'],
-                               ['structure', 'fuel_packages'],
-                               ['structure', 'fuel_release', 'release']]
-        cluster_key_paths = [['cluster_id']]
+                               ['structure', 'fuel_packages']]
+        cluster_key_paths = [['cluster_id'], ['cluster_fuel_version']]
         result_key_paths = plugin_key_paths + cluster_key_paths + \
             structure_key_paths
         app.logger.debug("Plugin keys paths got")
@@ -202,6 +201,8 @@ class StatsToCsv(object):
 
                 for cluster in clusters:
                     cluster['cluster_id'] = cluster['id']
+                    cluster['cluster_fuel_version'] = \
+                        cluster.get('fuel_version')
                     flatten_cluster = export_utils.get_flatten_data(
                         cluster_keys_paths, cluster)
                     plugins = cluster.pop('installed_plugins', [])

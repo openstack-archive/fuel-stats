@@ -36,14 +36,13 @@ class PluginsToCsvExportTest(InstStructureTest, DbTest):
         exporter = StatsToCsv()
         _, _, _, csv_keys_paths = exporter.get_plugin_keys_paths()
         self.assertTrue(['cluster_id'] in csv_keys_paths)
+        self.assertTrue(['cluster_fuel_version'] in csv_keys_paths)
         self.assertTrue(['master_node_uid'] in csv_keys_paths)
         self.assertTrue(['name'] in csv_keys_paths)
         self.assertTrue(['version'] in csv_keys_paths)
         self.assertTrue(['fuel_version'] in csv_keys_paths)
         self.assertTrue(['package_version'] in csv_keys_paths)
         self.assertTrue(['structure', 'fuel_packages'] in csv_keys_paths)
-        self.assertTrue(['structure', 'fuel_release', 'release'] in
-                        csv_keys_paths)
 
     def test_get_flatten_plugins(self):
         installations_num = 10
@@ -100,7 +99,8 @@ class PluginsToCsvExportTest(InstStructureTest, DbTest):
                 self.assertEqual(num - 1, len(list(flatten_plugins)))
 
     def test_fuel_release_info_in_flatten_plugins(self):
-        release = '8.0'
+        inst_fuel_version = '8.0'
+        cluster_fuel_version = '7.0'
         packages = ['z', 'a', 'c']
         inst_structures = [
             model.InstallationStructure(
@@ -108,10 +108,11 @@ class PluginsToCsvExportTest(InstStructureTest, DbTest):
                 creation_date=datetime.datetime.utcnow(),
                 is_filtered=False,
                 structure={
-                    'fuel_release': {'release': release},
+                    'fuel_release': {'release': inst_fuel_version},
                     'fuel_packages': packages,
                     'clusters': [{
                         'id': 1, 'nodes': [],
+                        'fuel_version': cluster_fuel_version,
                         'installed_plugins': [{
                             'name': 'plugin_a',
                             'version': 'plugin_version_0',
@@ -133,10 +134,10 @@ class PluginsToCsvExportTest(InstStructureTest, DbTest):
         flatten_plugins = exporter.get_flatten_plugins(
             structure_paths, cluster_paths, plugins_paths, inst_structures)
 
-        pos_release = csv_paths.index(['structure', 'fuel_release',
-                                       'release'])
+        pos_fuel_version = csv_paths.index(['cluster_fuel_version'])
         pos_packages = csv_paths.index(['structure', 'fuel_packages'])
         for flatten_plugin in flatten_plugins:
-            self.assertEqual(release, flatten_plugin[pos_release])
+            self.assertEqual(cluster_fuel_version,
+                             flatten_plugin[pos_fuel_version])
             self.assertEqual(' '.join(packages),
                              flatten_plugin[pos_packages])
