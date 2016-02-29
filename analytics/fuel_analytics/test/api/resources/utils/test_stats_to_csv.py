@@ -59,6 +59,19 @@ class StatsToCsvExportTest(InstStructureTest, DbTest):
                       csv_keys_paths)
         self.assertIn(['attributes', 'workloads_collector_enabled'],
                       csv_keys_paths)
+        self.assertIn(['attributes', 'ironic'], csv_keys_paths)
+        self.assertIn(['attributes', 'murano-cfapi'], csv_keys_paths)
+        self.assertIn(['attributes', 'murano_glance_artifacts_plugin'],
+                      csv_keys_paths)
+        self.assertIn(['attributes', 'neutron_dvr'], csv_keys_paths)
+        self.assertIn(['attributes', 'neutron_l2_pop'], csv_keys_paths)
+        self.assertIn(['attributes', 'neutron_l3_ha'], csv_keys_paths)
+        self.assertIn(['attributes', 'public_ssl_cert_source'], csv_keys_paths)
+        self.assertIn(['attributes', 'public_ssl_horizon'], csv_keys_paths)
+        self.assertIn(['attributes', 'public_ssl_services'], csv_keys_paths)
+        self.assertIn(['attributes', 'puppet_debug'], csv_keys_paths)
+        self.assertIn(['attributes', 'task_deploy'], csv_keys_paths)
+
         self.assertIn(['vmware_attributes', 'vmware_az_cinder_enable'],
                       csv_keys_paths)
         self.assertIn(['vmware_attributes', 'vmware_az_nova_computes_num'],
