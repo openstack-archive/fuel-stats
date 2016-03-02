@@ -21,6 +21,7 @@ from flask_script import Manager
 from collector.api import log
 from collector.api.app import app
 from collector.api import app as app_module
+from collector.api.config import index_filtering_rules
 from collector.api.db.model import *
 import flask_sqlalchemy
 
@@ -32,6 +33,7 @@ def configure_app(mode=None):
     }
     app.config.from_object(mode_map.get(mode))
     app.config.from_envvar('COLLECTOR_SETTINGS', silent=True)
+    index_filtering_rules(app)
     setattr(app_module, 'db', flask_sqlalchemy.SQLAlchemy(app))
     log.init_logger()
     return app

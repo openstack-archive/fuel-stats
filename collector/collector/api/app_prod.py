@@ -13,9 +13,11 @@
 #    under the License.
 
 from collector.api.app import app
+from collector.api.config import index_filtering_rules
 from collector.api import log
 
 
 app.config.from_object('collector.api.config.Production')
 app.config.from_envvar('COLLECTOR_SETTINGS', silent=True)
+index_filtering_rules(app)
 log.init_logger()

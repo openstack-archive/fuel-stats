@@ -15,6 +15,8 @@
 import logging
 import os
 
+import six
+
 
 class Production(object):
     DEBUG = False
@@ -32,8 +34,9 @@ class Production(object):
     # Structure of FILTERING_RULES for releases < 8.0:
     #   {release: {build_id: from_dt}}
     # Structure of FILTERING_RULES for releases >= 8.0:
-    #   {release: {('fuel-nailgun-8.0.0-1.mos8212.noarch',
-    #               'fuel-library8.0-8.0.0-1.mos7718.noarch'): from_dt}}
+    #   {release: [{'packages_list': ['fuel-nailgun-8.0.0-1.mos8212.noarch']},
+    #              {'packages_list': ['fuel-8.0-8.0.0-1.mos7718.noarch'],
+    #               'from_date': from_dt}]
     #
     # PAY ATTENTION: you must use tuples as indexes in the FILTERING_RULES
     #
@@ -53,8 +56,11 @@ class Production(object):
     #  },
     #  '6.1.1': {},  # All builds of 6.1.1 filtered
     #  '7.0': None,   # All builds of 7.0 not filtered
-    #  '8.0': {('fuel-nailgun-8.0.0-1.mos8212.noarch',): '2016-02-01T23:00:18',
-    #          ('fuel-nailgun-8.0.0-2.mos9345.noarch',): '2016-02-10',}
+    #  '8.0': [{'packages_list': ['fuel-nailgun-8.0.0-1.mos8212.noarch'],
+    #           'from_date': '2016-02-01T23:00:18'},
+    #          {'packages_list': ['fuel-nailgun-8.0.0-2.mos9345.noarch']},
+    #          {'build_id': 'build_id_value', 'from_date': '2016-03-01'},
+    #          {'build_id': 'build_id_value'}]
     # }
     #
     # If you don't need any filtration, please set FILTERING_RULES = None
@@ -76,16 +82,35 @@ class Testing(Production):
     SQLALCHEMY_ECHO = True
 
 
-def normalize_build_info(build_info):
-    """Prepare build info for searching in the filtering rules
+def packages_as_index(packages):
+    if isinstance(packages, (list, tuple)):
+        return tuple(sorted(packages))
+    else:
+        return packages
 
-    :param build_info: build_id or packages list
-    :return: build_id or ordered tuple of packages
+
+def convert_rules_to_dict(rules):
+    """Converts filtering rules for release to internal format
+
+    :param rules: dict or list of filtering rules for the release
+    :return: dict of converted filtering rules
     """
-    if isinstance(build_info, (list, tuple)):
-        return tuple(sorted(build_info))
 
-    return build_info
+    # Already converted or doesn't need to be converted
+    if isinstance(rules, dict):
+        return rules
+
+    # If rules is list of dicts
+    result = {}
+    for rule in rules:
+        if 'packages_list' in rule:
+            build_info = packages_as_index(rule['packages_list'])
+        else:
+            build_info = rule['build_id']
+
+        result[build_info] = rule.get('from_date')
+
+    return result
 
 
 def index_filtering_rules(app):
@@ -98,15 +123,11 @@ def index_filtering_rules(app):
     """
 
     filtering_rules = app.config.get('FILTERING_RULES')
+
     if not filtering_rules:
         return
 
-    for rules in filtering_rules.itervalues():
+    for release, rules in six.iteritems(filtering_rules):
         if not rules:
             continue
-
-        for build_info, from_dt in rules.iteritems():
-            normalized_info = normalize_build_info(build_info)
-            if normalized_info not in rules:
-                rules[normalized_info] = from_dt
-                rules.pop(build_info)
+        filtering_rules[release] = convert_rules_to_dict(rules)
