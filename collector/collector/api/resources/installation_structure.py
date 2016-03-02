@@ -25,7 +25,7 @@ from collector.api.app import db
 from collector.api.common.util import db_transaction
 from collector.api.common.util import exec_time
 from collector.api.common.util import handle_response
-from collector.api.config import normalize_build_info
+from collector.api.config import packages_as_index
 from collector.api.db.model import InstallationStructure
 
 
@@ -70,7 +70,7 @@ def _is_filtered_by_build_info(build_info, filtering_rules):
     if build_info is None:
         return False
 
-    build_info = normalize_build_info(build_info)
+    build_info = packages_as_index(build_info)
 
     # build info not found
     if build_info not in filtering_rules:

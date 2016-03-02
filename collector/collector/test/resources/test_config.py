@@ -19,34 +19,82 @@ from collector.test.base import BaseTest
 
 from collector.api.app import app
 from collector.api.config import index_filtering_rules
-from collector.api.config import normalize_build_info
+from collector.api.config import packages_as_index
 
 
 class TestConfig(BaseTest):
 
     def test_filtering_rules_indexed(self):
-        build_id = 'build_id_0'
-        filtering_rules = {(3, 2, 1): None, (2, 1): '2016-01-26',
-                           'build_id': build_id}
         release = '8.0'
+        packages_0 = [1, 5, 2]
+        packages_1 = [6, 4, 3]
+        from_date_1 = '2016-03-01'
+        packages_2 = []
+        raw_rules = {
+            release: [
+                {'packages_list': packages_0},
+                {'packages_list': packages_1, 'from_date': from_date_1},
+                {'packages_list': packages_2, 'from_date': None}
+            ]
+        }
+
+        expected_rules = {
+            release: {
+                packages_as_index(packages_0): None,
+                packages_as_index(packages_1): from_date_1,
+                packages_as_index(packages_2): None
+            }
+        }
+
         with mock.patch.dict(
             app.config,
-            {'FILTERING_RULES': {release: filtering_rules.copy()}}
+            {'FILTERING_RULES': copy.deepcopy(raw_rules)}
         ):
             # Checking filtering rules before sorting
-            actual_filtering_rules = app.config.get('FILTERING_RULES')[release]
-            for packages, from_dt in filtering_rules.iteritems():
-                if isinstance(packages, tuple):
-                    self.assertNotIn(tuple(sorted(packages)),
-                                     actual_filtering_rules)
-                    self.assertIn(packages, actual_filtering_rules)
+            actual_rules = app.config.get('FILTERING_RULES')
+            actual_release_rules = actual_rules[release]
+            for rule in raw_rules[release]:
+                packages = packages_as_index(rule['packages_list'])
+                self.assertNotIn(packages, actual_release_rules)
 
             # Checking filtering rules after sorting
             index_filtering_rules(app)
-            actual_filtering_rules = app.config.get('FILTERING_RULES')[release]
-            for build_info in filtering_rules.iterkeys():
-                self.assertIn(normalize_build_info(build_info),
-                              actual_filtering_rules)
+            actual_rules = app.config.get('FILTERING_RULES')
+            self.assertEqual(expected_rules, actual_rules)
+
+    def test_mix_packages_and_build_id(self):
+        release_build_id = '7.0'
+        build_id = 'build_id_0'
+
+        release_mixed = '8.0'
+        build_id_mixed = 'build_id_1'
+        from_date = '2016-03-01'
+        packages = [1, 5, 2]
+
+        raw_rules = {
+            release_mixed: [{'packages_list': packages},
+                            {'build_id': build_id_mixed,
+                             'from_date': from_date}],
+            release_build_id: {build_id: None}
+        }
+
+        with mock.patch.dict(
+            app.config,
+            {'FILTERING_RULES': copy.deepcopy(raw_rules)}
+        ):
+            index_filtering_rules(app)
+            actual_filtering_rules = app.config.get('FILTERING_RULES')
+
+        expected_rules = {
+            release_mixed: {
+                packages_as_index(packages): None,
+                build_id_mixed: from_date
+            },
+            release_build_id: {
+                build_id: None
+            }
+        }
+        self.assertEqual(expected_rules, actual_filtering_rules)
 
     def test_index_filtering_rules_idempotent(self):
         packages = ('a', 'b', 'c')
@@ -61,12 +109,10 @@ class TestConfig(BaseTest):
             index_filtering_rules(app)
             actual_rules = copy.copy(
                 app.config.get('FILTERING_RULES')[release])
-            self.assertIn(normalize_build_info(packages), actual_rules)
+            self.assertIn(packages_as_index(packages), actual_rules)
             self.assertEqual(expected_rules, actual_rules)
 
     def test_index_filtering_rules(self):
-        build_id = '2016-xxx.yyy'
-        self.assertEqual(build_id, normalize_build_info(build_id))
         packages = ['z', 'x', 'a']
         self.assertEqual(tuple(sorted(packages)),
-                         normalize_build_info(packages))
+                         packages_as_index(packages))
