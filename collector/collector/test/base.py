@@ -68,20 +68,56 @@ class BaseTest(TestCase):
 
 class DbTest(BaseTest):
 
+    def get_migrations_dir(self):
+        return os.path.join(os.path.dirname(__file__),
+                            '..', 'api', 'db', 'migrations')
+
     def setUp(self):
         super(DbTest, self).setUp()
 
         # Connection must be closed before DB migration
         db.session.close()
 
-        # Cleaning DB. It useful in case of tests failure
-        directory = os.path.join(os.path.dirname(__file__),
-                                 '..', 'api', 'db', 'migrations')
+        directory = self.get_migrations_dir()
         with app.app_context():
             try:
                 flask_migrate.downgrade(directory=directory,
                                         revision='base')
-            except CommandError:
-                # Workaround for the first migration
-                pass
+            except CommandError as e:
+                app.logger.debug("DB migration downgrade failed: %s", e)
+                db.session.rollback()
+                self.clean_db()
+                db.session.commit()
             flask_migrate.upgrade(directory=directory)
+
+    def clean_db(self):
+        app.logger.debug("Cleaning DB without Alembic")
+
+        # Removing tables
+        tables = db.session.execute(
+            "SELECT table_name FROM information_schema.tables "
+            "WHERE table_schema = 'public'")
+        table_names = list(item[0] for item in tables)
+        if table_names:
+            app.logger.debug("Removing tables: %s", table_names)
+            db.session.execute(
+                "DROP TABLE {0} CASCADE".format(','.join(table_names)))
+
+        # Removing sequences
+        sequences = list(item[0] for item in db.session.execute(
+            "SELECT relname FROM pg_class WHERE relkind='S'"))
+        sequence_names = list(item[0] for item in sequences)
+        if sequence_names:
+            app.logger.debug("Removing sequences: %s", sequence_names)
+            db.session.execute(
+                "DROP SEQUENCE {0}".format(','.join(sequences)))
+
+        # Removing enums
+        enums = db.session.execute(
+            "SELECT t.typname FROM pg_type t JOIN pg_catalog.pg_namespace n "
+            "ON n.oid = t.typnamespace WHERE n.nspname='public'")
+        enum_names = list(item[0] for item in enums)
+        if enum_names:
+            app.logger.debug("Removing types: %s", enum_names)
+            db.session.execute(
+                "DROP TYPE {0}".format(','.join(enum_names)))
