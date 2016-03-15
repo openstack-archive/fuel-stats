@@ -25,7 +25,7 @@ from collector.api.app import db
 from collector.api.common.util import db_transaction
 from collector.api.common.util import exec_time
 from collector.api.common.util import handle_response
-from collector.api.config import normalize_build_info
+from collector.api.config import packages_as_index
 from collector.api.db.model import InstallationStructure
 
 
@@ -70,7 +70,7 @@ def _is_filtered_by_build_info(build_info, filtering_rules):
     if build_info is None:
         return False
 
-    build_info = normalize_build_info(build_info)
+    build_info = packages_as_index(build_info)
 
     # build info not found
     if build_info not in filtering_rules:
@@ -98,6 +98,7 @@ def _is_filtered(structure):
     :return: bool
     """
     rules = app.config.get('FILTERING_RULES')
+    app.logger.debug("Filtering by rules: %s", rules)
     # No rules specified
     if not rules:
         return False
@@ -110,18 +111,25 @@ def _is_filtered(structure):
 
     # Release not in rules
     if release not in rules:
+        app.logger.debug("Release: %s not in rules. Not filtered",
+                         release)
         return True
 
     filtering_rules = rules.get(release)
 
     # Filtering rules doesn't specified
     if filtering_rules is None:
+        app.logger.debug("Filtering rules are empty. Not filtered")
         return False
 
     filtered_by_build_id = _is_filtered_by_build_info(
         build_id, filtering_rules)
+    app.logger.debug("Filtering by build_id: %s, result: %s",
+                     build_id, filtered_by_build_id)
 
     filtered_by_packages = _is_filtered_by_build_info(
         packages, filtering_rules)
+    app.logger.debug("Filtering by packages: %s, result: %s",
+                     packages, filtered_by_packages)
 
     return filtered_by_build_id or filtered_by_packages
