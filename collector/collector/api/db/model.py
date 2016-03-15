@@ -66,3 +66,32 @@ class OpenStackWorkloadStats(db.Model):
     resource_data = db.Column(JSON, nullable=True)
     resource_checksum = db.Column(db.Text, nullable=False)
     version_info = db.Column(JSON, nullable=True)
+
+
+class History(db.Model):
+    __tablename__ = 'history'
+
+    id = db.Column(db.Integer, primary_key=True)
+    resource_id = db.Column(db.String, nullable=False, index=True)
+    resource_type = db.Column(db.String, nullable=False, index=True)
+    version_tag = db.Column(db.Integer, nullable=False, index=True)
+    created = db.Column(db.DateTime, nullable=False, index=True)
+    data_diff = db.Column(JSON, nullable=False)
+    db.Index('ix_history_resource_id_resource_type',
+             'resource_id', 'resource_type')
+
+
+version_tag_seq = db.Sequence('history_version_tag_seq')
+
+
+class HistoryLastSnapshot(db.Model):
+    __tablename__ = 'history_last_snapshot'
+
+    id = db.Column(db.Integer, primary_key=True)
+    resource_id = db.Column(db.String, nullable=False, index=True)
+    resource_type = db.Column(db.String, nullable=False, index=True)
+    created = db.Column(db.DateTime, nullable=False, index=True,
+                        server_default='NOW')
+    data = db.Column(JSON, nullable=False)
+    db.Index('ix_history_last_snapshot_resource_id_resource_type',
+             'resource_id', 'resource_type')
