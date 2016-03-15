@@ -26,6 +26,7 @@ from collector.api.common.util import db_transaction
 from collector.api.common.util import exec_time
 from collector.api.common.util import handle_response
 from collector.api.config import packages_as_index
+from collector.api.db.history import write_history
 from collector.api.db.model import InstallationStructure
 
 
@@ -54,6 +55,11 @@ def post():
     obj.is_filtered = _is_filtered(structure)
     obj.structure = structure
     db.session.add(obj)
+
+    # Saving installation structure history
+    write_history(obj, resource_ids_names=('master_node_uid',),
+                  exclude_fields=('id', 'creation_date', 'modification_date'))
+
     return status_code, {'status': 'ok'}
 
 
