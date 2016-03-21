@@ -166,7 +166,7 @@ OSWL_SKELETONS = {
         'stats_on_date': None,
         'resource_type': None,
         'version_info': {
-            'fuel_release': None,
+            'fuel_version': None,
             'release_version': None,
             'release_os': None,
             'release_name': None,

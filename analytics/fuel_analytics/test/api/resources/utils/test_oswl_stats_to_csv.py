@@ -47,7 +47,7 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
             self.assertNotIn(['external_id'], oswl_keys_paths)
             self.assertNotIn(['updated_time'], oswl_keys_paths)
             self.assertNotIn(['release'], oswl_keys_paths)
-            self.assertIn(['version_info', 'fuel_release'], oswl_keys_paths)
+            self.assertIn(['version_info', 'fuel_version'], oswl_keys_paths)
             self.assertIn(['version_info', 'release_version'],
                           oswl_keys_paths)
             self.assertIn(['version_info', 'release_name'], oswl_keys_paths)
@@ -588,7 +588,7 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
 
                 # Checking release value in flatten resources
                 release_pos = csv_keys_paths.index(
-                    ['version_info', 'fuel_release'])
+                    ['version_info', 'fuel_version'])
                 flatten_resources = exporter.get_flatten_resources(
                     resource_type, oswl_keys_paths, resource_keys_paths, oswls)
                 for flatten_resource in flatten_resources:
@@ -678,11 +678,11 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
                 resource_checksum='with_version_info',
                 resource_data={'current': [{'id': 1}]},
                 version_info={
-                    'fuel_release': 'fr',
-                    'release_version': 'osr',
-                    'release_os': 'osos',
-                    'release_name': 'osn',
-                    'environment_version': '7.0'
+                    'release_version': 'liberty-9.0',
+                    'release_os': 'Ubuntu',
+                    'release_name': 'Liberty on Ubuntu 14.04',
+                    'fuel_version': '9.0',
+                    'environment_version': '9.0'
                 }
             ),
         ]
@@ -696,7 +696,7 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
         oswl_keys_paths, resource_keys_paths, csv_keys_paths = \
             exporter.get_resource_keys_paths(resource_type)
         fuel_release_pos = csv_keys_paths.index(
-            ['version_info', 'fuel_release'])
+            ['version_info', 'fuel_version'])
         flatten_resources = list(exporter.get_flatten_resources(
             resource_type, oswl_keys_paths, resource_keys_paths, oswls))
 
@@ -860,18 +860,26 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
         exporter = OswlStatsToCsv()
         resource_type = consts.OSWL_RESOURCE_TYPES.vm
         version_from_cluster = '7.0'
+        release_version_from_cluster = 'from_cluster_7.0'
         version_from_version_info = '9.0'
+        release_version_from_version_info = 'from_version_info_9.0'
+
         version_from_installation_info = '8.0'
+        release_version_from_inst_info = 'from_inst_info_8.0'
         installation_date = datetime.utcnow().date() - timedelta(days=3)
 
         # Upgraded Fuel and not upgraded cluster
         structure = InstallationStructure(
             master_node_uid=master_node_uid,
             structure={
-                'fuel_release': {'release': version_from_installation_info},
+                'fuel_release': {
+                    'release': version_from_installation_info,
+                    'openstack_version': release_version_from_inst_info
+                },
                 'clusters_num': 2,
                 'clusters': [
-                    {'id': 1, 'fuel_release': version_from_cluster},
+                    {'id': 1, 'fuel_version': version_from_cluster,
+                     'release': {'version': release_version_from_cluster}},
                     {'id': 2}
                 ],
                 'unallocated_nodes_num_range': 0,
@@ -905,7 +913,10 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
                 resource_checksum='info_from_version_info',
                 resource_data={'current': [{'id': 1}],
                                'added': [], 'modified': [], 'removed': []},
-                version_info={'fuel_release': version_from_version_info}
+                version_info={
+                    'fuel_version': version_from_version_info,
+                    'release_version': release_version_from_version_info
+                }
             ),
             OpenStackWorkloadStats(
                 master_node_uid=master_node_uid,
@@ -929,20 +940,28 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
         oswl_keys_paths, resource_keys_paths, csv_keys_paths = \
             exporter.get_resource_keys_paths(resource_type)
         fuel_release_pos = csv_keys_paths.index(
-            ['version_info', 'fuel_release'])
+            ['version_info', 'fuel_version'])
+        release_version_pos = csv_keys_paths.index(
+            ['version_info', 'release_version'])
         flatten_resources = list(exporter.get_flatten_resources(
             resource_type, oswl_keys_paths, resource_keys_paths, oswls_data))
 
         self.assertEqual(len(oswls), len(flatten_resources))
 
-        # Checking release info fetched from cluster
+        # Checking version info fetched from cluster
         self.assertEqual(version_from_cluster,
                          flatten_resources[0][fuel_release_pos])
+        self.assertEqual(release_version_from_cluster,
+                         flatten_resources[0][release_version_pos])
 
-        # Checking release info fetched from oswl.version_info
+        # Checking version info fetched from oswl.version_info
         self.assertEqual(version_from_version_info,
                          flatten_resources[1][fuel_release_pos])
+        self.assertEqual(release_version_from_version_info,
+                         flatten_resources[1][release_version_pos])
 
-        # Checking release info fetched from installation info
+        # Checking version info fetched from installation info
         self.assertEqual(version_from_installation_info,
                          flatten_resources[2][fuel_release_pos])
+        self.assertEqual(release_version_from_inst_info,
+                         flatten_resources[2][release_version_pos])
