@@ -496,7 +496,7 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
             # Saving installation structures for proper oswls filtering
             self.get_saved_inst_structs(oswls_saved)
 
-            oswls = list(get_oswls(resource_type).all())
+            oswls = list(get_oswls(resource_type))
             oswl_keys_paths, vm_keys_paths, csv_keys_paths = \
                 exporter.get_resource_keys_paths(resource_type)
             flatten_volumes = exporter.get_flatten_resources(
@@ -527,7 +527,7 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
             self.get_saved_inst_structs(oswls_saved)
 
             with app.test_request_context():
-                oswls = get_oswls(resource_type).all()
+                oswls = get_oswls(resource_type)
                 oswl_keys_paths, vm_keys_paths, csv_keys_paths = \
                     exporter.get_resource_keys_paths(resource_type)
 

@@ -94,8 +94,9 @@ def get_inst_structures():
     yield_per = app.config['CSV_DB_YIELD_PER']
     from_date = get_from_date()
     to_date = get_to_date()
-    return get_inst_structures_query(from_date=from_date,
-                                     to_date=to_date).yield_per(yield_per)
+    query = get_inst_structures_query(from_date=from_date,
+                                      to_date=to_date)
+    return paged_query(query, yield_per)
 
 
 def get_action_logs_query():
@@ -188,17 +189,33 @@ def get_oswls_query(resource_type, from_date=None, to_date=None):
         query = query.filter(OSWS.created_date >= from_date)
     if to_date is not None:
         query = query.filter(OSWS.created_date <= to_date)
-    return query.order_by(OSWS.created_date)
+    # For proper handling of paging we must use additional ordering by id.
+    # In other case we will lose some OSWLs form the execution result.
+    query = query.order_by(OSWS.created_date, OSWS.id)
+    return query
 
 
 def get_oswls(resource_type):
     yield_per = app.config['CSV_DB_YIELD_PER']
-    app.logger.debug("Fetching %s oswls with yeld per %d",
+    app.logger.debug("Fetching %s oswls with yield per %d",
                      resource_type, yield_per)
     from_date = get_from_date()
     to_date = get_to_date()
-    return get_oswls_query(resource_type, from_date=from_date,
-                           to_date=to_date).yield_per(yield_per)
+    query = get_oswls_query(resource_type, from_date=from_date,
+                            to_date=to_date)
+    return paged_query(query, yield_per)
+
+
+def paged_query(q, chunk_size):
+    offset = 0
+    while True:
+        remained = False
+        for elem in q.limit(chunk_size).offset(offset):
+            remained = True
+            yield elem
+        offset += chunk_size
+        if not remained:
+            break
 
 
 @bp.route('/<resource_type>', methods=['GET'])
