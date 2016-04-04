@@ -95,43 +95,6 @@ class OswlStatsToCsv(object):
 
         return result
 
-    def _add_oswl_to_clusters_versions_cache(self, oswl, clusters_versions):
-        """Adds oswl clusters version_info into clusters_versions cache.
-
-        :param oswl: OSWL DB object
-        :type oswl: fuel_analytics.api.db.model.OpenStackWorkloadStats
-        :param clusters_versions: cache for saving cluster versions with
-        structure {mn_uid: {cluster_id: version_info}}
-        :type clusters_versions: dict
-        """
-
-        mn_uid = oswl.master_node_uid
-
-        # Result of csv_exporter.get_oswls_query contains info about all
-        # clusters in the installation. Thus we need to add clusters data
-        # into the cache only once for specified master_node_uid.
-        if mn_uid in clusters_versions:
-            return
-
-        if oswl.clusters is None:
-            return
-
-        clusters_versions[mn_uid] = {}
-
-        for cluster in oswl.clusters:
-            fuel_version = cluster.get('fuel_version')
-            if not fuel_version:
-                continue
-
-            version_info = {'fuel_version': fuel_version}
-            release = cluster.get('release')
-            if release:
-                version_info['release_version'] = release.get('version')
-                version_info['release_os'] = release.get('os')
-                version_info['release_name'] = release.get('name')
-
-            clusters_versions[mn_uid][cluster['id']] = version_info
-
     def handle_empty_version_info(self, oswl, clusters_versions):
         """Handles empty version info in oswl object
 
@@ -151,7 +114,7 @@ class OswlStatsToCsv(object):
         if oswl.version_info:
             return
 
-        self._add_oswl_to_clusters_versions_cache(oswl, clusters_versions)
+        # self._add_oswl_to_clusters_versions_cache(oswl, clusters_versions)
 
         mn_uid = oswl.master_node_uid
         cluster_id = oswl.cluster_id
@@ -171,24 +134,23 @@ class OswlStatsToCsv(object):
         oswl.version_info = version_info
 
     def get_flatten_resources(self, resource_type, oswl_keys_paths,
-                              resource_keys_paths, oswls):
-        """Gets flatten vms data
+                              resource_keys_paths, oswls,
+                              clusters_version_info):
+        """Gets flatten resources data
         :param oswl_keys_paths: list of keys paths in the OpenStack workload
         info
         :param resource_keys_paths: list of keys paths in the resource
         :param oswls: list of OpenStack workloads
+        :param clusters_version_info: clusters version info cache.
+        Cache is used only if version_info is not provided in the oswl.
+        Cache structure: {mn_uid: {cluster_id: fuel_release}}
         :return: generator on flatten resources info collection
         """
         app.logger.debug("Getting OSWL flatten %s info started", resource_type)
 
-        # Cache for saving cluster versions. Cache is used only if version_info
-        # is not provided in the oswl.
-        # Structure: {mn_uid: {cluster_id: fuel_release}}
-        clusters_versions = {}
-
         for oswl in oswls:
             try:
-                self.handle_empty_version_info(oswl, clusters_versions)
+                self.handle_empty_version_info(oswl, clusters_version_info)
                 flatten_oswl = export_utils.get_flatten_data(oswl_keys_paths,
                                                              oswl)
                 resource_data = oswl.resource_data
@@ -328,7 +290,7 @@ class OswlStatsToCsv(object):
 
         app.logger.debug("Filling gaps in oswls finished")
 
-    def export(self, resource_type, oswls, to_date):
+    def export(self, resource_type, oswls, clusters_version_info, to_date):
         app.logger.info("Export oswls %s info into CSV started",
                         resource_type)
         oswl_keys_paths, resource_keys_paths, csv_keys_paths = \
@@ -337,7 +299,7 @@ class OswlStatsToCsv(object):
             oswls, to_date)
         flatten_resources = self.get_flatten_resources(
             resource_type, oswl_keys_paths, resource_keys_paths,
-            seamless_oswls)
+            seamless_oswls, clusters_version_info)
         result = export_utils.flatten_data_as_csv(
             csv_keys_paths, flatten_resources)
         app.logger.info("Export oswls %s info into CSV finished",

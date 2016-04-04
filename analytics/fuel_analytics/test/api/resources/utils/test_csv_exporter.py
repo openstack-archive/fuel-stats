@@ -29,8 +29,11 @@ from fuel_analytics.api.resources import csv_exporter as ce
 from fuel_analytics.api.resources.csv_exporter import extract_date
 from fuel_analytics.api.resources.csv_exporter import get_action_logs
 from fuel_analytics.api.resources.csv_exporter import get_from_date
-from fuel_analytics.api.resources.csv_exporter import get_inst_structures
+from fuel_analytics.api.resources.csv_exporter import get_inst_structures \
+    as get_inst_structures_paged
 from fuel_analytics.api.resources.csv_exporter import get_inst_structures_query
+from fuel_analytics.api.resources.csv_exporter import get_oswls \
+    as get_oswls_paged
 from fuel_analytics.api.resources.csv_exporter import get_oswls_query
 from fuel_analytics.api.resources.csv_exporter import get_resources_types
 from fuel_analytics.api.resources.csv_exporter import get_to_date
@@ -175,7 +178,7 @@ class CsvExporterTest(OswlTest, DbTest):
         self.get_saved_inst_structs(
             oswls, is_filtered_values=(True, False, None))
         with app.test_request_context():
-            for inst_structure in get_inst_structures():
+            for inst_structure in get_inst_structures_paged():
                 self.assertNotEqual(True, inst_structure.is_filtered)
 
     def test_get_resources_types(self):
@@ -192,7 +195,7 @@ class CsvExporterTest(OswlTest, DbTest):
 
         to_date = datetime.utcnow()
         from_date = to_date - timedelta(days=30)
-        reports = ce.get_all_reports(from_date, to_date)
+        reports = ce.get_all_reports(from_date, to_date, {})
 
         expected_reports = [
             ce.CLUSTERS_REPORT_FILE,
@@ -213,7 +216,7 @@ class CsvExporterTest(OswlTest, DbTest):
         from_date = datetime.utcnow()
         to_date = from_date + timedelta(days=7)
 
-        reports_generators = ce.get_all_reports(from_date, to_date)
+        reports_generators = ce.get_all_reports(from_date, to_date, {})
 
         # Checking no exception raised
         for report_generator, report_name in reports_generators:
@@ -302,3 +305,22 @@ class CsvExporterTest(OswlTest, DbTest):
         for action_log in action_logs:
             al = ActionLogInfo(*action_log)
             self.assertEqual(200, al.external_id, al)
+
+    def test_paged_queries(self):
+        num = app.config.get('CSV_DB_YIELD_PER') * 10
+        resource_type = consts.OSWL_RESOURCE_TYPES.volume
+
+        # Generating oswls and installation infos
+        oswls = self.get_saved_oswls(num, resource_type)
+        self.get_saved_inst_structs(oswls)
+
+        with app.test_request_context():
+            # Checking oswls paged query
+            expected_ids = set(o.id for o in get_oswls_query(resource_type))
+            actual_ids = set(o.id for o in get_oswls_paged(resource_type))
+            self.assertEqual(expected_ids, actual_ids)
+
+            # Checking installation infos paged query
+            expected_ids = set(o.id for o in get_inst_structures_query())
+            actual_ids = set(o.id for o in get_inst_structures_paged())
+            self.assertEqual(expected_ids, actual_ids)
