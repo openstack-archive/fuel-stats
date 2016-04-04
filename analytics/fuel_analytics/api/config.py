@@ -30,7 +30,7 @@ class Production(object):
     SQLALCHEMY_DATABASE_URI = \
         'postgresql://collector:*****@localhost/collector'
     CSV_DEFAULT_FROM_DATE_DAYS = 90
-    CSV_DB_YIELD_PER = 1000
+    CSV_DB_YIELD_PER = 100
     JSON_DB_DEFAULT_LIMIT = 1000
     # Number of attachments included into volumes CSV report
     CSV_VOLUME_ATTACHMENTS_NUM = 1

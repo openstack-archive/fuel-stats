@@ -30,6 +30,7 @@ from fuel_analytics.api.app import db
 from fuel_analytics.api.common import consts
 from fuel_analytics.api.db.model import InstallationStructure
 from fuel_analytics.api.db.model import OpenStackWorkloadStats
+from fuel_analytics.api.resources.csv_exporter import get_clusters_version_info
 from fuel_analytics.api.resources.csv_exporter import get_oswls
 from fuel_analytics.api.resources.csv_exporter import get_oswls_query
 from fuel_analytics.api.resources.utils import export_utils
@@ -66,7 +67,7 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
                 exporter.get_resource_keys_paths(resource_type)
             oswls = self.generate_oswls(2, resource_type)
             flatten_resources = exporter.get_flatten_resources(
-                resource_type, oswl_keys_paths, resource_keys_paths, oswls)
+                resource_type, oswl_keys_paths, resource_keys_paths, oswls, {})
             self.assertTrue(isinstance(flatten_resources, types.GeneratorType))
             for _ in flatten_resources:
                 pass
@@ -78,7 +79,7 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
             exporter.get_resource_keys_paths(resource_type)
         oswls = self.generate_oswls(1, resource_type)
         flatten_resources = exporter.get_flatten_resources(
-            resource_type, oswl_keys_paths, resource_keys_paths, oswls)
+            resource_type, oswl_keys_paths, resource_keys_paths, oswls, {})
 
         ephemeral_idx = csv_keys_paths.index(['flavor', 'ephemeral'])
         for fr in flatten_resources:
@@ -145,7 +146,7 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
                 self.assertEqual(num, len(oswls))
                 # Checking export
                 result = exporter.export(resource_type, oswls,
-                                         datetime.utcnow().date())
+                                         datetime.utcnow().date(), {})
                 self.assertTrue(isinstance(result, types.GeneratorType))
                 output = six.StringIO(list(result))
                 reader = csv.reader(output)
@@ -155,7 +156,7 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
     def test_export_on_empty_data(self):
         exporter = OswlStatsToCsv()
         for resource_type in self.RESOURCE_TYPES:
-            result = exporter.export(resource_type, [], None)
+            result = exporter.export(resource_type, [], {}, None)
             self.assertTrue(isinstance(result, types.GeneratorType))
             output = six.StringIO(list(result))
             reader = csv.reader(output)
@@ -351,7 +352,7 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
                 # Filtering oswls
                 oswls = get_oswls(resource_type)
                 result = exporter.export(resource_type, oswls,
-                                         datetime.utcnow().date())
+                                         datetime.utcnow().date(), {})
                 self.assertTrue(isinstance(result, types.GeneratorType))
                 output = six.StringIO(list(result))
                 reader = csv.reader(output)
@@ -441,7 +442,8 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
             result = exporter.export(
                 resource_type,
                 oswls,
-                (base_date - timedelta(days=1))
+                (base_date - timedelta(days=1)),
+                {}
             )
             # Only column names in result
             self.assertEqual(1, len(list(result)))
@@ -455,7 +457,8 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
             result = exporter.export(
                 resource_type,
                 oswls,
-                base_date - timedelta(days=1)
+                base_date - timedelta(days=1),
+                {}
             )
             # Only column names in result
             self.assertEqual(1, len(list(result)))
@@ -469,7 +472,8 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
             result = exporter.export(
                 resource_type,
                 oswls,
-                base_date + timedelta(days=1)
+                base_date + timedelta(days=1),
+                {}
             )
             # Not only column names in result
             self.assertEqual(1 + 2, len(list(result)))
@@ -496,11 +500,11 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
             # Saving installation structures for proper oswls filtering
             self.get_saved_inst_structs(oswls_saved)
 
-            oswls = list(get_oswls(resource_type).all())
+            oswls = list(get_oswls(resource_type))
             oswl_keys_paths, vm_keys_paths, csv_keys_paths = \
                 exporter.get_resource_keys_paths(resource_type)
             flatten_volumes = exporter.get_flatten_resources(
-                resource_type, oswl_keys_paths, vm_keys_paths, oswls)
+                resource_type, oswl_keys_paths, vm_keys_paths, oswls, {})
             flatten_volumes = list(flatten_volumes)
 
             csv_att_num = app.config['CSV_VOLUME_ATTACHMENTS_NUM']
@@ -527,7 +531,7 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
             self.get_saved_inst_structs(oswls_saved)
 
             with app.test_request_context():
-                oswls = get_oswls(resource_type).all()
+                oswls = get_oswls(resource_type)
                 oswl_keys_paths, vm_keys_paths, csv_keys_paths = \
                     exporter.get_resource_keys_paths(resource_type)
 
@@ -537,7 +541,8 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
                                        'get_additional_resource_info',
                                        side_effect=side_effect):
                     flatten_resources = exporter.get_flatten_resources(
-                        resource_type, oswl_keys_paths, vm_keys_paths, oswls)
+                        resource_type, oswl_keys_paths, vm_keys_paths,
+                        oswls, {})
                     # Checking only invalid data is not exported
                     self.assertEqual(num - 1, len(list(flatten_resources)))
 
@@ -590,7 +595,8 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
                 release_pos = csv_keys_paths.index(
                     ['version_info', 'fuel_version'])
                 flatten_resources = exporter.get_flatten_resources(
-                    resource_type, oswl_keys_paths, resource_keys_paths, oswls)
+                    resource_type, oswl_keys_paths, resource_keys_paths,
+                    oswls, {})
                 for flatten_resource in flatten_resources:
                     release = flatten_resource[release_pos]
                     self.assertIn(release, releases)
@@ -698,7 +704,7 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
         fuel_release_pos = csv_keys_paths.index(
             ['version_info', 'fuel_version'])
         flatten_resources = list(exporter.get_flatten_resources(
-            resource_type, oswl_keys_paths, resource_keys_paths, oswls))
+            resource_type, oswl_keys_paths, resource_keys_paths, oswls, {}))
 
         # Checking all oswls are in flatten resources
         external_uid_pos = csv_keys_paths.index(['master_node_uid'])
@@ -805,7 +811,7 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
 
         flatten_resources = list(exporter.get_flatten_resources(
             resource_type, oswl_keys_paths, resource_keys_paths,
-            oswls_seamless))
+            oswls_seamless, {}))
 
         # Expected oswls num: 2 for 'first', 2 for 'second', 2 for 'third'
         # and only one for finally removed 'fourth'
@@ -936,6 +942,7 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
 
         with app.test_request_context():
             oswls_data = list(get_oswls(resource_type))
+            clusters_version_info = get_clusters_version_info()
 
         oswl_keys_paths, resource_keys_paths, csv_keys_paths = \
             exporter.get_resource_keys_paths(resource_type)
@@ -944,7 +951,9 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
         release_version_pos = csv_keys_paths.index(
             ['version_info', 'release_version'])
         flatten_resources = list(exporter.get_flatten_resources(
-            resource_type, oswl_keys_paths, resource_keys_paths, oswls_data))
+            resource_type, oswl_keys_paths,
+            resource_keys_paths, oswls_data, clusters_version_info
+        ))
 
         self.assertEqual(len(oswls), len(flatten_resources))
 
@@ -965,3 +974,76 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
                          flatten_resources[2][fuel_release_pos])
         self.assertEqual(release_version_from_inst_info,
                          flatten_resources[2][release_version_pos])
+
+    def test_get_clusters_version_info(self):
+        mn_uid = 'x'
+        cluster_id = 1
+        empty_cluster_id = 2
+        mn_uid_no_clusters = 'xx'
+        release_name = 'release name'
+        resource_type = consts.OSWL_RESOURCE_TYPES.vm
+        version_from_cluster = '7.0'
+        release_version_from_cluster = 'from_cluster_7.0'
+        installation_date = datetime.utcnow().date() - timedelta(days=3)
+
+        expected_version_info = {
+            'release_version': release_version_from_cluster,
+            'release_os': None,
+            'release_name': release_name,
+            'fuel_version': version_from_cluster
+        }
+
+        structures = [
+            InstallationStructure(
+                master_node_uid=mn_uid,
+                structure={
+                    'clusters': [
+                        {'id': cluster_id,
+                         'fuel_version': version_from_cluster,
+                         'release': {'version': release_version_from_cluster,
+                                     'name': release_name}},
+                        {'id': empty_cluster_id}
+                    ]
+
+                },
+                creation_date=installation_date,
+                is_filtered=False
+            ),
+            InstallationStructure(
+                master_node_uid=mn_uid_no_clusters,
+                structure={'clusters': []},
+                creation_date=installation_date,
+                is_filtered=False
+            )
+        ]
+        for structure in structures:
+            db.session.add(structure)
+
+        oswls = [
+            OpenStackWorkloadStats(
+                master_node_uid=mn_uid,
+                external_id=1,
+                cluster_id=1,
+                created_date=installation_date,
+                updated_time=datetime.utcnow().time(),
+                resource_type=resource_type,
+                resource_checksum='info_from_cluster',
+                resource_data={'current': [{'id': 1, 'status': 'enabled'}],
+                               'added': [], 'modified': [], 'removed': []},
+                version_info=None
+            )
+        ]
+        for oswl in oswls:
+            db.session.add(oswl)
+
+        with app.test_request_context():
+            clusters_version_info = get_clusters_version_info()
+
+        self.assertIn(mn_uid, clusters_version_info)
+        self.assertIn(cluster_id, clusters_version_info[mn_uid])
+        self.assertNotIn(empty_cluster_id, clusters_version_info[mn_uid])
+        self.assertIn(mn_uid_no_clusters, clusters_version_info)
+
+        actual_version_info = clusters_version_info[mn_uid][cluster_id]
+        self.assertEqual(expected_version_info, actual_version_info)
+        self.assertEqual({}, clusters_version_info[mn_uid_no_clusters])

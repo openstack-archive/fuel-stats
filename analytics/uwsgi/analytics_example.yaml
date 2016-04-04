@@ -1,7 +1,7 @@
 uwsgi:
-    socket: :8082
     # for production app use analytics.api.app as module
     module: fuel_analytics.api.app_test
     callable: app
-    protocol: http
-    env: ANALYTICS_SETTINGS=/path/to/external/config.py
+    http: 0.0.0.0:5000
+    # Uncommetnt the following line to use external config
+    # env: ANALYTICS_SETTINGS=/path/to/external/config.py
