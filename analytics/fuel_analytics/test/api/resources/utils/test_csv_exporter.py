@@ -192,7 +192,7 @@ class CsvExporterTest(OswlTest, DbTest):
 
         to_date = datetime.utcnow()
         from_date = to_date - timedelta(days=30)
-        reports = ce.get_all_reports(from_date, to_date)
+        reports = ce.get_all_reports(from_date, to_date, {})
 
         expected_reports = [
             ce.CLUSTERS_REPORT_FILE,
@@ -213,7 +213,7 @@ class CsvExporterTest(OswlTest, DbTest):
         from_date = datetime.utcnow()
         to_date = from_date + timedelta(days=7)
 
-        reports_generators = ce.get_all_reports(from_date, to_date)
+        reports_generators = ce.get_all_reports(from_date, to_date, {})
 
         # Checking no exception raised
         for report_generator, report_name in reports_generators:
