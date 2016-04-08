@@ -312,8 +312,8 @@ def get_all_reports(from_date, to_date, clusters_version_info):
         app.logger.debug("Getting report '%s'", resource_type)
         oswls = get_oswls_query(resource_type, from_date=from_date,
                                 to_date=to_date)
-        report = oswl_exporter.export(resource_type, oswls,
-                                      clusters_version_info, to_date)
+        report = oswl_exporter.export(resource_type, oswls, to_date,
+                                      clusters_version_info)
         app.logger.debug("Report '%s' got", resource_type)
         yield report, '{}.csv'.format(resource_type)
 
