@@ -39,3 +39,8 @@ def date_parsing_error(error):
 @app.errorhandler(NoResultFound)
 def db_object_not_found(error):
     return make_response(six.text_type(error), 404)
+
+
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+    db.session.remove()

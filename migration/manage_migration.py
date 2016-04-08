@@ -44,7 +44,12 @@ def execute(params):
     from migration.migrator import Migrator
     migrator = Migrator()
     if params.action == 'migrate':
-        migrator.migrate_action_logs()
+        # We don't use action logs in the Elasticsearch reports.
+        # Action logs table contains huge number of action logs,
+        # thus we are temporary comment this migration.
+        # TODO (akislitsky): uncomment this when ActionLogs
+        # reports will be introduced into Fuel stats web UI.
+        # migrator.migrate_action_logs()
         migrator.migrate_installation_structure()
     elif params.action == 'remove_indices':
         migrator.remove_indices()
