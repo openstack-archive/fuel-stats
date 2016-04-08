@@ -100,3 +100,8 @@ def server_error(error):
         ),
         500
     )
+
+
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+    db.session.remove()
