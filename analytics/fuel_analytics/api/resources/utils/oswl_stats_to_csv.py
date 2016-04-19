@@ -27,21 +27,12 @@ class OswlStatsToCsv(object):
 
     OSWL_INDEX_FIELDS = ('master_node_uid', 'cluster_id', 'resource_type')
 
-    def get_additional_volume_keys_paths(self):
-        num = app.config['CSV_VOLUME_ATTACHMENTS_NUM']
-        return export_utils.get_enumerated_keys_paths(
-            consts.OSWL_RESOURCE_TYPES.volume, 'volume_attachment',
-            OSWL_SKELETONS['volume_attachment'], num)
-
     def get_additional_keys_paths(self, resource_type):
-        # Additional key paths for resource type info
-        resource_additional_key_paths = [[resource_type, 'is_added'],
-                                         [resource_type, 'is_modified'],
-                                         [resource_type, 'is_removed']]
-        if resource_type == consts.OSWL_RESOURCE_TYPES.volume:
-            resource_additional_key_paths += \
-                self.get_additional_volume_keys_paths()
-        return resource_additional_key_paths
+        """Returns additional key paths for resource type info."""
+
+        return [[resource_type, 'is_added'],
+                [resource_type, 'is_modified'],
+                [resource_type, 'is_removed']]
 
     def get_resource_keys_paths(self, resource_type):
         """Gets key paths for resource type. csv key paths is combination
@@ -113,8 +104,6 @@ class OswlStatsToCsv(object):
         """
         if oswl.version_info:
             return
-
-        # self._add_oswl_to_clusters_versions_cache(oswl, clusters_versions)
 
         mn_uid = oswl.master_node_uid
         cluster_id = oswl.cluster_id

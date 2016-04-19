@@ -38,14 +38,6 @@ class StatsToCsvExportTest(InstStructureTest, DbTest):
     def test_get_cluster_keys_paths(self):
         exporter = StatsToCsv()
         _, _, csv_keys_paths = exporter.get_cluster_keys_paths()
-        self.assertIn(['nodes_platform_name_gt3'], csv_keys_paths)
-        self.assertIn(['nodes_platform_name_0'], csv_keys_paths)
-        self.assertIn(['nodes_platform_name_1'], csv_keys_paths)
-        self.assertIn(['nodes_platform_name_2'], csv_keys_paths)
-        self.assertIn(['nodes_manufacturer_gt3'], csv_keys_paths)
-        self.assertIn(['nodes_manufacturer_0'], csv_keys_paths)
-        self.assertIn(['nodes_manufacturer_1'], csv_keys_paths)
-        self.assertIn(['nodes_manufacturer_2'], csv_keys_paths)
         self.assertIn(['attributes', 'heat'], csv_keys_paths)
         self.assertIn(['attributes', 'auto_assign_floating_ip'],
                       csv_keys_paths)
@@ -86,7 +78,7 @@ class StatsToCsvExportTest(InstStructureTest, DbTest):
                       csv_keys_paths)
         self.assertIn(['structure', 'fuel_release', 'fuel-library_sha'],
                       csv_keys_paths)
-        self.assertIn(['structure', 'fuel_packages'], csv_keys_paths)
+        self.assertIn(['structure', 'fuel_packages', 0], csv_keys_paths)
         self.assertNotIn(['structure', 'clusters'], csv_keys_paths)
         self.assertNotIn(['installed_plugins'], csv_keys_paths)
 
@@ -118,13 +110,8 @@ class StatsToCsvExportTest(InstStructureTest, DbTest):
         self.assertTrue(isinstance(result, types.GeneratorType))
         output = six.StringIO(list(result))
         reader = csv.reader(output)
-        columns = reader.next()
-
-        # Checking enumerated columns are present in the output
-        self.assertIn('nodes_manufacturer_0', columns)
-        self.assertIn('nodes_manufacturer_gt3', columns)
-        self.assertIn('nodes_platform_name_0', columns)
-        self.assertIn('nodes_platform_name_gt3', columns)
+        # Pop columns from reader
+        _ = reader.next()
 
         # Checking reading result CSV
         for _ in reader:
@@ -226,31 +213,6 @@ class StatsToCsvExportTest(InstStructureTest, DbTest):
             # Checking empty network verification status
             for flatten_cluster in flatten_clusters[2:]:
                 self.assertIsNone(flatten_cluster[nv_column_pos])
-
-    def test_platform_names(self):
-        exporter = StatsToCsv()
-        inst_structures = self.generate_inst_structures(
-            clusters_num_range=(1, 1))
-        inst_structure = list(inst_structures)[0]
-        nodes = []
-        for i in six.moves.range(exporter.PLATFORM_NAMES_NUM + 1):
-            node = self.generate_node()
-            node['platform_name'] = i
-            # to be ensure manufacturers all the same
-            node['manufacturer'] = 'x'
-            nodes.append(node)
-        inst_structure.structure['clusters'][0]['nodes'] = nodes
-        db.session.add(inst_structure)
-        db.session.commit()
-
-        structure_keys_paths, cluster_keys_paths, csv_keys_paths = \
-            exporter.get_cluster_keys_paths()
-        flatten_clusters = exporter.get_flatten_clusters(
-            structure_keys_paths, cluster_keys_paths,
-            [inst_structure], [])
-        flatten_cluster = list(flatten_clusters)[0]
-        pos = csv_keys_paths.index(['nodes_platform_name_gt3'])
-        self.assertEqual(True, flatten_cluster[pos])
 
     def test_vmware_attributes(self):
         exporter = StatsToCsv()
