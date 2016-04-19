@@ -38,14 +38,6 @@ class StatsToCsvExportTest(InstStructureTest, DbTest):
     def test_get_cluster_keys_paths(self):
         exporter = StatsToCsv()
         _, _, csv_keys_paths = exporter.get_cluster_keys_paths()
-        self.assertIn(['nodes_platform_name_gt3'], csv_keys_paths)
-        self.assertIn(['nodes_platform_name_0'], csv_keys_paths)
-        self.assertIn(['nodes_platform_name_1'], csv_keys_paths)
-        self.assertIn(['nodes_platform_name_2'], csv_keys_paths)
-        self.assertIn(['nodes_manufacturer_gt3'], csv_keys_paths)
-        self.assertIn(['nodes_manufacturer_0'], csv_keys_paths)
-        self.assertIn(['nodes_manufacturer_1'], csv_keys_paths)
-        self.assertIn(['nodes_manufacturer_2'], csv_keys_paths)
         self.assertIn(['attributes', 'heat'], csv_keys_paths)
         self.assertIn(['attributes', 'auto_assign_floating_ip'],
                       csv_keys_paths)
@@ -76,17 +68,7 @@ class StatsToCsvExportTest(InstStructureTest, DbTest):
                       csv_keys_paths)
         self.assertIn(['vmware_attributes', 'vmware_az_nova_computes_num'],
                       csv_keys_paths)
-        self.assertIn(['structure', 'fuel_release', 'ostf_sha'],
-                      csv_keys_paths)
-        self.assertIn(['structure', 'fuel_release', 'fuel-ostf_sha'],
-                      csv_keys_paths)
-        self.assertIn(['structure', 'fuel_release', 'python-fuelclient_sha'],
-                      csv_keys_paths)
-        self.assertIn(['structure', 'fuel_release', 'fuellib_sha'],
-                      csv_keys_paths)
-        self.assertIn(['structure', 'fuel_release', 'fuel-library_sha'],
-                      csv_keys_paths)
-        self.assertIn(['structure', 'fuel_packages'], csv_keys_paths)
+        self.assertIn(['structure', 'fuel_packages', 0], csv_keys_paths)
         self.assertNotIn(['structure', 'clusters'], csv_keys_paths)
         self.assertNotIn(['installed_plugins'], csv_keys_paths)
 
@@ -118,13 +100,8 @@ class StatsToCsvExportTest(InstStructureTest, DbTest):
         self.assertTrue(isinstance(result, types.GeneratorType))
         output = six.StringIO(list(result))
         reader = csv.reader(output)
-        columns = reader.next()
-
-        # Checking enumerated columns are present in the output
-        self.assertIn('nodes_manufacturer_0', columns)
-        self.assertIn('nodes_manufacturer_gt3', columns)
-        self.assertIn('nodes_platform_name_0', columns)
-        self.assertIn('nodes_platform_name_gt3', columns)
+        # Pop columns names from reader
+        _ = reader.next()
 
         # Checking reading result CSV
         for _ in reader:
@@ -227,31 +204,6 @@ class StatsToCsvExportTest(InstStructureTest, DbTest):
             for flatten_cluster in flatten_clusters[2:]:
                 self.assertIsNone(flatten_cluster[nv_column_pos])
 
-    def test_platform_names(self):
-        exporter = StatsToCsv()
-        inst_structures = self.generate_inst_structures(
-            clusters_num_range=(1, 1))
-        inst_structure = list(inst_structures)[0]
-        nodes = []
-        for i in six.moves.range(exporter.PLATFORM_NAMES_NUM + 1):
-            node = self.generate_node()
-            node['platform_name'] = i
-            # to be ensure manufacturers all the same
-            node['manufacturer'] = 'x'
-            nodes.append(node)
-        inst_structure.structure['clusters'][0]['nodes'] = nodes
-        db.session.add(inst_structure)
-        db.session.commit()
-
-        structure_keys_paths, cluster_keys_paths, csv_keys_paths = \
-            exporter.get_cluster_keys_paths()
-        flatten_clusters = exporter.get_flatten_clusters(
-            structure_keys_paths, cluster_keys_paths,
-            [inst_structure], [])
-        flatten_cluster = list(flatten_clusters)[0]
-        pos = csv_keys_paths.index(['nodes_platform_name_gt3'])
-        self.assertEqual(True, flatten_cluster[pos])
-
     def test_vmware_attributes(self):
         exporter = StatsToCsv()
         inst_structures = self.generate_inst_structures(
@@ -259,56 +211,6 @@ class StatsToCsvExportTest(InstStructureTest, DbTest):
         result = exporter.export_clusters(inst_structures, [])
         for _ in result:
             pass
-
-    def test_fuel_release(self):
-        exporter = StatsToCsv()
-        # Calculating positions of the params in the flatten data
-        structure_keys_paths, cluster_keys_paths, csv_keys_paths = \
-            exporter.get_cluster_keys_paths()
-        ostf_pos = csv_keys_paths.index(['structure', 'fuel_release',
-                                         'ostf_sha'])
-        f_ostf_pos = csv_keys_paths.index(['structure', 'fuel_release',
-                                           'fuel-ostf_sha'])
-        f_lib_pos = csv_keys_paths.index(['structure', 'fuel_release',
-                                          'fuellib_sha'])
-        f_libbrary_pos = csv_keys_paths.index(['structure', 'fuel_release',
-                                               'fuel-library_sha'])
-        f_cli_pos = csv_keys_paths.index(['structure', 'fuel_release',
-                                          'python-fuelclient_sha'])
-
-        # Checking fuel_release structure before 2015.04
-        inst_structures = self.generate_inst_structures(
-            release_generators=('_fuel_release_gen',)
-        )
-        flatten_clusters = exporter.get_flatten_clusters(
-            structure_keys_paths, cluster_keys_paths,
-            inst_structures, [])
-
-        for flatten_cluster in flatten_clusters:
-            self.assertIsNotNone(flatten_cluster[ostf_pos])
-            self.assertIsNone(flatten_cluster[f_ostf_pos])
-
-            self.assertIsNotNone(flatten_cluster[f_lib_pos])
-            self.assertIsNone(flatten_cluster[f_libbrary_pos])
-
-            self.assertIsNone(flatten_cluster[f_cli_pos])
-
-        # Checking fuel_release structure after 2015.04
-        inst_structures = self.generate_inst_structures(
-            release_generators=('_fuel_release_gen_2015_04',)
-        )
-        flatten_clusters = exporter.get_flatten_clusters(
-            structure_keys_paths, cluster_keys_paths,
-            inst_structures, [])
-
-        for flatten_cluster in flatten_clusters:
-            self.assertIsNone(flatten_cluster[ostf_pos])
-            self.assertIsNotNone(flatten_cluster[f_ostf_pos])
-
-            self.assertIsNone(flatten_cluster[f_lib_pos])
-            self.assertIsNotNone(flatten_cluster[f_libbrary_pos])
-
-            self.assertIsNotNone(flatten_cluster[f_cli_pos])
 
     def test_cluster_invalid_data(self):
         exporter = StatsToCsv()
