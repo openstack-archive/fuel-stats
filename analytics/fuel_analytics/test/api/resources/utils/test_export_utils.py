@@ -14,11 +14,17 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import six
-
 from fuel_analytics.test.base import BaseTest
 
 from fuel_analytics.api.resources.utils import export_utils
+
+
+class O(object):
+    """Helper object."""
+    def __init__(self, a, b, c):
+        self.a = a
+        self.b = b
+        self.c = c
 
 
 class ExportUtilsTest(BaseTest):
@@ -32,32 +38,36 @@ class ExportUtilsTest(BaseTest):
         paths = export_utils.get_keys_paths(skeleton)
         self.assertListEqual([['a', 'e'], ['a', 'g']], paths)
 
-        skeleton = [{'a': 'b', 'c': 'd'}]
-        paths = export_utils.get_keys_paths(skeleton)
-        self.assertListEqual([[]], paths)
+    def test_get_key_paths_for_lists(self):
+        skeleton = {'a': [{'b': None}, 2], 'c': [None, 2]}
+        actual = export_utils.get_keys_paths(skeleton)
+        expected = [['a', 0, 'b'], ['a', 1, 'b'], ['c', 0], ['c', 1]]
+        self.assertListEqual(expected, actual)
+
+        skeleton = {'h': [{'a': 'b', 'c': 'd'}, 1], 't': None}
+        actual = export_utils.get_keys_paths(skeleton)
+        self.assertListEqual([['h', 0, 'a'], ['h', 0, 'c'], ['t']], actual)
+
+    def test_get_key_paths_for_empty_lists(self):
+        skeleton = {'h': [], 't': None}
+        actual = export_utils.get_keys_paths(skeleton)
+        self.assertListEqual([['h'], ['t']], actual)
 
     def test_get_flatten_data(self):
-
-        class O(object):
-            def __init__(self, a, c, x):
-                self.a = a
-                self.c = c
-                self.x = x
-
         data = [
-            {'a': 'b', 'c': {'e': 2.1}},
-            {'a': 'ee\nxx', 'c': {'e': 3.1415}, 'x': ['z', 'zz']},
+            {'a': 'b', 'b': {'e': 2.1}},
+            {'a': 'ee\nxx', 'b': {'e': 3.1415}, 'c': ['z', 'zz']},
             O('y', {'e': 44}, None),
             O('yy', {'e': 45}, ['b', 'e'])
         ]
+        skeleton = {'a': None, 'b': {'e': None}, 'c': [None, 2]}
         expected_flatten_data = [
-            ['b', 2.1, None],
-            ['ee\nxx', 3.1415, 'z zz'],
-            ['y', 44, None],
-            ['yy', 45, 'b e']
+            ['b', 2.1, None, None],
+            ['ee\nxx', 3.1415, 'z', 'zz'],
+            ['y', 44, None, None],
+            ['yy', 45, 'b', 'e']
         ]
 
-        skeleton = export_utils.get_data_skeleton(data)
         key_paths = export_utils.get_keys_paths(skeleton)
 
         for idx, expected in enumerate(expected_flatten_data):
@@ -67,6 +77,69 @@ class ExportUtilsTest(BaseTest):
         for idx, data in enumerate(data):
             actual = export_utils.get_flatten_data(key_paths, data)
             self.assertListEqual(expected_flatten_data[idx], actual)
+
+    def test_get_flatten_data_for_functions(self):
+
+        skeleton = {'a': None, 'b': len, 'c': max}
+        data = [
+            O('y', [1, 2], [0, 42, -1]),
+            {'a': 'yy', 'b': {'e': 45}, 'c': ['z', 'e']}
+        ]
+        expected_flatten_data = [
+            ['y', 2, 42],
+            ['yy', 1, 'z']
+        ]
+
+        key_paths = export_utils.get_keys_paths(skeleton)
+
+        for idx, expected in enumerate(expected_flatten_data):
+            actual = export_utils.get_flatten_data(key_paths, data[idx])
+            self.assertEqual(expected, actual)
+
+        for idx, data in enumerate(data):
+            actual = export_utils.get_flatten_data(key_paths, data)
+            self.assertEqual(expected_flatten_data[idx], actual)
+
+    def test_get_flatten_data_for_list(self):
+        b_repeats = 1
+        e_repeats = 2
+        skeleton = {
+            'a': None,
+            'b': [
+                {'d': None, 'e': [{'f': None}, e_repeats]},
+                b_repeats
+            ],
+            'c': []
+        }
+
+        expected_keys = [
+            ['a'],
+            ['b', 0, 'd'], ['b', 0, 'e', 0, 'f'], ['b', 0, 'e', 1, 'f'],
+            ['c']
+        ]
+        self.assertEqual(expected_keys, export_utils.get_keys_paths(skeleton))
+
+        data = [
+            O('a_val_o', [{'d': 'd_0_o', 'e': [{'f': 'f_0_o'}]}],
+              ['c_o_0', 'c_o_1']),
+            {'a': 'a_val', 'b': [{'d': 'd_0', 'e': []}, {'d': 'ignored'}],
+             'c': 'c_val'}
+        ]
+
+        expected_flatten_data = [
+            ['a_val_o', 'd_0_o', 'f_0_o', None, 'c_o_0 c_o_1'],
+            ['a_val', 'd_0', None, None, 'c_val'],
+        ]
+
+        key_paths = export_utils.get_keys_paths(skeleton)
+
+        for idx, expected in enumerate(expected_flatten_data):
+            actual = export_utils.get_flatten_data(key_paths, data[idx])
+            self.assertEqual(expected, actual)
+
+        for idx, data in enumerate(data):
+            actual = export_utils.get_flatten_data(key_paths, data)
+            self.assertEqual(expected_flatten_data[idx], actual)
 
     def test_get_flatten_as_csv_unicode(self):
         data = [
@@ -90,23 +163,29 @@ class ExportUtilsTest(BaseTest):
 
     def test_dict_construct_skeleton(self):
         data = {'a': 'b'}
-        skeleton = export_utils.construct_skeleton(data)
-        self.assertDictEqual(data, skeleton)
+        expected = {'a': None}
+        actual = export_utils.construct_skeleton(data)
+        self.assertDictEqual(expected, actual)
 
         data = {'a': 'b', 'x': None}
-        skeleton = export_utils.construct_skeleton(data)
-        self.assertDictEqual(data, skeleton)
+        expected = {'a': None, 'x': None}
+        actual = export_utils.construct_skeleton(data)
+        self.assertDictEqual(expected, actual)
 
     def test_list_construct_skeleton(self):
         data = ['a', 'b', 'c']
-        skeleton = export_utils.construct_skeleton(data)
-        self.assertListEqual([], skeleton)
+        actual = export_utils.construct_skeleton(data)
+        self.assertListEqual([], actual)
+
+        data = []
+        actual = export_utils.construct_skeleton(data)
+        self.assertListEqual([], actual)
 
         data = [{'a': None}, {'b': 'x'}, {'a': 4, 'c': 'xx'}, {}]
-        skeleton = export_utils.construct_skeleton(data)
-        self.assertListEqual(
-            sorted(skeleton[0].keys()),
-            sorted(['a', 'b', 'c'])
+        actual = export_utils.construct_skeleton(data)
+        self.assertItemsEqual(
+            actual[0].keys(),
+            ['a', 'b', 'c']
         )
 
         data = [
@@ -117,9 +196,51 @@ class ExportUtilsTest(BaseTest):
             ['a'],
             {'p': 'q'}
         ]
-        skeleton = export_utils.construct_skeleton(data)
-        self.assertListEqual([[[], {'a': 'b', 'x': 'z'}], {'p': 'q'}],
-                             skeleton)
+        actual = export_utils.construct_skeleton(data)
+        expected = [[[], {'a': None, 'x': None}], {'p': None}]
+        self.assertListEqual(expected, actual)
+
+    def test_construct_skeleton(self):
+        data = {'a': 'b', 'c': [[{'d': 'e'}], 'f']}
+        expected = {'a': None, 'c': [[{'d': None}]]}
+        actual = export_utils.construct_skeleton(data)
+        self.assertEqual(expected, actual)
+
+        data = {'a': {'b': []}}
+        expected = {'a': {'b': []}}
+        actual = export_utils.construct_skeleton(data)
+        self.assertEqual(expected, actual)
+
+        data = {'a': {'b': [{'c': 'd'}, {'e': 'f'}]}}
+        expected = {'a': {'b': [{'c': None, 'e': None}]}}
+        actual = export_utils.construct_skeleton(data)
+        self.assertEqual(expected, actual)
+
+    def test_get_skeleton_for_dicts(self):
+        data = [
+            {'ci': {'p': True, 'e': '@', 'n': 'n'}},
+            # reducing fields in nested dict
+            {'ci': {'p': False}},
+            # adding new value
+            {'a': 'b'},
+            # checking empty dict
+            {}
+        ]
+        actual = export_utils.get_data_skeleton(data)
+        expected = {'a': None, 'ci': {'p': None, 'e': None, 'n': None}}
+        self.assertEqual(expected, actual)
+
+    def test_get_skeleton_for_lists(self):
+        data = [
+            {'c': [{'s': 'v', 'n': 2}, {'s': 'vv', 'n': 22}]},
+            # adding new value in the list
+            {'c': [{'z': 'p'}]},
+            # checking empty list
+            {'c': []},
+        ]
+        actual = export_utils.get_data_skeleton(data)
+        expected = {'c': [{'s': None, 'n': None, 'z': None}]}
+        self.assertEqual(expected, actual)
 
     def test_get_skeleton(self):
         data = [
@@ -135,27 +256,10 @@ class ExportUtilsTest(BaseTest):
             # adding new value
             {'a': 'b'},
         ]
-        skeleton = export_utils.get_data_skeleton(data)
-        self.assertDictEqual(
-            {'a': None, 'c': [{'s': None, 'n': None, 'z': None}],
-             'ci': {'p': None, 'e': None, 'n': None}},
-            skeleton)
-
-    def test_align_enumerated_field_values(self):
-        # Data for checks in format (source, num, expected)
-        checks = [
-            ([], 0, []),
-            ([], 1, [False, None]),
-            (['a'], 1, [False, 'a']),
-            (['a'], 2, [False, 'a', None]),
-            (['a', 'b'], 2, [False, 'a', 'b']),
-            (['a', 'b'], 1, [True, 'a'])
-        ]
-        for source, num, expected in checks:
-            self.assertListEqual(
-                expected,
-                export_utils.align_enumerated_field_values(source, num)
-            )
+        actual = export_utils.get_data_skeleton(data)
+        expected = {'a': None, 'ci': {'p': None, 'e': None, 'n': None},
+                    'c': [{'s': None, 'n': None, 'z': None}]}
+        self.assertEqual(expected, actual)
 
     def test_get_index(self):
 
@@ -172,21 +276,3 @@ class ExportUtilsTest(BaseTest):
         ]
         for obj, fields, idx in checks:
             self.assertTupleEqual(idx, export_utils.get_index(obj, *fields))
-
-    def test_get_enumerated_keys_paths(self):
-        resource_type = 'res_type'
-        skeleton_name = 'test_skel'
-        enum_num = 2
-        skeleton = {'id': None, 'attr': None, 'value': None}
-        keys_paths = export_utils.get_enumerated_keys_paths(
-            resource_type, skeleton_name, skeleton, enum_num)
-        # Checking gt field in keys paths
-        self.assertEqual(len(keys_paths), enum_num * len(skeleton) + 1)
-        self.assertEqual(keys_paths[0],
-                         ['res_type', 'test_skel_gt_{}'.format(enum_num)])
-        # Checking all keys paths present
-        for key in six.iterkeys(skeleton):
-            for i in six.moves.range(enum_num):
-                keys_path = [resource_type, skeleton_name,
-                             six.text_type(i), key]
-                self.assertIn(keys_path, keys_paths)
