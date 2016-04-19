@@ -14,6 +14,11 @@
 
 from fuel_analytics.api.common import consts
 
+
+def count(items):
+    return len(items) if items is not None else None
+
+
 INSTALLATION_INFO_SKELETON = {
     'structure': {
         'allocated_nodes_num': None,
@@ -79,25 +84,65 @@ INSTALLATION_INFO_SKELETON = {
                 'is_customized': None,
                 'mode': None,
                 'net_provider': None,
-                'node_groups': [{'id': None, 'nodes': [{}]}],
+                'node_groups': [{'id': None}],
                 'nodes': [
                     {
-                        'bond_interfaces': [
-                            {'id': None, 'slaves': [{}]}
-                        ],
+                        'bond_interfaces': count,
+                        'nic_interfaces': count,
                         'error_type': None,
                         'group_id': None,
                         'id': None,
                         'manufacturer': None,
-                        'nic_interfaces': [{'id': None}],
                         'online': None,
                         'os': None,
                         'pending_addition': None,
                         'pending_deletion': None,
-                        'pending_roles': [{}],
+                        'roles': [None],
+                        'pending_roles': [None],
                         'platform_name': None,
-                        'roles': [{}],
-                        'status': None
+                        'status': None,
+                        'meta': {
+                            'cpu': {
+                                'real': None,
+                                'total': None,
+                                'spec': [
+                                    {
+                                        'frequency': None,
+                                        'model': None,
+                                    },
+                                    10  # number of showing items
+                                ]
+                            },
+                            'memory': {
+                                'slots': None,
+                                'total': None,
+                                'maximum_capacity': None,
+                                'devices': [
+                                    {
+                                        'frequency': None,
+                                        'type': None,
+                                        'size': None
+                                    },
+                                    10  # number of showing items
+                                ]
+                            },
+                            'disks': [
+                                {
+                                    'name': None,
+                                    'removable': None,
+                                    'model': None,
+                                    'size': None
+                                },
+                                10  # number of showing items
+                            ],
+                            'system': {
+                                'product': None,
+                                'family': None,
+                                'version': None,
+                                'manufacturer': None
+                            },
+                            'interfaces': count
+                        }
                     }
                 ],
                 'nodes_num': None,
@@ -116,12 +161,23 @@ INSTALLATION_INFO_SKELETON = {
                         'releases': [{
                             'deployment_scripts_path': None,
                             'repository_path': None,
-                            'mode': [],
+                            'mode': [None],
                             'os': None,
                             'version': None,
                         }],
                         'fuel_version': None,
                         'package_version': None,
+                        'metadata': None,
+                        'tasks': [],
+                        'deployment_tasks': [],
+                        'is_hotpluggable': None,
+                        'groups': [None],
+                        'licenses': [None],
+                        'roles_metadata': None,
+                        'volumes_metadata': None,
+                        'attributes_metadata': None,
+                        'components_metadata': None,
+                        'network_roles_metadata': None
                     }
                 ],
                 'release': {'name': None, 'os': None, 'version': None},
@@ -134,7 +190,7 @@ INSTALLATION_INFO_SKELETON = {
             'astute_sha': None,
             'build_id': None,
             'build_number': None,
-            'feature_groups': [{}],
+            'feature_groups': [None],
             'fuellib_sha': None,
             'fuel-library_sha': None,
             'fuelmain_sha': None,
@@ -145,7 +201,7 @@ INSTALLATION_INFO_SKELETON = {
             'production': None,
             'release': None
         },
-        'fuel_packages': [],
+        'fuel_packages': [None],
         'unallocated_nodes_num': None,
         'user_information': {
             'company': None,
@@ -200,7 +256,8 @@ OSWL_SKELETONS = {
         'volume_type': None,
         'size': None,
         'snapshot_id': None,
-        'tenant_id': None
+        'tenant_id': None,
+        'attachments': count
     },
     'volume_attachment': {
         "device": None,
