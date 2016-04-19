@@ -15,7 +15,9 @@
 import csv
 import io
 import itertools
+
 import six
+from sqlalchemy.util import KeyedTuple
 
 from fuel_analytics.api.app import app
 
@@ -27,9 +29,30 @@ def get_keys_paths(skeleton):
     """
     def _keys_paths_helper(keys, skel):
         result = []
+
         if isinstance(skel, dict):
             for k in sorted(six.iterkeys(skel)):
                 result.extend(_keys_paths_helper(keys + [k], skel[k]))
+        elif isinstance(skel, (list, tuple)):
+            # For lists in the skeleton we can specify repeats value.
+            # For instance we want to show 3 roles in the CSV report.
+            # In this case skeleton for roles will be {'roles': [None, 3]}
+            if len(skel) > 1:
+                repeats = skel[1]
+            else:
+                repeats = app.config['CSV_DEFAULT_LIST_ITEMS_NUM']
+
+            if len(skel):
+                for idx in six.moves.xrange(repeats):
+                    result.extend(_keys_paths_helper(keys + [idx], skel[0]))
+            else:
+                result.append(keys)
+
+        elif hasattr(skel, '__call__'):
+            # Handling aggregate functions in the skeleton. For instance if
+            # we want to show number of networks we will have the following
+            # skeleton: {'networks': count}
+            result.append(keys + [skel])
         else:
             result.append(keys)
         return result
@@ -38,6 +61,7 @@ def get_keys_paths(skeleton):
 
 def get_flatten_data(keys_paths, data):
     """Creates flatten data from data by keys_paths
+
     :param keys_paths: list of dict keys lists
     :param data: dict with nested structures
     :return: list of flatten data dicts
@@ -46,13 +70,25 @@ def get_flatten_data(keys_paths, data):
     for key_path in keys_paths:
         d = data
         for key in key_path:
+            if hasattr(key, '__call__'):
+                # Handling aggregate functions in the skeleton
+                d = key(d)
+                break
             if isinstance(d, dict):
                 d = d.get(key, None)
+            elif isinstance(d, KeyedTuple):
+                # If we specify DB fields in the query SQLAlchemy
+                # returns KeyedTuple inherited from tuple
+                d = getattr(d, key, None)
+            elif isinstance(d, (list, tuple)):
+                d = d[key] if key < len(d) else None
             else:
                 d = getattr(d, key, None)
             if d is None:
                 break
         if isinstance(d, (list, tuple)):
+            # If type for list items is not specified values
+            # will be shown as joined text
             flatten_data.append(' '.join(map(six.text_type, d)))
         else:
             flatten_data.append(d)
@@ -84,13 +120,14 @@ def construct_skeleton(data):
             list_result.append(dict_result)
         return list_result
     else:
-        return data
+        return None
 
 
 def get_data_skeleton(structures):
-    """Gets skeleton by structures list
-    :param structures:
-    :return: data structure skeleton
+    """Constructs and merges skeletons from raw data
+
+    :param structures: list of data
+    :return: skeleton for provided data structures
     """
     def _merge_skeletons(lh, rh):
         keys_paths = get_keys_paths(rh)
@@ -102,11 +139,13 @@ def get_data_skeleton(structures):
                 if isinstance(data_point, dict):
                     if key not in merge_point:
                         merge_point[key] = {}
-                elif isinstance(data_point, list):
+                elif isinstance(data_point, (list, tuple)):
                     if key not in merge_point:
-                        merge_point[key] = [{}]
-                    _merge_skeletons(merge_point[key][0],
-                                     get_data_skeleton(data_point))
+                        merge_point[key] = [get_data_skeleton(data_point)]
+                    else:
+                        _merge_skeletons(merge_point[key][0],
+                                         get_data_skeleton(data_point))
+                    break
                 else:
                     merge_point[key] = None
                 merge_point = merge_point[key]
@@ -114,61 +153,11 @@ def get_data_skeleton(structures):
     skeleton = {}
     for structure in structures:
         app.logger.debug("Constructing skeleton by data: %s", structure)
-        app.logger.debug("Updating skeleton by %s",
-                         construct_skeleton(structure))
-        _merge_skeletons(skeleton, construct_skeleton(structure))
+        new_skeleton = construct_skeleton(structure)
+        app.logger.debug("Updating skeleton by %s", new_skeleton)
+        _merge_skeletons(skeleton, new_skeleton)
         app.logger.debug("Result skeleton is %s", skeleton)
     return skeleton
-
-
-def align_enumerated_field_values(values, number):
-    """Fills result list by the None values, if number is greater than
-    values len. The first element of result is bool value
-    len(values) > number
-    :param values:
-    :param number:
-    :return: aligned list to 'number' + 1 length, filled by Nones on
-    empty values positions and bool value on the first place. Bool value
-    is True if len(values) > number
-    """
-    if number > 0:
-        return ([len(values) > number] +
-                (values + [None] * (number - len(values)))[:number])
-    else:
-        return []
-
-
-def get_enumerated_keys_paths(resource_type, skeleton_name,
-                              nested_data_skeleton, enum_length):
-    """Gets enumerated keys paths for nested data lists or tuples in the
-    skeleton. For example volume contains list of attachments. Only enum_length
-    of them will be shown in report. The first element of result is the column
-    for showing if number of elements in resource greater or not than
-    enum_length.
-    :param resource_type: name of resource type. used for column names
-    generation
-    :param skeleton_name: name of skeleton. used for generation of the first
-    column name in result
-    :param nested_data_skeleton: skeleton of nested structure
-    :param enum_length: number of enumerated nested elements
-    :return: list of enumerated column names
-    """
-    app.logger.debug("Getting additional enumerated keys paths for: "
-                     "%s, skeleton: %s", resource_type, skeleton_name)
-    result = []
-    gt_field_name = '{}_gt_{}'.format(skeleton_name, enum_length)
-    result.append([resource_type, gt_field_name])
-    skel_keys_paths = get_keys_paths(nested_data_skeleton)
-
-    for i in six.moves.xrange(enum_length):
-        attachment_key_paths = [resource_type, skeleton_name,
-                                six.text_type(i)]
-        for key_path in skel_keys_paths:
-            result.append(attachment_key_paths + key_path)
-    app.logger.debug("Additional enumerated keys paths for: "
-                     "%s, skeleton: %s are: %s", resource_type,
-                     skeleton_name, result)
-    return result
 
 
 def flatten_data_as_csv(keys_paths, flatten_data):
@@ -181,7 +170,10 @@ def flatten_data_as_csv(keys_paths, flatten_data):
     app.logger.debug("Saving flatten data as CSV started")
     names = []
     for key_path in keys_paths:
-        names.append('.'.join(key_path))
+        # Handling functions and list indexes in key_path
+        key_texts = (getattr(k, '__name__', six.text_type(k))
+                     for k in key_path)
+        names.append('.'.join(key_texts))
 
     output = six.BytesIO()
     writer = csv.writer(output)
