@@ -34,6 +34,7 @@ class Production(object):
     JSON_DB_DEFAULT_LIMIT = 1000
     # Number of attachments included into volumes CSV report
     CSV_VOLUME_ATTACHMENTS_NUM = 1
+    CSV_DEFAULT_LIST_ITEMS_NUM = 5
 
 
 class Testing(Production):

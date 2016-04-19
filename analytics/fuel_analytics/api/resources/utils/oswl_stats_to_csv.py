@@ -18,7 +18,6 @@ import itertools
 import six
 
 from fuel_analytics.api.app import app
-from fuel_analytics.api.common import consts
 from fuel_analytics.api.resources.utils import export_utils
 from fuel_analytics.api.resources.utils.skeleton import OSWL_SKELETONS
 
@@ -27,21 +26,12 @@ class OswlStatsToCsv(object):
 
     OSWL_INDEX_FIELDS = ('master_node_uid', 'cluster_id', 'resource_type')
 
-    def get_additional_volume_keys_paths(self):
-        num = app.config['CSV_VOLUME_ATTACHMENTS_NUM']
-        return export_utils.get_enumerated_keys_paths(
-            consts.OSWL_RESOURCE_TYPES.volume, 'volume_attachment',
-            OSWL_SKELETONS['volume_attachment'], num)
-
     def get_additional_keys_paths(self, resource_type):
-        # Additional key paths for resource type info
-        resource_additional_key_paths = [[resource_type, 'is_added'],
-                                         [resource_type, 'is_modified'],
-                                         [resource_type, 'is_removed']]
-        if resource_type == consts.OSWL_RESOURCE_TYPES.volume:
-            resource_additional_key_paths += \
-                self.get_additional_volume_keys_paths()
-        return resource_additional_key_paths
+        """Returns additional key paths for resource type info."""
+
+        return [[resource_type, 'is_added'],
+                [resource_type, 'is_modified'],
+                [resource_type, 'is_removed']]
 
     def get_resource_keys_paths(self, resource_type):
         """Gets key paths for resource type. csv key paths is combination
@@ -79,20 +69,6 @@ class OswlStatsToCsv(object):
         is_removed = id_val in removed_ids
         result = [is_added, is_modified, is_removed]
 
-        # Handling nested lists and tuples
-        if resource_type == consts.OSWL_RESOURCE_TYPES.volume:
-            flatten_attachments = []
-            skeleton = OSWL_SKELETONS['volume_attachment']
-            enum_length = (app.config['CSV_VOLUME_ATTACHMENTS_NUM'] *
-                           len(skeleton))
-            attachment_keys_paths = export_utils.get_keys_paths(skeleton)
-            for attachment in resource.get('attachments', []):
-                flatten_attachment = export_utils.get_flatten_data(
-                    attachment_keys_paths, attachment)
-                flatten_attachments.extend(flatten_attachment)
-            result += export_utils.align_enumerated_field_values(
-                flatten_attachments, enum_length)
-
         return result
 
     def handle_empty_version_info(self, oswl, clusters_versions):
@@ -113,8 +89,6 @@ class OswlStatsToCsv(object):
         """
         if oswl.version_info:
             return
-
-        # self._add_oswl_to_clusters_versions_cache(oswl, clusters_versions)
 
         mn_uid = oswl.master_node_uid
         cluster_id = oswl.cluster_id

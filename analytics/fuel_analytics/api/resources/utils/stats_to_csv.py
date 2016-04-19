@@ -15,7 +15,6 @@
 import collections
 import copy
 import six
-from six.moves import range
 
 from fuel_analytics.api.app import app
 from fuel_analytics.api.resources.utils import export_utils
@@ -46,36 +45,24 @@ class StatsToCsv(object):
 
         # Removing lists of dicts from cluster skeleton
         cluster_skeleton.pop('nodes', None)
-        cluster_skeleton.pop('node_groups', None)
         cluster_skeleton.pop('installed_plugins', None)
         cluster_key_paths = export_utils.get_keys_paths(cluster_skeleton)
 
         result_key_paths = cluster_key_paths + structure_key_paths
 
-        def enumerated_field_keys(field_name, number):
-            """Adds enumerated fields columns and property
-            field for showing case, when values will be cut
-            :param field_name: field name
-            :param number: number of enumerated fields
-            :return: list of cut fact column and enumerated columns names
-            """
-            result = [['{}_gt{}'.format(field_name, number)]]
-            for i in range(number):
-                result.append(['{}_{}'.format(field_name, i)])
-            return result
-
-        # Handling enumeration of manufacturers names
-        result_key_paths.extend(enumerated_field_keys('nodes_manufacturer',
-                                                      self.MANUFACTURERS_NUM))
-
-        # Handling enumeration of platform names
-        result_key_paths.extend(enumerated_field_keys('nodes_platform_name',
-                                                      self.PLATFORM_NAMES_NUM))
-
         # Handling network verification check
         result_key_paths.append([self.NETWORK_VERIFICATION_COLUMN])
         app.logger.debug("Cluster keys paths got")
         return structure_key_paths, cluster_key_paths, result_key_paths
+
+    def _get_subcluster_keys_paths(self, skeleton):
+        key_paths = export_utils.get_keys_paths(skeleton)
+        structure_key_paths = [['master_node_uid'],
+                               ['structure', 'fuel_packages']]
+        cluster_key_paths = [['cluster_id'], ['cluster_fuel_version']]
+        result_key_paths = key_paths + cluster_key_paths + structure_key_paths
+        return structure_key_paths, cluster_key_paths, \
+            key_paths, result_key_paths
 
     def get_plugin_keys_paths(self):
         app.logger.debug("Getting plugin keys paths")
@@ -84,15 +71,19 @@ class StatsToCsv(object):
         plugin_skeleton = clusters[0]['installed_plugins'][0]
         plugin_skeleton.pop('releases', None)
 
-        plugin_key_paths = export_utils.get_keys_paths(plugin_skeleton)
-        structure_key_paths = [['master_node_uid'],
-                               ['structure', 'fuel_packages']]
-        cluster_key_paths = [['cluster_id'], ['cluster_fuel_version']]
-        result_key_paths = plugin_key_paths + cluster_key_paths + \
-            structure_key_paths
+        result = self._get_subcluster_keys_paths(plugin_skeleton)
         app.logger.debug("Plugin keys paths got")
-        return structure_key_paths, cluster_key_paths, \
-            plugin_key_paths, result_key_paths
+        return result
+
+    def get_node_keys_paths(self):
+        app.logger.debug("Getting node keys paths")
+        structure_skeleton = copy.deepcopy(INSTALLATION_INFO_SKELETON)
+        clusters = structure_skeleton['structure']['clusters']
+        node_skeleton = clusters[0]['nodes'][0]
+
+        result = self._get_subcluster_keys_paths(node_skeleton)
+        app.logger.debug("Node keys paths got")
+        return result
 
     def build_action_logs_idx(self, action_logs):
         app.logger.debug("Building action logs index started")
@@ -117,21 +108,6 @@ class StatsToCsv(object):
         app.logger.debug("Getting flatten clusters info is started")
         action_logs_idx = self.build_action_logs_idx(action_logs)
 
-        def extract_nodes_fields(field, nodes):
-            """Extracts fields values from nested nodes dicts
-            :param field: field name
-            :param nodes: nodes data list
-            :return: set of extracted fields values from nodes
-            """
-            result = set([d.get(field) for d in nodes])
-            return filter(lambda x: x is not None, result)
-
-        def extract_nodes_manufacturers(nodes):
-            return extract_nodes_fields('manufacturer', nodes)
-
-        def extract_nodes_platform_name(nodes):
-            return extract_nodes_fields('platform_name', nodes)
-
         for inst_structure in inst_structures:
             try:
                 structure = inst_structure.structure
@@ -144,19 +120,6 @@ class StatsToCsv(object):
                     flatten_cluster = export_utils.get_flatten_data(
                         cluster_keys_paths, cluster)
                     flatten_cluster.extend(flatten_structure)
-                    nodes = cluster.get('nodes', [])
-
-                    # Adding enumerated manufacturers
-                    manufacturers = extract_nodes_manufacturers(nodes)
-                    flatten_cluster += export_utils.\
-                        align_enumerated_field_values(manufacturers,
-                                                      self.MANUFACTURERS_NUM)
-
-                    # Adding enumerated platforms
-                    platform_names = extract_nodes_platform_name(nodes)
-                    flatten_cluster += export_utils.\
-                        align_enumerated_field_values(platform_names,
-                                                      self.PLATFORM_NAMES_NUM)
 
                     # Adding network verification status
                     idx = export_utils.get_index(
@@ -190,7 +153,28 @@ class StatsToCsv(object):
         :param inst_structures: list of installation structures
         :return: list of flatten plugins info
         """
-        app.logger.debug("Getting flatten plugins info started")
+
+        return self._get_flatten_subcluster_data(
+            'installed_plugins',
+            structure_keys_paths,
+            cluster_keys_paths,
+            plugin_keys_paths,
+            inst_structures
+        )
+
+    def _get_flatten_subcluster_data(self, data_path, structure_keys_paths,
+                                     cluster_keys_paths, keys_paths,
+                                     inst_structures):
+        """Gets flatten data form clusters from installation
+        structures collection
+        :param structure_keys_paths: list of keys paths in the
+        installation structure
+        :param cluster_keys_paths: list of keys paths in the cluster
+        :param keys_paths: list of keys paths in the data
+        :param inst_structures: list of installation structures
+        :return: list of flatten plugins info
+        """
+        app.logger.debug("Getting flatten %s info started", data_path)
 
         for inst_structure in inst_structures:
             try:
@@ -205,22 +189,42 @@ class StatsToCsv(object):
                         cluster.get('fuel_version')
                     flatten_cluster = export_utils.get_flatten_data(
                         cluster_keys_paths, cluster)
-                    plugins = cluster.pop('installed_plugins', [])
-                    for plugin in plugins:
-                        flatten_plugin = export_utils.get_flatten_data(
-                            plugin_keys_paths, plugin)
-                        flatten_plugin.extend(flatten_cluster)
-                        flatten_plugin.extend(flatten_structure)
-                        yield flatten_plugin
+                    data = cluster.pop(data_path, [])
+                    for item in data:
+                        flatten_data = export_utils.get_flatten_data(
+                            keys_paths, item)
+                        flatten_data.extend(flatten_cluster)
+                        flatten_data.extend(flatten_structure)
+                        yield flatten_data
             except Exception as e:
                 # Generation of report should be reliable
-                app.logger.error("Getting flatten plugin data failed. "
+                app.logger.error("Getting flatten %s data failed. "
                                  "Installation info id: %s, "
                                  "master node uid: %s, error: %s",
+                                 data_path,
                                  inst_structure.id,
                                  inst_structure.master_node_uid,
                                  six.text_type(e))
-        app.logger.debug("Getting flatten plugins info finished")
+        app.logger.debug("Getting flatten %s info finished", data_path)
+
+    def get_flatten_nodes(self, structure_keys_paths, cluster_keys_paths,
+                          node_keys_paths, inst_structures):
+        """Gets flatten plugins data form clusters from installation
+        structures collection
+        :param structure_keys_paths: list of keys paths in the
+        installation structure
+        :param cluster_keys_paths: list of keys paths in the cluster
+        :param node_keys_paths: list of keys paths in the node
+        :param inst_structures: list of installation structures
+        :return: list of flatten plugins info
+        """
+        return self._get_flatten_subcluster_data(
+            'nodes',
+            structure_keys_paths,
+            cluster_keys_paths,
+            node_keys_paths,
+            inst_structures
+        )
 
     def export_clusters(self, inst_structures, action_logs):
         app.logger.info("Export clusters info into CSV started")
@@ -244,4 +248,16 @@ class StatsToCsv(object):
         result = export_utils.flatten_data_as_csv(
             csv_keys_paths, flatten_plugins)
         app.logger.info("Export plugins info into CSV finished")
+        return result
+
+    def export_nodes(self, inst_structures):
+        app.logger.info("Export nodes info into CSV started")
+        (structure_keys_paths, cluster_keys_paths,
+         node_keys_paths, csv_keys_paths) = self.get_node_keys_paths()
+        flatten_nodes = self.get_flatten_nodes(
+            structure_keys_paths, cluster_keys_paths,
+            node_keys_paths, inst_structures)
+        result = export_utils.flatten_data_as_csv(
+            csv_keys_paths, flatten_nodes)
+        app.logger.info("Export nodes info into CSV finished")
         return result
