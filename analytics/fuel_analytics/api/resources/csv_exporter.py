@@ -37,6 +37,7 @@ bp = Blueprint('clusters_to_csv', __name__)
 
 CLUSTERS_REPORT_FILE = 'clusters.csv'
 PLUGINS_REPORT_FILE = 'plugins.csv'
+NODES_REPORT_FILE = 'nodes.csv'
 
 
 def extract_date(field_name, default_value=None, date_format='%Y-%m-%d'):
@@ -168,6 +169,23 @@ def clusters_to_csv():
     headers = {
         'Content-Disposition': 'attachment; filename={}'.format(
             CLUSTERS_REPORT_FILE)
+    }
+    return Response(result, mimetype='text/csv', headers=headers)
+
+
+@bp.route('/nodes', methods=['GET'])
+def nodes_to_csv():
+    app.logger.debug("Handling nodes_to_csv get request")
+    inst_structures = get_inst_structures()
+    exporter = StatsToCsv()
+    result = exporter.export_nodes(inst_structures)
+
+    # NOTE: result - is generator, but streaming can not work with some
+    # WSGI middlewares: http://flask.pocoo.org/docs/0.10/patterns/streaming/
+    app.logger.debug("Get request for nodes_to_csv handled")
+    headers = {
+        'Content-Disposition': 'attachment; filename={}'.format(
+            NODES_REPORT_FILE)
     }
     return Response(result, mimetype='text/csv', headers=headers)
 
