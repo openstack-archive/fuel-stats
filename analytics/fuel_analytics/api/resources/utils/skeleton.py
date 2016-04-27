@@ -89,7 +89,6 @@ INSTALLATION_INFO_SKELETON = {
                     {
                         'bond_interfaces': count,
                         'nic_interfaces': count,
-                        'error_type': None,
                         'group_id': None,
                         'id': None,
                         'manufacturer': None,
@@ -141,7 +140,54 @@ INSTALLATION_INFO_SKELETON = {
                                 'version': None,
                                 'manufacturer': None
                             },
-                            'interfaces': count
+                            'interfaces': [
+                                {
+                                    'pxe': None,
+                                    'name': None,
+                                    'driver': None,
+                                    'state': None,
+                                    'max_speed': None,
+                                    'current_speed': None,
+                                    'offloading_modes': [
+                                        {
+                                            'state': None,
+                                            'name': None,
+                                            'sub': [
+                                                {
+                                                    'state': None,
+                                                    'name': None,
+                                                }
+                                            ]
+                                        }
+                                    ],
+                                    "interface_properties": {
+                                        "mtu": None,
+                                        "numa_node": None,
+                                        "disable_offloading": None,
+                                        "sriov": {
+                                            "available": None,
+                                            "enabled": None,
+                                            "physnet": None,
+                                            "sriov_numvfs": None,
+                                            "sriov_totalvfs": None
+                                        },
+                                        "dpdk": {
+                                            "enabled": None
+                                        }
+                                    }
+                                }
+                            ],
+                            "numa_topology": {
+                                "numa_nodes": [
+                                    {
+                                        "memory": None,
+                                        "id": None,
+                                        "cpus": count
+                                    }
+                                ],
+                                "supported_hugepages": [None],
+                                "distances": [None]
+                            }
                         }
                     }
                 ],

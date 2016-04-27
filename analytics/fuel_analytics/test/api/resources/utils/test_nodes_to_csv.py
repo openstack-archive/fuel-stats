@@ -44,7 +44,28 @@ class NodesToCsvExportTest(InstStructureTest, DbTest):
         self.assertTrue(['online'] in csv_keys_paths)
         self.assertTrue(['platform_name'] in csv_keys_paths)
         self.assertTrue(['manufacturer'] in csv_keys_paths)
-        self.assertTrue(['error_type'] in csv_keys_paths)
+
+        self.assertTrue(['meta', 'numa_topology', 'numa_nodes', 0, 'memory']
+                        in csv_keys_paths)
+        self.assertTrue(['meta', 'numa_topology', 'supported_hugepages', 0]
+                        in csv_keys_paths)
+        self.assertTrue(['meta', 'numa_topology', 'distances', 0]
+                        in csv_keys_paths)
+
+        self.assertTrue(['meta', 'interfaces', 0, 'name'] in csv_keys_paths)
+        self.assertTrue(['meta', 'interfaces', 0, 'pxe'] in csv_keys_paths)
+        self.assertTrue(['meta', 'interfaces', 0, 'offloading_modes',
+                         0, 'state'] in csv_keys_paths)
+        self.assertTrue(['meta', 'interfaces', 0, 'interface_properties',
+                         'sriov', 'available'] in csv_keys_paths)
+        self.assertTrue(['meta', 'interfaces', 0, 'interface_properties',
+                         'dpdk', 'enabled'] in csv_keys_paths)
+        self.assertTrue(['meta', 'interfaces', 0, 'interface_properties',
+                         'mtu'] in csv_keys_paths)
+        self.assertTrue(['meta', 'interfaces', 0, 'interface_properties',
+                         'disable_offloading'] in csv_keys_paths)
+        self.assertTrue(['meta', 'interfaces', 0, 'interface_properties',
+                         'numa_node'] in csv_keys_paths)
 
     def test_get_flatten_nodes(self):
         installations_num = 10
