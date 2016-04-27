@@ -89,7 +89,6 @@ INSTALLATION_INFO_SKELETON = {
                     {
                         'bond_interfaces': count,
                         'nic_interfaces': count,
-                        'error_type': None,
                         'group_id': None,
                         'id': None,
                         'manufacturer': None,
@@ -141,7 +140,37 @@ INSTALLATION_INFO_SKELETON = {
                                 'version': None,
                                 'manufacturer': None
                             },
-                            'interfaces': count
+                            'interfaces': [
+                                {
+                                    'pxe': None,
+                                    'name': None,
+                                    'driver': None,
+                                    'state': None,
+                                    'max_speed': None,
+                                    'current_speed': None,
+                                    'offloading_modes': [
+                                        {
+                                            'state': None,
+                                            'name': None,
+                                            'sub': [
+                                                {
+                                                    'state': None,
+                                                    'name': None,
+                                                }
+                                            ]
+                                        }
+                                    ],
+                                    "interface_properties": {
+                                        "sriov": {
+                                            "available": None,
+                                            "enabled": None,
+                                            "physnet": None,
+                                            "sriov_numvfs": None,
+                                            "sriov_totalvfs": None
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 ],
