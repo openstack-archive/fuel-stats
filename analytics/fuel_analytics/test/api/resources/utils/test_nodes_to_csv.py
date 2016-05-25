@@ -34,87 +34,82 @@ class NodesToCsvExportTest(InstStructureTest, DbTest):
     def test_get_node_keys_paths(self):
         exporter = StatsToCsv()
         _, _, _, csv_keys_paths = exporter.get_node_keys_paths()
-        self.assertTrue(['id'] in csv_keys_paths)
-        self.assertTrue(['group_id'] in csv_keys_paths)
-        self.assertTrue(['cluster_fuel_version'] in csv_keys_paths)
-        self.assertTrue(['master_node_uid'] in csv_keys_paths)
-        self.assertTrue(['os'] in csv_keys_paths)
-        self.assertTrue(['roles', 0] in csv_keys_paths)
-        self.assertTrue(['pending_addition'] in csv_keys_paths)
-        self.assertTrue(['pending_deletion'] in csv_keys_paths)
-        self.assertTrue(['pending_roles', 0] in csv_keys_paths)
-        self.assertTrue(['status'] in csv_keys_paths)
-        self.assertTrue(['online'] in csv_keys_paths)
-        self.assertTrue(['platform_name'] in csv_keys_paths)
-        self.assertTrue(['manufacturer'] in csv_keys_paths)
+        self.assertNotIn(['manufacturer'], csv_keys_paths)
+        self.assertNotIn(['platform_name'], csv_keys_paths)
 
-        self.assertTrue(['meta', 'cpu', 'real'] in csv_keys_paths)
-        self.assertTrue(['meta', 'cpu', 'total'] in csv_keys_paths)
-        self.assertTrue(['meta', 'cpu', 'spec', 0, 'frequency']
-                        in csv_keys_paths)
-        self.assertTrue(['meta', 'cpu', 'spec', 0, 'model']
-                        in csv_keys_paths)
+        self.assertIn(['id'], csv_keys_paths)
+        self.assertIn(['group_id'], csv_keys_paths)
+        self.assertIn(['cluster_fuel_version'], csv_keys_paths)
+        self.assertIn(['master_node_uid'], csv_keys_paths)
+        self.assertIn(['os'], csv_keys_paths)
+        self.assertIn(['roles', 0], csv_keys_paths)
+        self.assertIn(['pending_addition'], csv_keys_paths)
+        self.assertIn(['pending_deletion'], csv_keys_paths)
+        self.assertIn(['pending_roles', 0], csv_keys_paths)
+        self.assertIn(['status'], csv_keys_paths)
+        self.assertIn(['online'], csv_keys_paths)
 
-        self.assertTrue(['meta', 'memory', 'slots'] in csv_keys_paths)
-        self.assertTrue(['meta', 'memory', 'total'] in csv_keys_paths)
-        self.assertTrue(['meta', 'memory', 'maximum_capacity']
-                        in csv_keys_paths)
-        self.assertTrue(['meta', 'memory', 'devices', 0, 'frequency']
-                        in csv_keys_paths)
-        self.assertTrue(['meta', 'memory', 'devices', 0, 'type']
-                        in csv_keys_paths)
-        self.assertTrue(['meta', 'memory', 'devices', 0, 'size']
-                        in csv_keys_paths)
+        self.assertIn(['meta', 'cpu', 'real'], csv_keys_paths)
+        self.assertIn(['meta', 'cpu', 'total'], csv_keys_paths)
+        self.assertIn(['meta', 'cpu', 'spec', 0, 'frequency'], csv_keys_paths)
+        self.assertIn(['meta', 'cpu', 'spec', 0, 'model'], csv_keys_paths)
 
-        self.assertTrue(['meta', 'disks', 0, 'name'] in csv_keys_paths)
-        self.assertTrue(['meta', 'disks', 0, 'removable'] in csv_keys_paths)
-        self.assertTrue(['meta', 'disks', 0, 'model'] in csv_keys_paths)
-        self.assertTrue(['meta', 'disks', 0, 'size'] in csv_keys_paths)
+        self.assertIn(['meta', 'memory', 'slots'], csv_keys_paths)
+        self.assertIn(['meta', 'memory', 'total'], csv_keys_paths)
+        self.assertIn(['meta', 'memory', 'maximum_capacity'], csv_keys_paths)
+        self.assertIn(['meta', 'memory', 'devices', 0, 'frequency'],
+                      csv_keys_paths)
+        self.assertIn(['meta', 'memory', 'devices', 0, 'type'], csv_keys_paths)
+        self.assertIn(['meta', 'memory', 'devices', 0, 'size'], csv_keys_paths)
 
-        self.assertTrue(['meta', 'system', 'product'] in csv_keys_paths)
-        self.assertTrue(['meta', 'system', 'family'] in csv_keys_paths)
-        self.assertTrue(['meta', 'system', 'version'] in csv_keys_paths)
-        self.assertTrue(['meta', 'system', 'manufacturer'] in csv_keys_paths)
+        self.assertIn(['meta', 'disks', 0, 'name'], csv_keys_paths)
+        self.assertIn(['meta', 'disks', 0, 'removable'], csv_keys_paths)
+        self.assertIn(['meta', 'disks', 0, 'model'], csv_keys_paths)
+        self.assertIn(['meta', 'disks', 0, 'size'], csv_keys_paths)
 
-        self.assertTrue(['meta', 'numa_topology', 'numa_nodes', 0, 'memory']
-                        in csv_keys_paths)
-        self.assertTrue(['meta', 'numa_topology', 'numa_nodes', 0, 'id']
-                        in csv_keys_paths)
-        self.assertTrue(['meta', 'numa_topology', 'supported_hugepages', 0]
-                        in csv_keys_paths)
-        self.assertTrue(['meta', 'numa_topology', 'distances', 0]
-                        in csv_keys_paths)
+        self.assertIn(['meta', 'system', 'product'], csv_keys_paths)
+        self.assertIn(['meta', 'system', 'family'], csv_keys_paths)
+        self.assertIn(['meta', 'system', 'version'], csv_keys_paths)
+        self.assertIn(['meta', 'system', 'manufacturer'], csv_keys_paths)
 
-        self.assertTrue(['meta', 'interfaces', 0, 'name'] in csv_keys_paths)
-        self.assertTrue(['meta', 'interfaces', 0, 'pxe'] in csv_keys_paths)
-        self.assertTrue(['meta', 'interfaces', 0, 'driver'] in csv_keys_paths)
-        self.assertTrue(['meta', 'interfaces', 0, 'max_speed']
-                        in csv_keys_paths)
-        self.assertTrue(['meta', 'interfaces', 0, 'offloading_modes',
-                         0, 'state'] in csv_keys_paths)
-        self.assertTrue(['meta', 'interfaces', 0, 'offloading_modes',
-                         0, 'name'] in csv_keys_paths)
-        self.assertTrue(['meta', 'interfaces', 0, 'offloading_modes',
-                         0, 'sub', 0, 'name'] in csv_keys_paths)
+        self.assertIn(['meta', 'numa_topology', 'numa_nodes', 0, 'memory'],
+                      csv_keys_paths)
+        self.assertIn(['meta', 'numa_topology', 'numa_nodes', 0, 'id'],
+                      csv_keys_paths)
+        self.assertIn(['meta', 'numa_topology', 'supported_hugepages', 0],
+                      csv_keys_paths)
+        self.assertIn(['meta', 'numa_topology', 'distances', 0],
+                      csv_keys_paths)
 
-        self.assertTrue(['meta', 'interfaces', 0, 'interface_properties',
-                         'sriov', 'available'] in csv_keys_paths)
-        self.assertTrue(['meta', 'interfaces', 0, 'interface_properties',
-                         'sriov', 'enabled'] in csv_keys_paths)
-        self.assertTrue(['meta', 'interfaces', 0, 'interface_properties',
-                         'sriov', 'physnet'] in csv_keys_paths)
-        self.assertTrue(['meta', 'interfaces', 0, 'interface_properties',
-                         'sriov', 'sriov_numvfs'] in csv_keys_paths)
-        self.assertTrue(['meta', 'interfaces', 0, 'interface_properties',
-                         'sriov', 'sriov_totalvfs'] in csv_keys_paths)
-        self.assertTrue(['meta', 'interfaces', 0, 'interface_properties',
-                         'dpdk', 'enabled'] in csv_keys_paths)
-        self.assertTrue(['meta', 'interfaces', 0, 'interface_properties',
-                         'mtu'] in csv_keys_paths)
-        self.assertTrue(['meta', 'interfaces', 0, 'interface_properties',
-                         'disable_offloading'] in csv_keys_paths)
-        self.assertTrue(['meta', 'interfaces', 0, 'interface_properties',
-                         'numa_node'] in csv_keys_paths)
+        self.assertIn(['meta', 'interfaces', 0, 'name'], csv_keys_paths)
+        self.assertIn(['meta', 'interfaces', 0, 'pxe'], csv_keys_paths)
+        self.assertIn(['meta', 'interfaces', 0, 'driver'], csv_keys_paths)
+        self.assertIn(['meta', 'interfaces', 0, 'max_speed'], csv_keys_paths)
+        self.assertIn(['meta', 'interfaces', 0, 'offloading_modes',
+                       0, 'state'], csv_keys_paths)
+        self.assertIn(['meta', 'interfaces', 0, 'offloading_modes',
+                       0, 'name'], csv_keys_paths)
+        self.assertIn(['meta', 'interfaces', 0, 'offloading_modes', 0, 'sub',
+                       0, 'name'], csv_keys_paths)
+
+        self.assertIn(['meta', 'interfaces', 0, 'interface_properties',
+                       'sriov', 'available'], csv_keys_paths)
+        self.assertIn(['meta', 'interfaces', 0, 'interface_properties',
+                       'sriov', 'enabled'], csv_keys_paths)
+        self.assertIn(['meta', 'interfaces', 0, 'interface_properties',
+                       'sriov', 'physnet'], csv_keys_paths)
+        self.assertIn(['meta', 'interfaces', 0, 'interface_properties',
+                       'sriov', 'sriov_numvfs'], csv_keys_paths)
+        self.assertIn(['meta', 'interfaces', 0, 'interface_properties',
+                       'sriov', 'sriov_totalvfs'], csv_keys_paths)
+        self.assertIn(['meta', 'interfaces', 0, 'interface_properties',
+                       'dpdk', 'enabled'], csv_keys_paths)
+        self.assertIn(['meta', 'interfaces', 0, 'interface_properties',
+                       'mtu'], csv_keys_paths)
+        self.assertIn(['meta', 'interfaces', 0, 'interface_properties',
+                       'disable_offloading'], csv_keys_paths)
+        self.assertIn(['meta', 'interfaces', 0, 'interface_properties',
+                       'numa_node'], csv_keys_paths)
 
     def test_get_flatten_nodes(self):
         installations_num = 10
