@@ -91,14 +91,12 @@ INSTALLATION_INFO_SKELETON = {
                         'nic_interfaces': count,
                         'group_id': None,
                         'id': None,
-                        'manufacturer': None,
                         'online': None,
                         'os': None,
                         'pending_addition': None,
                         'pending_deletion': None,
                         'roles': [None],
                         'pending_roles': [None],
-                        'platform_name': None,
                         'status': None,
                         'meta': {
                             'cpu': {

@@ -34,6 +34,9 @@ class NodesToCsvExportTest(InstStructureTest, DbTest):
     def test_get_node_keys_paths(self):
         exporter = StatsToCsv()
         _, _, _, csv_keys_paths = exporter.get_node_keys_paths()
+        self.assertFalse(['manufacturer'] in csv_keys_paths)
+        self.assertFalse(['platform_name'] in csv_keys_paths)
+
         self.assertTrue(['id'] in csv_keys_paths)
         self.assertTrue(['group_id'] in csv_keys_paths)
         self.assertTrue(['cluster_fuel_version'] in csv_keys_paths)
@@ -45,8 +48,6 @@ class NodesToCsvExportTest(InstStructureTest, DbTest):
         self.assertTrue(['pending_roles', 0] in csv_keys_paths)
         self.assertTrue(['status'] in csv_keys_paths)
         self.assertTrue(['online'] in csv_keys_paths)
-        self.assertTrue(['platform_name'] in csv_keys_paths)
-        self.assertTrue(['manufacturer'] in csv_keys_paths)
 
         self.assertTrue(['meta', 'cpu', 'real'] in csv_keys_paths)
         self.assertTrue(['meta', 'cpu', 'total'] in csv_keys_paths)
