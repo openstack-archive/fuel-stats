@@ -19,7 +19,8 @@ function($, d3, D3pie, d3tip, nv, elasticsearch) {
         {name: '6.0 GA', filter: '6.0'},
         {name: '6.1', filter: '6.1'},
         {name: '7.0', filter: '7.0'},
-        {name: '8.0', filter: '8.0'}
+        {name: '8.0', filter: '8.0'},
+        {name: '9.0', filter: '9.0'}
     ];
     var currentRelease = releases[0].filter;
 
