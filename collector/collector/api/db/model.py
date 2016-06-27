@@ -43,6 +43,7 @@ class InstallationStructure(db.Model):
     creation_date = db.Column(db.DateTime)
     modification_date = db.Column(db.DateTime)
     is_filtered = db.Column(db.Boolean, default=False, index=True)
+    release = db.Column(db.Text, index=True)
 
 
 class OpenStackWorkloadStats(db.Model):
