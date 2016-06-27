@@ -39,6 +39,7 @@ class InstallationStructure(db.Model):
     creation_date = db.Column(db.DateTime)
     modification_date = db.Column(db.DateTime)
     is_filtered = db.Column(db.Boolean)
+    release = db.Column(db.Text)
 
 
 class ActionLog(db.Model):
