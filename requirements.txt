@@ -6,6 +6,7 @@ Flask-Script==2.0.5
 Flask-SQLAlchemy==2.0
 psycopg2==2.5.4
 python-dateutil==2.2
+python-memcached>=1.56
 PyYAML==3.11
 six>=1.8.0
 SQLAlchemy==0.9.8

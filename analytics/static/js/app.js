@@ -5,13 +5,10 @@ define(
     'd3',
     'd3pie',
     'd3tip',
-    'nv',
-    'elasticsearch'
+    'nv'
 ],
-function($, d3, D3pie, d3tip, nv, elasticsearch) {
+function($, d3, D3pie, d3tip, nv) {
     'use strict';
-
-    var statuses = ['operational', 'error'];
 
     var releases = [
         {name: 'All', filter: ''},
@@ -34,541 +31,337 @@ function($, d3, D3pie, d3tip, nv, elasticsearch) {
         statsPage();
     });
 
-    var applyFilters = function(body) {
-        var result = body;
-        if (currentRelease) {
-            result = {
-                aggs: {
-                    releases: {
-                        filter: {
-                            terms: {
-                                'fuel_release.release': [currentRelease]
-                            }
-                        },
-                        aggs: body.aggs
-                    }
-                }
-            };
-        }
-        // adding filtering by is_filtered
-        result = {
-            aggs: {
-                is_filtered: {
-                    filter: {
-                        bool: {
-                            should: [
-                                {term: {is_filtered: false}},
-                                {missing: {field: 'is_filtered'}}
-                            ]
-                        }
-                    },
-                    aggs: result.aggs
-                }
-            }
-        };
-        return result;
-    };
-
-    var getRootData = function(resp) {
-        var root = resp.aggregations.is_filtered;
-        return currentRelease ? root.releases : root;
-    };
-
-    var elasticSearchHost = function() {
-        return {
-            host: {
-                port: location.port || (location.protocol == 'https:' ? 443 : 80),
-                protocol: location.protocol,
-                host: location.hostname
-            }
-        };
-    };
-
     var statsPage = function() {
-        installationsCount();
-        environmentsCount();
-        distributionOfInstallations();
-        nodesDistributionChart();
-        hypervisorDistributionChart();
-        osesDistributionChart();
+        var url = '/api/v1/json/report/installations';
+        var data = {};
+
+        if (currentRelease) {
+            data['release'] = currentRelease;
+        }
+
+        $.get(url, data, function(resp) {
+            installationsCount(resp);
+            environmentsCount(resp);
+            distributionOfInstallations(resp);
+            nodesDistributionChart(resp);
+            hypervisorDistributionChart(resp);
+            osesDistributionChart(resp);
+        })
+        .done(function() {
+            $('#loader').addClass('hidden');
+            $('#main').removeClass('hidden');
+        })
+        .fail(function() {
+            $('#loader').addClass('hidden');
+            $('#load-error').removeClass('hidden');
+        });
+
     };
 
-    var installationsCount = function() {
-        var client = new elasticsearch.Client(elasticSearchHost());
-        var request = {
-            query: {
-                filtered: {
-                    filter: {
-                        bool: {
-                            should: [
-                                {term: {'is_filtered': false}},
-                                {missing: {'field': 'is_filtered'}},
-                            ]
-                        }
-                    }
-                }
-            }
-        }
-        if (currentRelease) {
-            request.query.filtered.filter.bool['must'] = {
-                terms: {'fuel_release.release': [currentRelease]}
-            }
-        }
+    var installationsCount = function(resp) {
+        $('#installations-count').html(resp.installations.count);
+    };
 
-        client.count({
-            index: 'fuel',
-            type: 'structure',
-            body: request
-        }).then(function(resp) {
-            $('#installations-count').html(resp.count);
+    var environmentsCount = function(resp) {
+        $('#environments-count').html(resp.environments.count);
+
+        var colors = [
+            {status: 'new', code: '#999999'},
+            {status: 'operational', code: '#51851A'},
+            {status: 'error', code: '#FF7372'},
+            {status: 'deployment', code: '#2783C0'},
+            {status: 'remove', code: '#000000'},
+            {status: 'stopped', code: '#FFB014'},
+            {status: 'update', code: '#775575'},
+            {status: 'update_error', code: '#F5007B'}
+        ];
+        var chartData = [];
+
+        $.each(colors, function(index, color) {
+            var in_status = resp.environments.statuses[color.status];
+            if (in_status) {
+                chartData.push({label: color.status, value: in_status, color: color.code});
+            }
+        });
+
+        var data = [{
+            key: 'Distribution of environments by statuses',
+            values: chartData
+            }];
+
+        nv.addGraph(function() {
+            var chart = nv.models.discreteBarChart()
+                .x(function(d) { return d.label;})
+                .y(function(d) { return d.value;})
+                .margin({top: 30, bottom: 60})
+                .staggerLabels(true)
+                .transitionDuration(350);
+
+            chart.xAxis
+                .axisLabel('Statuses');
+
+            chart.yAxis
+                .axisLabel('Environments')
+                .axisLabelDistance(30)
+                .tickFormat(d3.format('d'));
+
+            chart.tooltipContent(function(key, x, y) {
+                return '<h3>Status: "' + x + '"</h3>' + '<p>' + parseInt(y) + ' environments</p>';
+            });
+
+            d3.select('#clusters-distribution svg')
+                .datum(data)
+                .call(chart);
+
+            nv.utils.windowResize(chart.update);
+
+            return chart;
         });
     };
 
-    var environmentsCount = function() {
-        var client = new elasticsearch.Client(elasticSearchHost());
-         client.search({
-            index: 'fuel',
-            type: 'structure',
-            body: applyFilters({
-               aggs: {
-                    clusters: {
-                        nested: {
-                            path: 'clusters'
-                        },
-                        aggs: {
-                           statuses: {
-                                terms: {field: 'status'}
-                            }
-                        }
-                    }
-                }
-            })
-            }).then(function(resp) {
-                var rootData = getRootData(resp);
-                var rawData = rootData.clusters.statuses.buckets,
-                    total = rootData.clusters.doc_count,
-                    colors = {
-                        error: '#FF7372',
-                        operational: '#51851A',
-                        new: '#999999',
-                        deployment: '#2783C0',
-                        remove: '#000000',
-                        update: '#775575',
-                        update_error: '#F5007B',
-                        stopped: '#FFB014'
-                    },
-                    chartData = [];
-                $.each(rawData, function(key, value) {
-                    chartData.push({label: value.key, value: value.doc_count, color: colors[value.key]});
-                });
-                $('#environments-count').html(total);
-                var data = [{
-                    key: 'Distribution of environments by statuses',
-                    values: chartData
-                    }];
+    var distributionOfInstallations = function(resp) {
+        var chartData = [];
+        $.each(resp.installations.environments_num, function(key, value) {
+            chartData.push({label: key, value: value});
+        });
+        var data = [{
+            color: '#1DA489',
+            values: chartData
+            }];
 
-                nv.addGraph(function() {
-                    var chart = nv.models.discreteBarChart()
-                        .x(function(d) { return d.label;})
-                        .y(function(d) { return d.value;})
-                        .margin({top: 30, bottom: 60})
-                        .staggerLabels(true)
-                        .transitionDuration(350);
+        nv.addGraph(function() {
+            var chart = nv.models.multiBarChart()
+                .x(function(d) { return d.label;})
+                .y(function(d) { return d.value;})
+                .margin({top: 30, bottom: 60})
+                .transitionDuration(350)
+                .reduceXTicks(false)   //If 'false', every single x-axis tick label will be rendered.
+                .rotateLabels(0)      //Angle to rotate x-axis labels.
+                .showControls(false)   //Allow user to switch between 'Grouped' and 'Stacked' mode.
+                .showLegend(false)
+                .groupSpacing(0.5);    //Distance between each group of bars.
 
-                    chart.xAxis
-                        .axisLabel('Statuses');
+            chart.xAxis
+                .axisLabel('Environments count');
 
-                    chart.yAxis
-                        .axisLabel('Environments')
-                        .axisLabelDistance(30)
-                        .tickFormat(d3.format('d'));
+            chart.yAxis
+                .axisLabel('Installations')
+                .axisLabelDistance(30)
+                .tickFormat(d3.format('d'));
 
-                    chart.tooltipContent(function(key, x, y) {
-                        return '<h3>Status: "' + x + '"</h3>' + '<p>' + parseInt(y) + ' environments</p>';
-                    });
-
-                    d3.select('#clusters-distribution svg')
-                        .datum(data)
-                        .call(chart);
-
-                    nv.utils.windowResize(chart.update);
-
-                    return chart;
-                });
+            chart.tooltipContent(function(key, x, y) {
+                return '<h3>' + parseInt(y) + ' installations</h3>' + '<p>with ' + x + ' environments</p>';
             });
+
+            d3.select('#env-distribution svg')
+                .datum(data)
+                .call(chart);
+
+            nv.utils.windowResize(chart.update);
+
+            return chart;
+        });
     };
 
-    var distributionOfInstallations = function() {
-        var client = new elasticsearch.Client(elasticSearchHost());
-         client.search({
-            index: 'fuel',
-            size: 0,
-            body: applyFilters({
-                 aggs: {
-                    envs_distribution: {
-                        histogram: {
-                            field: 'clusters_num',
-                            interval: 1
-                        }
-                    }
+    var nodesDistributionChart = function(resp) {
+        var total = resp.environments.operable_envs_count;
+        var ranges = [
+            {from: 1, to: 5, count: 0},
+            {from: 5, to: 10, count: 0},
+            {from: 10, to: 20, count: 0},
+            {from: 20, to: 50, count: 0},
+            {from: 50, to: 100, count: 0},
+            {from: 100, to: null, count: 0}
+        ];
+        var chartData = [];
+
+        $('#count-nodes-distribution').html(total);
+        $.each(resp.environments.nodes_num, function(nodes_num, count) {
+            $.each(ranges, function(index, range) {
+                var num = parseInt(nodes_num);
+                if (
+                    num >= range.from &&
+                    (num < range.to || range.to == null)
+                ) {
+                    range.count += count;
                 }
-            })
-            }).then(function(resp) {
-                var rootData = getRootData(resp);
-                var rawData = rootData.envs_distribution.buckets,
-                    chartData = [];
-                $.each(rawData, function(key, value) {
-                    chartData.push({label: value.key, value: value.doc_count});
-                });
-                var data = [{
-                    color: '#1DA489',
-                    values: chartData
-                    }];
-
-                nv.addGraph(function() {
-                    var chart = nv.models.multiBarChart()
-                        .x(function(d) { return d.label;})
-                        .y(function(d) { return d.value;})
-                        .margin({top: 30, bottom: 60})
-                        .transitionDuration(350)
-                        .reduceXTicks(false)   //If 'false', every single x-axis tick label will be rendered.
-                        .rotateLabels(0)      //Angle to rotate x-axis labels.
-                        .showControls(false)   //Allow user to switch between 'Grouped' and 'Stacked' mode.
-                        .showLegend(false)
-                        .groupSpacing(0.5);    //Distance between each group of bars.
-
-                    chart.xAxis
-                        .axisLabel('Environments count');
-
-                    chart.yAxis
-                        .axisLabel('Installations')
-                        .axisLabelDistance(30)
-                        .tickFormat(d3.format('d'));
-
-                    chart.tooltipContent(function(key, x, y) {
-                        return '<h3>' + parseInt(y) + ' installations</h3>' + '<p>with ' + x + ' environments</p>';
-                    });
-
-                    d3.select('#env-distribution svg')
-                        .datum(data)
-                        .call(chart);
-
-                    nv.utils.windowResize(chart.update);
-
-                    return chart;
-                });
             });
+        });
+
+        $.each(ranges, function(index, range) {
+            var labelText = range.from + (range.to == null ? '+' : '-' + range.to);
+            chartData.push({label: labelText, value: range.count});
+        });
+
+        var data = [{
+            key: 'Environment size distribution by number of nodes',
+            color: '#1DA489',
+            values: chartData
+            }];
+
+        nv.addGraph(function() {
+            var chart = nv.models.multiBarChart()
+                .x(function(d) { return d.label;})
+                .y(function(d) { return d.value;})
+                .margin({top: 30})
+                .transitionDuration(350)
+                .reduceXTicks(false)   //If 'false', every single x-axis tick label will be rendered.
+                .rotateLabels(0)      //Angle to rotate x-axis labels.
+                .showControls(false)   //Allow user to switch between 'Grouped' and 'Stacked' mode.
+                .groupSpacing(0.2);    //Distance between each group of bars.
+
+            chart.xAxis
+                .axisLabel('Number of nodes');
+
+            chart.yAxis
+                .axisLabel('Environments')
+                .axisLabelDistance(30)
+                .tickFormat(d3.format('d'));
+
+            chart.tooltipContent(function(key, x, y) {
+                return '<h3>' + x + ' nodes</h3>' + '<p>' + parseInt(y) + '</p>';
+            });
+
+            d3.select('#nodes-distribution svg')
+                .datum(data)
+                .call(chart);
+
+            nv.utils.windowResize(chart.update);
+
+            return chart;
+        });
     };
 
-    var nodesDistributionChart = function() {
-        var client = new elasticsearch.Client(elasticSearchHost()),
-            ranges = [
-                  {from: 1, to: 5},
-                  {from: 5, to: 10},
-                  {from: 10, to: 20},
-                  {from: 20, to: 50},
-                  {from: 50, to: 100},
-                  {from: 100}
-            ];
-
-        client.search({
-            index: 'fuel',
-            type: 'structure',
-            size: 0,
-            body: applyFilters({
-                aggs: {
-                    clusters: {
-                        nested: {
-                            path: 'clusters'
-                        },
-                        aggs: {
-                            statuses: {
-                                filter: {
-                                    terms:   {status: statuses}
-                                },
-                                aggs: {
-                                    nodes_ranges: {
-                                        range: {
-                                            field: 'nodes_num',
-                                            ranges: ranges
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+    var hypervisorDistributionChart = function(resp) {
+        var totalСounted = 0,
+            total = resp.environments.operable_envs_count,
+            chartData = [];
+        $.each(resp.environments.hypervisors_num, function(hypervisor, count) {
+            chartData.push({label: hypervisor, value: count});
+            totalСounted  += count;
+        });
+        var unknownHypervisorsCount = total - totalСounted;
+        if (unknownHypervisorsCount) {
+            chartData.push({label: 'unknown', value: unknownHypervisorsCount});
+        }
+        $('#count-releases-distribution').html(total);
+        $('#releases-distribution').html('');
+        new D3pie("releases-distribution", {
+            header: {
+                title: {
+                    text: 'Distribution of deployed hypervisor',
+                    fontSize: 15
+                },
+                location: 'top-left',
+                titleSubtitlePadding: 9
+            },
+            size: {
+                canvasWidth: 330,
+                canvasHeight: 300,
+                pieInnerRadius: '40%',
+                pieOuterRadius: '55%'
+            },
+            labels: {
+                outer: {
+                    format: 'label-value2',
+                    pieDistance: 10
+                },
+                inner: {
+                    format: "percentage",
+                    hideWhenLessThanPercentage: 5
+                },
+                mainLabel: {
+                    fontSize: 14
+                },
+                percentage: {
+                    color: '#ffffff',
+                    decimalPlaces: 2
+                },
+                value: {
+                    color: '#adadad',
+                    fontSize: 11
+                },
+                lines: {
+                    enabled: true
                 }
-            })
-            }).then(function(resp) {
-                var rootData = getRootData(resp);
-                var rawData = rootData.clusters.statuses.nodes_ranges.buckets,
-                    total = rootData.clusters.statuses.doc_count,
-                    chartData = [];
-                $('#count-nodes-distribution').html(total);
-                $.each(rawData, function(key, value) {
-                    var labelText = '',
-                        labelData = value.key.split('-');
-                    $.each(labelData, function(key, value) {
-                        if (value) {
-                            if (key == labelData.length - 1) {
-                                labelText += (value == '*' ? '+' : '-' + parseInt(value));
-                            } else {
-                                labelText += parseInt(value);
-                            }
-                        }
-                    });
-                    chartData.push({label: labelText, value: value.doc_count});
-                });
-
-                var data = [{
-                    key: 'Environment size distribution by number of nodes',
-                    color: '#1DA489',
-                    values: chartData
-                    }];
-
-                nv.addGraph(function() {
-                    var chart = nv.models.multiBarChart()
-                        .x(function(d) { return d.label;})
-                        .y(function(d) { return d.value;})
-                        .margin({top: 30})
-                        .transitionDuration(350)
-                        .reduceXTicks(false)   //If 'false', every single x-axis tick label will be rendered.
-                        .rotateLabels(0)      //Angle to rotate x-axis labels.
-                        .showControls(false)   //Allow user to switch between 'Grouped' and 'Stacked' mode.
-                        .groupSpacing(0.2);    //Distance between each group of bars.
-
-                    chart.xAxis
-                        .axisLabel('Number of nodes');
-
-                    chart.yAxis
-                        .axisLabel('Environments')
-                        .axisLabelDistance(30)
-                        .tickFormat(d3.format('d'));
-
-                    chart.tooltipContent(function(key, x, y) {
-                        return '<h3>' + x + ' nodes</h3>' + '<p>' + parseInt(y) + '</p>';
-                    });
-
-                    d3.select('#nodes-distribution svg')
-                        .datum(data)
-                        .call(chart);
-
-                    nv.utils.windowResize(chart.update);
-
-                    return chart;
-                });
-            });
+            },
+            data: {
+                content: chartData
+            },
+            tooltips: {
+                enabled: true,
+                type: 'placeholder',
+                string: '{label}: {value} pcs, {percentage}%',
+                styles: {
+                    borderRadius: 3,
+                    fontSize: 12,
+                    padding: 6
+                }
+            }
+        });
     };
 
-    var hypervisorDistributionChart = function() {
-        var client = new elasticsearch.Client(elasticSearchHost());
-        client.search({
-            size: 0,
-            index: 'fuel',
-            type: 'structure',
-            body: applyFilters({
-                aggs: {
-                    clusters: {
-                        nested: {
-                            path: 'clusters'
-                        },
-                        aggs: {
-                            statuses: {
-                                filter: {
-                                    terms:   {status: statuses}
-                                },
-                                aggs: {
-                                    attributes: {
-                                        nested: {
-                                            path: 'clusters.attributes'
-                                        },
-                                        aggs: {
-                                            libvirt_types: {
-                                                terms: {
-                                                    field: 'libvirt_type'
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+    var osesDistributionChart = function(resp) {
+        var total =  resp.environments.operable_envs_count,
+            chartData = [];
+        $('#count-distribution-of-oses').html(total);
+        $.each(resp.environments.oses_num, function(os, count) {
+            chartData.push({label: os, value: count});
+        });
+        $('#distribution-of-oses').html('');
+        new D3pie("distribution-of-oses", {
+            header: {
+                title: {
+                    text: 'Distribution of deployed operating system',
+                    fontSize: 15
+                },
+                location: 'top-left',
+                titleSubtitlePadding: 9
+            },
+            size: {
+                canvasWidth: 330,
+                canvasHeight: 300,
+                pieInnerRadius: '40%',
+                pieOuterRadius: '55%'
+            },
+            labels: {
+                outer: {
+                    format: 'label-value2',
+                    pieDistance: 10
+                },
+                inner: {
+                    format: "percentage",
+                    hideWhenLessThanPercentage: 5
+                },
+                mainLabel: {
+                    fontSize: 14
+                },
+                percentage: {
+                    color: '#ffffff',
+                    decimalPlaces: 2
+                },
+                value: {
+                    color: '#adadad',
+                    fontSize: 11
+                },
+                lines: {
+                    enabled: true
                 }
-            })
-            }).then(function(resp) {
-                var rootData = getRootData(resp);
-                var rawData = rootData.clusters.statuses.attributes.libvirt_types.buckets,
-                    total = rootData.clusters.statuses.attributes.doc_count,
-                    totalСounted = 0,
-                    chartData = [];
-                $.each(rawData, function(key, value) {
-                    chartData.push({label: value.key, value: value.doc_count});
-                    totalСounted  += value.doc_count;
-                });
-                var unknownHypervisorsCount = total - totalСounted;
-                if (unknownHypervisorsCount) {
-                    chartData.push({label: 'unknown', value: unknownHypervisorsCount});
+            },
+            data: {
+                content: chartData
+            },
+            tooltips: {
+                enabled: true,
+                type: 'placeholder',
+                string: '{label}: {value} pcs, {percentage}%',
+                styles: {
+                    borderRadius: 3,
+                    fontSize: 12,
+                    padding: 6
                 }
-                $('#count-releases-distribution').html(total);
-                $('#releases-distribution').html('');
-                new D3pie("releases-distribution", {
-                    header: {
-                        title: {
-                            text: 'Distribution of deployed hypervisor',
-                            fontSize: 15
-                        },
-                        location: 'top-left',
-                        titleSubtitlePadding: 9
-                    },
-                    size: {
-                        canvasWidth: 330,
-                        canvasHeight: 300,
-                        pieInnerRadius: '40%',
-                        pieOuterRadius: '55%'
-                    },
-                    labels: {
-                        outer: {
-                            format: 'label-value2',
-                            pieDistance: 10
-                        },
-                        inner: {
-                            format: "percentage",
-                            hideWhenLessThanPercentage: 5
-                        },
-                        mainLabel: {
-                            fontSize: 14
-                        },
-                        percentage: {
-                            color: '#ffffff',
-                            decimalPlaces: 2
-                        },
-                        value: {
-                            color: '#adadad',
-                            fontSize: 11
-                        },
-                        lines: {
-                            enabled: true
-                        }
-                    },
-                    data: {
-                        content: chartData
-                    },
-                    tooltips: {
-                        enabled: true,
-                        type: 'placeholder',
-                        string: '{label}: {value} pcs, {percentage}%',
-                        styles: {
-                            borderRadius: 3,
-                            fontSize: 12,
-                            padding: 6
-                        }
-                    }
-                });
-            });
-    };
-
-    var osesDistributionChart = function() {
-        var client = new elasticsearch.Client(elasticSearchHost());
-        client.search({
-            size: 0,
-            index: 'fuel',
-            type: 'structure',
-            body: applyFilters({
-                aggs: {
-                    clusters: {
-                        nested: {
-                            path: 'clusters'
-                        },
-                        aggs: {
-                            statuses: {
-                                filter: {
-                                    terms:   {status: statuses}
-                                },
-                                aggs: {
-                                    release: {
-                                        nested: {
-                                            path: 'clusters.release'
-                                        },
-
-                                        aggs: {
-                                            oses: {
-                                                terms: {
-                                                    field: 'os'
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            })
-            }).then(function(resp) {
-                var rootData = getRootData(resp);
-                var rawData = rootData.clusters.statuses.release.oses.buckets,
-                    total =  rootData.clusters.statuses.doc_count,
-                    chartData = [];
-                $('#count-distribution-of-oses').html(total);
-                $.each(rawData, function(key, value) {
-                    chartData.push({label: value.key, value: value.doc_count});
-                });
-                $('#distribution-of-oses').html('');
-                new D3pie("distribution-of-oses", {
-                    header: {
-                        title: {
-                            text: 'Distribution of deployed operating system',
-                            fontSize: 15
-                        },
-                        location: 'top-left',
-                        titleSubtitlePadding: 9
-                    },
-                    size: {
-                        canvasWidth: 330,
-                        canvasHeight: 300,
-                        pieInnerRadius: '40%',
-                        pieOuterRadius: '55%'
-                    },
-                    labels: {
-                        outer: {
-                            format: 'label-value2',
-                            pieDistance: 10
-                        },
-                        inner: {
-                            format: "percentage",
-                            hideWhenLessThanPercentage: 5
-                        },
-                        mainLabel: {
-                            fontSize: 14
-                        },
-                        percentage: {
-                            color: '#ffffff',
-                            decimalPlaces: 2
-                        },
-                        value: {
-                            color: '#adadad',
-                            fontSize: 11
-                        },
-                        lines: {
-                            enabled: true
-                        }
-                    },
-                    data: {
-                        content: chartData
-                    },
-                    tooltips: {
-                        enabled: true,
-                        type: 'placeholder',
-                        string: '{label}: {value} pcs, {percentage}%',
-                        styles: {
-                            borderRadius: 3,
-                            fontSize: 12,
-                            padding: 6
-                        }
-                    }
-                });
-            });
+            }
+        });
     };
 
     return statsPage();

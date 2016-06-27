@@ -41,6 +41,53 @@ html, body {
 	background-color: #f3f3f4;
 	height: 100%;
 }
+
+#loader {
+	background-color: #415766;
+	position: absolute;
+	top: 0;
+	width: 100%;
+	height: 100%;
+}
+#load-error {
+	background-color: #415766;
+	position: absolute;
+	top: 0;
+	width: 100%;
+	height: 100%;
+	color: white;
+	text-align: center;
+	padding-top: 100px;
+	font-size: 24px;
+}
+@keyframes loading {
+  from {transform:rotate(0deg);}
+  to {transform:rotate(360deg);}
+}
+.loading:before {
+	content: "";
+	display: block;
+	width: 98px;
+	height: 98px;
+	overflow: hidden;
+	margin: 200px auto 0;
+	background: url(../img/loader-bg.svg);
+	animation: loading 6s linear infinite;
+}
+.loading:after {
+	content: "";
+	display: block;
+	width: 98px;
+	height: 98px;
+	margin: -124px auto 0;
+	position: relative;
+	z-index: 9999;
+	background: url(../img/loader-logo.svg);
+}
+
+.hidden {
+	display: none;
+}
 .nav-pannel {
 	width: 70px;
 	height: 100%;
