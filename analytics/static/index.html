@@ -36,120 +36,129 @@
         </div>
         <!-- End Left Pannel -->
 
+        <div id="loader">
+            <div class="loading"></div>
+        </div>
+        <div id="load-error" class="hidden">
+            Error: Service is unavailable.
+        </div>
+
         <!-- Start Base Layout -->
         <div class="base-box">
             <select id="release-filter"></select>
 
-            <!-- TOP BIG GRAPH -->
-            <div class="container-fluid titul-graph-box">
-                <div class="row top-graph">
-                    <div class="col-md-4">
-                        <div class="header">
-                            <p>
-                            <div class="title">
-                                Number of installations: <b><span id="installations-count"></span></b>
+            <div id="main" class="hidden">
+                <!-- TOP BIG GRAPH -->
+                <div class="container-fluid titul-graph-box" style="background: red;">
+                    <div class="row top-graph">
+                        <div class="col-md-4">
+                            <div class="header">
+                                <p>
+                                <div class="title">
+                                    Number of installations: <b><span id="installations-count"></span></b>
+                                </div>
+                                </p>
+                                <p>
+                                <div class="title">Total number of environments: <b><span id="environments-count"></span></b>
+                                </div>
+                                </p>
                             </div>
-                            </p>
-                            <p>
-                            <div class="title">Total number of environments: <b><span id="environments-count"></span></b>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="title">Distribution of installations by number of environments</div>
+                            <div id="env-distribution">
+                                <svg style="height: 280px;"></svg>
                             </div>
-                            </p>
                         </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="title">Distribution of installations by number of environments</div>
-                        <div id="env-distribution">
-                            <svg style="height: 280px;"></svg>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="title">Environments statuses distribution</div>
-                        <div id="clusters-distribution">
-                            <svg style="height: 280px;"></svg>
+                        <div class="col-md-4">
+                            <div class="title">Environments statuses distribution</div>
+                            <div id="clusters-distribution">
+                                <svg style="height: 280px;"></svg>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Start Block with small graphics -->
-            <div class="container-fluid small-graphs-box">
-                <div class="row">
+                <!-- Start Block with small graphics -->
+                <div class="container-fluid small-graphs-box">
+                    <div class="row">
 
-                    <!-- Start Graphics Items -->
-                    <div class="container-fluid standard-graph-box">
-                        <div class="row">
+                        <!-- Start Graphics Items -->
+                        <div class="container-fluid standard-graph-box">
+                            <div class="row">
 
-                            <!-- Start Item 1 -->
-                            <div class="col-md-4">
-                                <div class="graph-item-box">
-                                    <!-- Start Item Header -->
-                                    <div class="header">
-                                        <div class="title">Environment Size</div>
-                                        <!-- <div class="icon"><a href="#"></a></div> -->
-                                    </div>
-                                    <!-- End Item Header -->
-                                    <!-- Start Item Content -->
-                                    <div class="content">
-                                        <div class="image">
-                                            <div id="nodes-distribution">
-                                                <svg style="height: 280px;"></svg>
+                                <!-- Start Item 1 -->
+                                <div class="col-md-4">
+                                    <div class="graph-item-box">
+                                        <!-- Start Item Header -->
+                                        <div class="header">
+                                            <div class="title">Environment Size</div>
+                                            <!-- <div class="icon"><a href="#"></a></div> -->
+                                        </div>
+                                        <!-- End Item Header -->
+                                        <!-- Start Item Content -->
+                                        <div class="content">
+                                            <div class="image">
+                                                <div id="nodes-distribution">
+                                                    <svg style="height: 280px;"></svg>
+                                                </div>
+                                            </div>
+                                            <div class="description">Number of environments: <span
+                                                    id="count-nodes-distribution"></span>
                                             </div>
                                         </div>
-                                        <div class="description">Number of environments: <span
-                                                id="count-nodes-distribution"></span>
-                                        </div>
+                                        <!-- End Item Content -->
                                     </div>
-                                    <!-- End Item Content -->
                                 </div>
-                            </div>
-                            <!-- End Item 1 -->
+                                <!-- End Item 1 -->
 
-                            <!-- Start Item 2 -->
-                            <div class="col-md-4">
-                                <div class="graph-item-box">
-                                    <!-- Start Item Header -->
-                                    <div class="header">
-                                        <div class="title">Hypervisor</div>
-                                    </div>
-                                    <!-- End Item Header -->
-                                    <!-- Start Item Content -->
-                                    <div class="content">
-                                        <div class="image">
-                                            <div id="releases-distribution"></div>
+                                <!-- Start Item 2 -->
+                                <div class="col-md-4">
+                                    <div class="graph-item-box">
+                                        <!-- Start Item Header -->
+                                        <div class="header">
+                                            <div class="title">Hypervisor</div>
                                         </div>
-                                        <div class="description">Number of environments: <span
-                                                id="count-releases-distribution"></span>
+                                        <!-- End Item Header -->
+                                        <!-- Start Item Content -->
+                                        <div class="content">
+                                            <div class="image">
+                                                <div id="releases-distribution"></div>
+                                            </div>
+                                            <div class="description">Number of environments: <span
+                                                    id="count-releases-distribution"></span>
+                                            </div>
                                         </div>
+                                        <!-- End Item Content -->
                                     </div>
-                                    <!-- End Item Content -->
                                 </div>
-                            </div>
-                            <!-- End Item 2 -->
+                                <!-- End Item 2 -->
 
-                            <!-- Start Item 3 -->
-                            <div class="col-md-4">
-                                <div class="graph-item-box">
-                                    <!-- Start Item Header -->
-                                    <div class="header">
-                                        <div class="title">Operating System</div>
-                                    </div>
-                                    <!-- End Item Header -->
-                                    <!-- Start Item Content -->
-                                    <div class="content">
-                                        <div class="image">
-                                            <div id="distribution-of-oses"></div>
+                                <!-- Start Item 3 -->
+                                <div class="col-md-4">
+                                    <div class="graph-item-box">
+                                        <!-- Start Item Header -->
+                                        <div class="header">
+                                            <div class="title">Operating System</div>
                                         </div>
-                                        <div class="description">Number of environments: <span
-                                                id="count-distribution-of-oses"></span>
+                                        <!-- End Item Header -->
+                                        <!-- Start Item Content -->
+                                        <div class="content">
+                                            <div class="image">
+                                                <div id="distribution-of-oses"></div>
+                                            </div>
+                                            <div class="description">Number of environments: <span
+                                                    id="count-distribution-of-oses"></span>
+                                            </div>
                                         </div>
+                                        <!-- End Item Content -->
                                     </div>
-                                    <!-- End Item Content -->
                                 </div>
+                                <!-- End Item 3 -->
                             </div>
-                            <!-- End Item 3 -->
                         </div>
+                        <!-- End Graphics Items -->
                     </div>
-                    <!-- End Graphics Items -->
                 </div>
             </div>
         </div>

@@ -52,6 +52,7 @@ def post():
         obj.modification_date = datetime.utcnow()
         status_code = 200
     obj.is_filtered = _is_filtered(structure)
+    obj.release = get_release(structure)
     obj.structure = structure
     db.session.add(obj)
     return status_code, {'status': 'ok'}
@@ -133,3 +134,7 @@ def _is_filtered(structure):
                      packages, filtered_by_packages)
 
     return filtered_by_build_id or filtered_by_packages
+
+
+def get_release(structure):
+    return structure.get('fuel_release', {}).get('release')
