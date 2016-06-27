@@ -2,5 +2,6 @@ psycopg2==2.5.4
 Flask==0.10.1
 Flask-Script==2.0.5
 Flask-SQLAlchemy==2.0
+python-memcached>=1.56
 SQLAlchemy==0.9.8
 six>=1.8.0

@@ -507,3 +507,28 @@ class TestInstallationStructure(DbTest):
         filtering_rules = {tuple(sorted(packages)): from_dt_str}
         self.assertFalse(_is_filtered_by_build_info(
             packages, filtering_rules))
+
+    def test_release_column(self):
+        master_node_uid = 'x'
+        release = 'release'
+        struct = {
+            'master_node_uid': master_node_uid,
+            'fuel_release': {
+                'release': release,
+                'feature_groups': [],
+                'api': 'v1'
+            },
+            'allocated_nodes_num': 0,
+            'unallocated_nodes_num': 0,
+            'clusters_num': 0,
+            'clusters': []
+        }
+        resp = self.post(
+            '/api/v1/installation_structure/',
+            {'installation_structure': struct}
+        )
+        self.check_response_ok(resp, codes=(201,))
+        obj = db.session.query(InstallationStructure).filter(
+            InstallationStructure.master_node_uid == master_node_uid).one()
+        self.assertEqual(struct, obj.structure)
+        self.assertEqual(release, obj.release)
