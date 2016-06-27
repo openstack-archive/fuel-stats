@@ -203,6 +203,24 @@ Revert all migrations: ::
   python manage_collector.py --mode test db downgrade -d collector/api/db/migrations/
 
 
+Switching off the Elasticsearch
+-------------------------------
+
+Elasticsearch was chosen as data storage for dynamic generated statistics reports,
+but now only CSV reports are used for analytics purposes. Elasticsearch is unnecessary
+complication of infrastructure and data flow in this case.
+
+Without Elasticsearch we are using memcached as cache for web UI. Data expiration
+is configured by param MEMCACHED_JSON_REPORTS_EXPIRATION for the fuel_analytics.
+
+Changes in the Nginx config: ::
+
+    # Add this to the block 'server'
+    location /api/ {
+        proxy_pass http://IP_OF_ANALYTICS_SERVICE:PORT_OF_ANALYTICS_SERVICE/api/;
+    }
+
+
 .. _Fuel: https://docs.mirantis.com/openstack/fuel/
 .. _Elasticsearch: https://www.elastic.co/
 .. _uWSGI: https://pypi.python.org/pypi/uWSGI/
