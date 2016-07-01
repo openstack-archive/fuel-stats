@@ -30,6 +30,7 @@ from migration.db import engine
 from migration.migrator import Migrator
 from migration.model import ActionLog
 from migration.model import InstallationStructure
+from six.moves import xrange
 
 
 class BaseTest(TestCase):

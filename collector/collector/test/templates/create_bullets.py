@@ -17,6 +17,7 @@ import getopt
 import os
 import sys
 
+from six.moves import xrange
 from requests import ActionLogRequestTemplate
 from requests import InstallationRequestTemplate
 from requests import OSwLRequestTemplate

@@ -17,6 +17,7 @@ from collector.test.base import BaseTest
 from collector.api.common.util import build_index
 from collector.api.common.util import get_index
 from collector.api.common.util import split_collection
+from six.moves import xrange
 
 
 class Indexed(object):

@@ -18,6 +18,7 @@ from datetime import datetime
 from datetime import timedelta
 import random
 import six
+from six.moves import xrange
 import uuid
 
 from fuel_analytics.test.base import BaseTest

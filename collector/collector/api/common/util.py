@@ -19,6 +19,7 @@ from functools import wraps
 import jsonschema
 import math
 import six
+from six.moves import xrange
 from sqlalchemy import and_
 from sqlalchemy import or_
 
