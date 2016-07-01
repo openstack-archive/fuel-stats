@@ -22,6 +22,7 @@ from collector.api.app import db
 from collector.api.common import consts
 from collector.api.common import util
 from collector.api.db.model import OpenStackWorkloadStats as OSWL
+from six.moves import xrange
 
 
 class TestOswlStats(DbTest):

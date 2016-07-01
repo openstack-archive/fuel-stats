@@ -22,6 +22,7 @@ from migration.test.base import MigrationTest
 from migration.migrator import Migrator
 from migration.model import ActionLog as AL
 from migration.model import InstallationStructure as IS
+from six.moves import xrange
 
 
 class MigratorTest(MigrationTest):

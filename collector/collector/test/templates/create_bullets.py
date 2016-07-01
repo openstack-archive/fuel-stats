@@ -20,6 +20,7 @@ import sys
 from requests import ActionLogRequestTemplate
 from requests import InstallationRequestTemplate
 from requests import OSwLRequestTemplate
+from six.moves import xrange
 
 
 class Settings(object):

@@ -20,6 +20,7 @@ from collector.test.base import DbTest
 from collector.api.app import db
 from collector.api.common import consts
 from collector.api.db.model import ActionLog
+from six.moves import xrange
 
 
 class TestActionLogs(DbTest):

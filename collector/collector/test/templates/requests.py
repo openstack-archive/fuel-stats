@@ -17,6 +17,7 @@ import json
 import random
 
 from bisect import bisect
+from six.moves import xrange
 
 
 class BaseRequestTemplate(object):
