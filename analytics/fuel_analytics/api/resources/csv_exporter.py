@@ -66,6 +66,13 @@ def get_to_date():
                         default_value=datetime.utcnow().date())
 
 
+def get_list_values(param_name, delimiter=','):
+    if param_name not in request.args:
+        return None
+    value = request.args.get(param_name).strip()
+    return [v.strip() for v in value.split(delimiter)]
+
+
 def get_inst_structures_query(from_date=None, to_date=None, fields=()):
     """Composes query for fetching not filtered installation
     structures info with filtering by from and to dates and
@@ -207,12 +214,14 @@ def plugins_to_csv():
     return Response(result, mimetype='text/csv', headers=headers)
 
 
-def get_oswls_query(resource_type, from_date=None, to_date=None):
+def get_oswls_query(resource_type, from_date=None, to_date=None,
+                    release=None):
     """Composes query for fetching oswls with installation
     info creation and update dates with ordering by created_date
     :param resource_type: resource type
     :param from_date: filter from date
     :param to_date: filter to date
+    :param release: filter by release
     :return: SQLAlchemy query
     """
     query = db.session.query(
@@ -232,20 +241,22 @@ def get_oswls_query(resource_type, from_date=None, to_date=None):
         query = query.filter(OSWS.created_date >= from_date)
     if to_date is not None:
         query = query.filter(OSWS.created_date <= to_date)
+    if release is not None:
+        query = query.filter(IS.release == release)
     # For proper handling of paging we must use additional ordering by id.
     # In other case we will lose some OSWLs form the execution result.
     query = query.order_by(OSWS.created_date, OSWS.id)
     return query
 
 
-def get_oswls(resource_type):
+def get_oswls(resource_type, release=None):
     yield_per = app.config['CSV_DB_YIELD_PER']
     app.logger.debug("Fetching %s oswls with yield per %d",
                      resource_type, yield_per)
     from_date = get_from_date()
     to_date = get_to_date()
     query = get_oswls_query(resource_type, from_date=from_date,
-                            to_date=to_date)
+                            to_date=to_date, release=release)
     return query.yield_per(yield_per)
 
 
@@ -279,27 +290,53 @@ def _add_oswl_to_clusters_versions_cache(inst_structure, clusters_versions):
         clusters_versions[mn_uid][cluster['id']] = version_info
 
 
+def get_oswls_reports(resource_type, releases, from_date, to_date,
+                      clusters_version_info):
+
+    exporter = OswlStatsToCsv()
+
+    if releases is None:
+        releases = [None]
+
+    for release in releases:
+        app.logger.debug("Getting report '%s' for release: '%s'",
+                         resource_type, release)
+
+        oswls = get_oswls_query(resource_type, from_date=from_date,
+                                to_date=to_date, release=release)
+        report = exporter.export(resource_type, oswls, to_date,
+                                 clusters_version_info)
+        if release is None:
+            file_name = '{0}.csv'.format(resource_type)
+        else:
+            file_name = '{0}_{1}.csv'.format(resource_type, release)
+
+        app.logger.debug("Report '%s' for release '%s' got",
+                         resource_type, release)
+        yield report, file_name
+
+
 @bp.route('/<resource_type>', methods=['GET'])
 def oswl_to_csv(resource_type):
     app.logger.debug("Handling oswl_to_csv get request for resource %s",
                      resource_type)
 
-    exporter = OswlStatsToCsv()
-    oswls = get_oswls(resource_type)
-
+    releases = get_list_values('releases')
+    from_date = get_from_date()
+    to_date = get_to_date()
     clusters_version_info = get_clusters_version_info()
-    result = exporter.export(resource_type, oswls, get_to_date(),
-                             clusters_version_info)
 
-    # NOTE: result - is generator, but streaming can not work with some
-    # WSGI middlewares: http://flask.pocoo.org/docs/0.10/patterns/streaming/
-    app.logger.debug("Request oswl_to_csv for resource %s handled",
-                     resource_type)
+    reports = get_oswls_reports(resource_type, releases,
+                                from_date, to_date, clusters_version_info)
+    file_name = '{}_from{}_to{}'.format(resource_type, from_date, to_date)
     headers = {
-        'Content-Disposition': 'attachment; filename={}.csv'.format(
-            resource_type)
+        'Content-Disposition': 'attachment; filename={}.tar'.format(file_name)
     }
-    return Response(result, mimetype='text/csv', headers=headers)
+    app.logger.debug("Get oswl_to_csv request for resource %s handled",
+                     resource_type)
+
+    return Response(stream_reports_tar(reports),
+                    mimetype='application/x-tar', headers=headers)
 
 
 def get_resources_types():
@@ -378,6 +415,10 @@ def stream_reports_tar(reports):
 
             tar_stream.seek(io.SEEK_SET)
             yield tar_stream.getvalue()
+
+            import time
+            time.sleep(5)
+            app.logger.debug("HHHHHRRRRRR!!!")
 
             tar_stream.seek(io.SEEK_SET)
             tar_stream.truncate()

@@ -28,12 +28,10 @@ from fuel_analytics.api.errors import DateExtractionError
 from fuel_analytics.api.resources import csv_exporter as ce
 from fuel_analytics.api.resources.csv_exporter import extract_date
 from fuel_analytics.api.resources.csv_exporter import get_action_logs
-from fuel_analytics.api.resources.csv_exporter import get_from_date
 from fuel_analytics.api.resources.csv_exporter import get_inst_structures
 from fuel_analytics.api.resources.csv_exporter import get_inst_structures_query
 from fuel_analytics.api.resources.csv_exporter import get_oswls_query
 from fuel_analytics.api.resources.csv_exporter import get_resources_types
-from fuel_analytics.api.resources.csv_exporter import get_to_date
 from fuel_analytics.api.resources.utils.stats_to_csv import ActionLogInfo
 from fuel_analytics.api.resources.utils.stats_to_csv import StatsToCsv
 
@@ -74,23 +72,34 @@ class CsvExporterTest(OswlTest, DbTest):
         with app.test_request_context():
             expected = datetime.utcnow().date() - \
                 timedelta(days=app.config['CSV_DEFAULT_FROM_DATE_DAYS'])
-            actual = get_from_date()
+            actual = ce.get_from_date()
             self.assertEqual(expected, actual)
 
         with app.test_request_context('/?from_date=2015-02-24'):
             expected = datetime(2015, 2, 24).date()
-            actual = get_from_date()
+            actual = ce.get_from_date()
             self.assertEqual(expected, actual)
 
-    def test_to_date(self):
+    def test_get_to_date(self):
         with app.test_request_context():
-            actual = get_to_date()
+            actual = ce.get_to_date()
             self.assertEqual(datetime.utcnow().date(), actual)
 
         with app.test_request_context('/?to_date=2015-02-25'):
             expected = datetime(2015, 2, 25).date()
-            actual = get_to_date()
+            actual = ce.get_to_date()
             self.assertEqual(expected, actual)
+
+    def test_get_list_values(self):
+        with app.test_request_context():
+            self.assertIsNone(ce.get_list_values('param'))
+        with app.test_request_context('/?param='):
+            self.assertItemsEqual([''], ce.get_list_values('param'))
+        with app.test_request_context('/?param=   '):
+            self.assertItemsEqual([''], ce.get_list_values('param'))
+        with app.test_request_context('/?param=a, b , c'):
+            self.assertItemsEqual(['a', 'b', 'c'],
+                                  ce.get_list_values('param'))
 
     def test_get_oswls_query_with_dates(self):
         num = 20
