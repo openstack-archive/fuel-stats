@@ -58,6 +58,7 @@ class StatsToCsvExportTest(InstStructureTest, DbTest):
         self.assertIn(['attributes', 'neutron_dvr'], csv_keys_paths)
         self.assertIn(['attributes', 'neutron_l2_pop'], csv_keys_paths)
         self.assertIn(['attributes', 'neutron_l3_ha'], csv_keys_paths)
+        self.assertIn(['attributes', 'neutron_qos'], csv_keys_paths)
         self.assertIn(['attributes', 'public_ssl_cert_source'], csv_keys_paths)
         self.assertIn(['attributes', 'public_ssl_horizon'], csv_keys_paths)
         self.assertIn(['attributes', 'public_ssl_services'], csv_keys_paths)

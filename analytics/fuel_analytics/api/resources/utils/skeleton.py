@@ -49,6 +49,7 @@ INSTALLATION_INFO_SKELETON = {
                     'neutron_dvr': None,
                     'neutron_l2_pop': None,
                     'neutron_l3_ha': None,
+                    'neutron_qos': None,
                     'nova_quota': None,
                     'nsx': None,
                     'nsx_replication': None,
