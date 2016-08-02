@@ -30,19 +30,19 @@ class JsonReportsTest(DbTest):
         structures = [
             model.InstallationStructure(
                 master_node_uid='x0',
-                structure={},
+                structure={'clusters': [], 'clusters_num': 0},
                 is_filtered=False,
                 release='9.0'
             ),
             model.InstallationStructure(
                 master_node_uid='x1',
-                structure={},
+                structure={'clusters': [], 'clusters_num': 0},
                 is_filtered=False,
                 release='8.0'
             ),
             model.InstallationStructure(
                 master_node_uid='x2',
-                structure={},
+                structure={'clusters': [], 'clusters_num': 0},
                 is_filtered=True,
                 release='8.0'
             ),
@@ -147,31 +147,31 @@ class JsonReportsTest(DbTest):
         structures = [
             model.InstallationStructure(
                 master_node_uid='x0',
-                structure={'clusters': [{}, {}, {}]},
+                structure={'clusters': [{}, {}, {}], 'clusters_num': 3},
                 is_filtered=False,
                 release='9.0'
             ),
             model.InstallationStructure(
                 master_node_uid='x1',
-                structure={'clusters': [{}, {}]},
+                structure={'clusters': [{}, {}], 'clusters_num': 2},
                 is_filtered=False,
                 release='8.0'
             ),
             model.InstallationStructure(
                 master_node_uid='x2',
-                structure={'clusters': []},
+                structure={'clusters': [], 'clusters_num': 0},
                 is_filtered=False,
                 release='8.0'
             ),
             model.InstallationStructure(
                 master_node_uid='x3',
-                structure={'clusters': []},
+                structure={'clusters': [], 'clusters_num': 0},
                 is_filtered=False,
                 release='8.0'
             ),
             model.InstallationStructure(
                 master_node_uid='x4',
-                structure={'clusters': [{}, {}, {}]},
+                structure={'clusters': [{}, {}, {}], 'clusters_num': 3},
                 is_filtered=True,
                 release='8.0'
             ),
