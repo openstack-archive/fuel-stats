@@ -20,10 +20,10 @@ from flask import Blueprint
 from flask import request
 from flask import Response
 import memcache
+import sqlalchemy
 
 from fuel_analytics.api.app import app
 from fuel_analytics.api.app import db
-from fuel_analytics.api.db.model import InstallationStructure as IS
 
 bp = Blueprint('reports', __name__)
 
@@ -69,10 +69,57 @@ def get_installations_info():
 
 
 def get_installations_info_from_db(release):
-    query = db.session.query(IS.structure, IS.release).\
-        filter(IS.is_filtered == bool(0))
+    """Extracts and aggregates installation and environments info
+
+    We have list of clusters in the DB field installations_info.structure.
+    The cluster data stored as dict. Unfortunately we have no ways in the
+    DB layer to extract only required fields from the dicts in the list.
+    For decrease memory consumption we are selecting only required fields
+    from clusters data.
+
+    For instance we want to extract only statuses of the clusters:
+    {"clusters": [{"status": "error", ...}, {"status": "new", ...},
+    {"status": "operational", ...}].
+
+    The only way to fetch only required data is expanding of cluster data to
+    separate rows in the SQL query result and extract only required fields.
+    For this purpose we are selecting FROM installation_structures,
+    json_array_elements(...).
+
+    Unfortunately rows with empty clusters list wouldn't be in the output.
+    As workaround we are adding empty cluster data in this case [{}].
+    Also we have ordering or rows by id.
+
+    Now we able to select only required fields in rows and rows are ordered
+    by id. So clusters are grouped by the installation id. When we are
+    iterating other the clusters the changing of id is marker of changing
+    installation.
+
+    :param release: filter data by Fuel release
+    :return: aggregated installations and environments info
+    """
+
+    params = {'is_filtered': False}
+    # For counting installations without clusters we are
+    # adding empty cluster data into SQL result: [{}]
+    query = "SELECT id, release, " \
+            "cluster_data->>'status' status, " \
+            "structure->>'clusters_num' clusters_num, " \
+            "cluster_data->>'nodes_num' nodes_num, " \
+            "cluster_data->'attributes'->>'libvirt_type' hypervisor, " \
+            "cluster_data->'release'->>'os' os_name " \
+            "FROM installation_structures, " \
+            "json_array_elements(CASE " \
+            "  WHEN structure->>'clusters' = '[]' THEN '[{}]' " \
+            "  ELSE structure->'clusters' " \
+            "  END" \
+            ") AS cluster_data " \
+            "WHERE is_filtered = :is_filtered"
     if release:
-        query = query.filter(IS.release == release)
+        params['release'] = release
+        query += " AND release = :release"
+    query += " ORDER BY id"
+    query = sqlalchemy.text(query)
 
     info_template = {
         'installations': {
@@ -94,58 +141,64 @@ def get_installations_info_from_db(release):
     app.logger.debug("Fetching installations info from DB for release: %s",
                      release)
 
-    yield_per = app.config['JSON_DB_YIELD_PER']
-    for row in query.yield_per(yield_per):
-        structure = row[0]
-        extract_installation_info(structure, info[release])
+    last_id = None
+    for row in db.session.execute(query, params):
 
+        extract_installation_info(row, info[release], last_id)
         cur_release = row[1]
+
         # Splitting info by release if fetching for all releases
         if not release and cur_release != release:
-            extract_installation_info(structure, info[cur_release])
+            extract_installation_info(row, info[cur_release], last_id)
+
+        last_id = row[0]
 
     app.logger.debug("Fetched installations info from DB for release: "
                      "%s, info: %s", release, info)
-
     return info
 
 
-def extract_installation_info(source, result):
+def extract_installation_info(row, result, last_id):
     """Extracts installation info from structure
 
-    :param source: source of installation info data
-    :type source: dict
+    :param row: row with data from DB
+    :type row: tuple
     :param result: placeholder for extracted data
     :type result: dict
+    :param last_id: DB id of last processed installation
+    :param last_id: int
     """
+
+    (cur_id, cur_release, status, clusters_num, nodes_num,
+     hypervisor, os_name) = row
 
     inst_info = result['installations']
     env_info = result['environments']
 
     production_statuses = ('operational', 'error')
 
-    inst_info['count'] += 1
-    envs_num = 0
+    if last_id != cur_id:
+        inst_info['count'] += 1
+        inst_info['environments_num'][clusters_num] += 1
 
-    for cluster in source.get('clusters', []):
-        envs_num += 1
-        env_info['count'] += 1
+    # For empty clusters data we don't increase environments count
+    try:
+        if int(clusters_num):
+            env_info['count'] += 1
+    except (ValueError, TypeError):
+        app.logger.exception("Value of clusters_num %s "
+                             "can't be casted to int", clusters_num)
 
-        if cluster.get('status') in production_statuses:
-            current_nodes_num = cluster.get('nodes_num', 0)
-            env_info['nodes_num'][current_nodes_num] += 1
+    if status in production_statuses:
+        if nodes_num:
+            env_info['nodes_num'][nodes_num] += 1
             env_info['operable_envs_count'] += 1
 
-            hypervisor = cluster.get('attributes', {}).get('libvirt_type')
-            if hypervisor:
-                env_info['hypervisors_num'][hypervisor.lower()] += 1
+        if hypervisor:
+            env_info['hypervisors_num'][hypervisor.lower()] += 1
 
-            os = cluster.get('release', {}).get('os')
-            if os:
-                env_info['oses_num'][os.lower()] += 1
+        if os_name:
+            env_info['oses_num'][os_name.lower()] += 1
 
-        status = cluster.get('status')
-        if status is not None:
-            env_info['statuses'][status] += 1
-
-    inst_info['environments_num'][envs_num] += 1
+    if status is not None:
+        env_info['statuses'][status] += 1
