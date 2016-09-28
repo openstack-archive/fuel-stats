@@ -43,8 +43,8 @@ class MappingRuleTest(MigrationTest):
         doc_source = doc['_source']
         self.assertIn('creation_date', doc_source)
         self.assertIn('modification_date', doc_source)
-        self.assertEquals(index, doc['_index'])
-        self.assertEquals(doc_type, doc['_type'])
-        self.assertEquals(db_obj.master_node_uid, doc['_id'])
+        self.assertEqual(index, doc['_index'])
+        self.assertEqual(doc_type, doc['_type'])
+        self.assertEqual(db_obj.master_node_uid, doc['_id'])
         for struct_key in six.iterkeys(db_obj.structure):
             self.assertIn(struct_key, doc_source)

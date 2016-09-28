@@ -161,5 +161,5 @@ class OsDistribution(ElasticTest):
         self.assertDictEqual(expected_oses, actual_oses)
 
         # checking clusters are filtered
-        self.assertEquals(expected_clusters_num,
-                          sum(six.itervalues(actual_oses)))
+        self.assertEqual(expected_clusters_num,
+                         sum(six.itervalues(actual_oses)))

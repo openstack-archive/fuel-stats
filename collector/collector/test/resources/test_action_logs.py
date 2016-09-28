@@ -70,14 +70,14 @@ class TestActionLogs(DbTest):
         self.check_response_ok(resp)
         resp_data = json.loads(resp.data)
         for d in resp_data['action_logs']:
-            self.assertEquals(
+            self.assertEqual(
                 consts.ACTION_LOG_STATUSES.added,
                 d['status']
             )
 
         actual_logs = db.session.query(ActionLog).filter(
             ActionLog.master_node_uid == master_node_uid).all()
-        self.assertEquals(len(expected_logs), len(actual_logs))
+        self.assertEqual(len(expected_logs), len(actual_logs))
         self.assertListEqual(
             sorted([l['external_id'] for l in expected_logs]),
             sorted([l.external_id for l in actual_logs])
@@ -119,11 +119,11 @@ class TestActionLogs(DbTest):
             ActionLog.master_node_uid == master_node_uid).count()
         resp_data = json.loads(resp.data)
         for d in resp_data['action_logs']:
-            self.assertEquals(
+            self.assertEqual(
                 consts.ACTION_LOG_STATUSES.added,
                 d['status']
             )
-        self.assertEquals(len(action_logs), count_actual)
+        self.assertEqual(len(action_logs), count_actual)
 
         # Checking duplications is not added
         new_action_logs = [
@@ -158,7 +158,7 @@ class TestActionLogs(DbTest):
         self.check_response_ok(resp)
         count_actual = db.session.query(ActionLog).filter(
             ActionLog.master_node_uid == master_node_uid).count()
-        self.assertEquals(
+        self.assertEqual(
             len(new_action_logs),
             count_actual
         )
@@ -171,8 +171,8 @@ class TestActionLogs(DbTest):
             lambda x: x['status'] == consts.ACTION_LOG_STATUSES.added,
             data['action_logs']
         )
-        self.assertEquals(len(action_logs), len(existed))
-        self.assertEquals(len(new_action_logs) - len(action_logs), len(added))
+        self.assertEqual(len(action_logs), len(existed))
+        self.assertEqual(len(new_action_logs) - len(action_logs), len(added))
 
     def test_validation_error(self):
         expected_logs = [{'master_node_uid': 'x', 'external_id': None}]

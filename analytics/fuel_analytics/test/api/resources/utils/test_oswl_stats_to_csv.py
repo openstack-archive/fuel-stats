@@ -167,7 +167,7 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
 
             oswls = get_oswls_query(resource_type).all()
             oswl = oswls[0]
-            self.assertEquals(
+            self.assertEqual(
                 inst_struct.creation_date,
                 exporter.get_last_sync_datetime(oswl)
             )
@@ -175,7 +175,7 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
             inst_struct.modification_date = datetime.utcnow()
             oswls = get_oswls_query(resource_type).all()
             oswl = oswls[0]
-            self.assertEquals(
+            self.assertEqual(
                 inst_struct.modification_date,
                 exporter.get_last_sync_datetime(oswl)
             )
@@ -236,7 +236,7 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
 
             oswls_seamless = exporter.fill_date_gaps(
                 oswls, datetime.utcnow().date())
-            self.assertEquals(1, len(list(oswls_seamless)))
+            self.assertEqual(1, len(list(oswls_seamless)))
 
             # Checking record is duplicated
             inst_struct.modification_date = datetime.utcnow()
@@ -250,8 +250,8 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
             on_date_days = 1
             on_date = (datetime.utcnow() - timedelta(days=on_date_days)).date()
             oswls_seamless = list(exporter.fill_date_gaps(oswls, on_date))
-            self.assertEquals(created_days - on_date_days + 1,
-                              len(oswls_seamless))
+            self.assertEqual(created_days - on_date_days + 1,
+                             len(oswls_seamless))
 
             # Checking dates are seamless and grow
             expected_date = oswls_seamless[0].stats_on_date
@@ -277,7 +277,7 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
             self.get_saved_inst_structs(oswls_saved,
                                         creation_date_range=(0, 0))
             oswls = get_oswls_query(resource_type).all()
-            self.assertEquals(oswls_before + num, len(list(oswls)))
+            self.assertEqual(oswls_before + num, len(list(oswls)))
 
             # Checking added, modified, removed not empty
             for oswl in oswls:
@@ -325,7 +325,7 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
                                             creation_date_range=(0, 0))
             # Checking all resources in seamless oswls
             oswls = get_oswls_query(resource_type).all()
-            self.assertEquals(insts_num * clusters_num, len(oswls))
+            self.assertEqual(insts_num * clusters_num, len(oswls))
             oswls_seamless = list(exporter.fill_date_gaps(
                 oswls, datetime.utcnow().date()))
             self.assertEqual(insts_num * clusters_num * (created_days + 1),
@@ -788,10 +788,10 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
 
         def check_resource_state(resource, tenant_id, is_added,
                                  is_modified, is_removed):
-            self.assertEquals(is_added, resource[is_added_pos])
-            self.assertEquals(is_modified, resource[is_modified_pos])
-            self.assertEquals(is_removed, resource[is_removed_pos])
-            self.assertEquals(tenant_id, resource[tenant_id_pos])
+            self.assertEqual(is_added, resource[is_added_pos])
+            self.assertEqual(is_modified, resource[is_modified_pos])
+            self.assertEqual(is_removed, resource[is_removed_pos])
+            self.assertEqual(tenant_id, resource[tenant_id_pos])
 
         # The fist oswl status True only in is_added
         check_resource_state(flatten_resources[0], 'first',

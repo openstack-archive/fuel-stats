@@ -301,7 +301,7 @@ class JsonReportsTest(DbTest):
             resp = self.client.get(url)
             self.check_response_ok(resp)
             self.assertEqual(0, cached_mc_get.call_count)
-            self.assertEquals(3, cached_mc_set.call_count)
+            self.assertEqual(3, cached_mc_set.call_count)
 
     @mock.patch.object(memcache.Client, 'get', return_value=None)
     def test_get_nodes_num(self, _):

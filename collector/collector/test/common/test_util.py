@@ -32,15 +32,15 @@ class TestUtil(BaseTest):
     def test_split_collection(self):
         coll = list(xrange(3))
         chunks = list(split_collection(coll, chunk_size=len(coll)))
-        self.assertEquals(1, len(chunks))
+        self.assertEqual(1, len(chunks))
         self.assertListEqual(chunks[0], coll)
 
         chunks = list(split_collection(coll, chunk_size=len(coll) + 1))
-        self.assertEquals(1, len(chunks))
+        self.assertEqual(1, len(chunks))
         self.assertListEqual(chunks[0], coll)
 
         chunks = list(split_collection(coll, chunk_size=len(coll) - 1))
-        self.assertEquals(2, len(chunks))
+        self.assertEqual(2, len(chunks))
         self.assertListEqual(chunks[0], coll[:-1])
         self.assertListEqual(chunks[1], coll[-1:])
 

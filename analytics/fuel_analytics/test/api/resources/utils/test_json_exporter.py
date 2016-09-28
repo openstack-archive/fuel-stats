@@ -172,7 +172,7 @@ class JsonExporterTest(InstStructureTest, OswlTest, DbTest):
             # Checking SqlAlchemy objects equality
             for c in expected.__table__.columns:
                 column_name = c.name
-                self.assertEquals(
+                self.assertEqual(
                     getattr(expected, column_name),
                     getattr(actual, column_name)
                 )

@@ -51,7 +51,7 @@ class ElasticsearchMapping(ElasticTest):
         result = resp['aggregations']['structs']['buckets']
         # checking that master_node_uids with whitespaces and
         # non-literal symbols didn't split
-        self.assertEquals(len(docs), len(result))
+        self.assertEqual(len(docs), len(result))
 
     def test_mixed_values_in_list_migration(self):
         doc = {

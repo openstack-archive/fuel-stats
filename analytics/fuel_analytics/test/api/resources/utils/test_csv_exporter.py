@@ -154,7 +154,7 @@ class CsvExporterTest(OswlTest, DbTest):
 
         # Checking filtered inst structures don't fetched
         count_with_filtered = get_inst_structures_query(None, None).count()
-        self.assertEquals(count_initial, count_with_filtered)
+        self.assertEqual(count_initial, count_with_filtered)
 
         # Generating not filtered inst structures
         oswls = self.get_saved_oswls(20, consts.OSWL_RESOURCE_TYPES.vm,
@@ -166,8 +166,8 @@ class CsvExporterTest(OswlTest, DbTest):
         # Checking not filtered inst structures fetched
         count_with_not_filtered = get_inst_structures_query(None, None).count()
         get_inst_structures_query(None, None).all()
-        self.assertEquals(count_initial + not_filtered_num,
-                          count_with_not_filtered)
+        self.assertEqual(count_initial + not_filtered_num,
+                         count_with_not_filtered)
 
     def test_no_filtered_structures(self):
         oswls = self.get_saved_oswls(100, consts.OSWL_RESOURCE_TYPES.vm,

@@ -105,7 +105,7 @@ class Reports(ElasticTest):
                              body=query)
         inst_count = len(filter(
             lambda x: x['fuel_release']['release'] == release, installations))
-        self.assertEquals(inst_count, resp['count'])
+        self.assertEqual(inst_count, resp['count'])
 
     def test_filtration(self):
         installations_num = 100
@@ -155,11 +155,11 @@ class Reports(ElasticTest):
                 filter(lambda c: c['status'] in statuses,
                        structure['clusters'])
             )
-        self.assertEquals(expected_clusters_num, actual_clusters_num)
+        self.assertEqual(expected_clusters_num, actual_clusters_num)
 
         # checking number of filtered libvirt types and clusters
         libvirt_types = filtered_statuses['attributes']['libvirt_types']
-        self.assertEquals(
+        self.assertEqual(
             expected_clusters_num,
             sum(d['doc_count'] for d in libvirt_types['buckets'])
         )
@@ -258,8 +258,8 @@ class Reports(ElasticTest):
         # checking filtered clusters num
         filtered_releases = resp['aggregations']['releases']
         # checking releases are filtered
-        self.assertEquals(releases_data[filter_by_release],
-                          filtered_releases['doc_count'])
+        self.assertEqual(releases_data[filter_by_release],
+                         filtered_releases['doc_count'])
 
     def test_filtration_by_is_filtered(self):
         # Query for fetching libvirt distribution

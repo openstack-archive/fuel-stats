@@ -58,12 +58,12 @@ class BaseTest(TestCase):
     def check_response_ok(self, resp, codes=(200, 201)):
         self.assertIn(resp.status_code, codes)
         d = json.loads(resp.data)
-        self.assertEquals('ok', d['status'])
+        self.assertEqual('ok', d['status'])
 
     def check_response_error(self, resp, code):
-        self.assertEquals(code, resp.status_code)
+        self.assertEqual(code, resp.status_code)
         d = json.loads(resp.data)
-        self.assertEquals('error', d['status'])
+        self.assertEqual('error', d['status'])
 
 
 class DbTest(BaseTest):

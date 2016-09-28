@@ -39,7 +39,7 @@ class BaseTest(TestCase):
         self.assertIn(resp.status_code, codes)
 
     def check_response_error(self, resp, code):
-        self.assertEquals(code, resp.status_code)
+        self.assertEqual(code, resp.status_code)
 
 
 class DbTest(BaseTest):

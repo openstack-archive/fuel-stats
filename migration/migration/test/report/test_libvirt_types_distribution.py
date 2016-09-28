@@ -68,11 +68,11 @@ class LibvirtTypesDistribution(ElasticTest):
             expected_clusters_num += len(clusters_in_statuses)
             total_clusters_num += structure['clusters_num']
         self.assertGreater(total_clusters_num, actual_clusters_num)
-        self.assertEquals(expected_clusters_num, actual_clusters_num)
+        self.assertEqual(expected_clusters_num, actual_clusters_num)
 
         # checking number of filtered libvirt types and clusters
         libvirt_types = filtered_statuses['attributes']['libvirt_types']
-        self.assertEquals(
+        self.assertEqual(
             expected_clusters_num,
             sum(d['doc_count'] for d in libvirt_types['buckets'])
         )
