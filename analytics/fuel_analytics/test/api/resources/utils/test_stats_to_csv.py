@@ -82,7 +82,7 @@ class StatsToCsvExportTest(InstStructureTest, DbTest):
             exporter.get_cluster_keys_paths()
         flatten_clusters = exporter.get_flatten_clusters(
             structure_paths, cluster_paths, inst_structures, [])
-        self.assertTrue(isinstance(flatten_clusters, types.GeneratorType))
+        self.assertIsInstance(flatten_clusters, types.GeneratorType)
         for flatten_cluster in flatten_clusters:
             self.assertEquals(len(csv_paths), len(flatten_cluster))
 
@@ -96,9 +96,9 @@ class StatsToCsvExportTest(InstStructureTest, DbTest):
             exporter.get_cluster_keys_paths()
         flatten_clusters = exporter.get_flatten_clusters(
             structure_paths, cluster_paths, inst_structures, [])
-        self.assertTrue(isinstance(flatten_clusters, types.GeneratorType))
+        self.assertIsInstance(flatten_clusters, types.GeneratorType)
         result = export_utils.flatten_data_as_csv(csv_paths, flatten_clusters)
-        self.assertTrue(isinstance(result, types.GeneratorType))
+        self.assertIsInstance(result, types.GeneratorType)
         output = six.StringIO(list(result))
         reader = csv.reader(output)
         # Pop columns names from reader
@@ -128,7 +128,7 @@ class StatsToCsvExportTest(InstStructureTest, DbTest):
             installations_num=installations_num)
         exporter = StatsToCsv()
         result = exporter.export_clusters(inst_structures, [])
-        self.assertTrue(isinstance(result, types.GeneratorType))
+        self.assertIsInstance(result, types.GeneratorType)
 
     def test_filter_by_date(self):
         exporter = StatsToCsv()
@@ -140,7 +140,7 @@ class StatsToCsvExportTest(InstStructureTest, DbTest):
                 installations_num=num)
             # Filtering installation structures
             result = exporter.export_clusters(inst_structures, [])
-            self.assertTrue(isinstance(result, types.GeneratorType))
+            self.assertIsInstance(result, types.GeneratorType)
             output = six.StringIO(list(result))
             reader = csv.reader(output)
             for _ in reader:

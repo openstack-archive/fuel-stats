@@ -53,7 +53,7 @@ class PluginsToCsvExportTest(InstStructureTest, DbTest):
             exporter.get_plugin_keys_paths()
         flatten_plugins = exporter.get_flatten_plugins(
             structure_paths, cluster_paths, plugins_paths, inst_structures)
-        self.assertTrue(isinstance(flatten_plugins, types.GeneratorType))
+        self.assertIsInstance(flatten_plugins, types.GeneratorType)
         pos_mn_uid = csv_paths.index(['master_node_uid'])
         pos_cluster_id = csv_paths.index(['cluster_id'])
         for flatten_plugin in flatten_plugins:
@@ -70,7 +70,7 @@ class PluginsToCsvExportTest(InstStructureTest, DbTest):
                 installations_num=installations_num)
             # Filtering installation structures
             result = exporter.export_plugins(inst_structures)
-            self.assertTrue(isinstance(result, types.GeneratorType))
+            self.assertIsInstance(result, types.GeneratorType)
             output = six.StringIO(list(result))
             reader = csv.reader(output)
             for _ in reader:
