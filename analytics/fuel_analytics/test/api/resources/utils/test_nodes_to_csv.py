@@ -128,7 +128,7 @@ class NodesToCsvExportTest(InstStructureTest, DbTest):
             self.assertIsNotNone(flatten_node[pos_mn_uid])
             self.assertIsNotNone(flatten_node[pos_cluster_id])
             self.assertIsNotNone(flatten_node[pos_status])
-            self.assertEquals(len(csv_paths), len(flatten_node))
+            self.assertEqual(len(csv_paths), len(flatten_node))
 
     def test_export_nodes(self):
         installations_num = 100

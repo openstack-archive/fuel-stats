@@ -191,7 +191,7 @@ class JsonExporterTest(InstStructureTest, OswlTest, DbTest):
             self.check_response_ok(resp)
             result = json.loads(resp.data)
 
-            self.assertEquals(filtered_num, result['paging_params']['total'])
+            self.assertEqual(filtered_num, result['paging_params']['total'])
             for struct in result['objs']:
                 self.assertTrue(struct['is_filtered'])
 
