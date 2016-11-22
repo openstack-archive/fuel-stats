@@ -84,7 +84,7 @@ class StatsToCsvExportTest(InstStructureTest, DbTest):
             structure_paths, cluster_paths, inst_structures, [])
         self.assertTrue(isinstance(flatten_clusters, types.GeneratorType))
         for flatten_cluster in flatten_clusters:
-            self.assertEquals(len(csv_paths), len(flatten_cluster))
+            self.assertEqual(len(csv_paths), len(flatten_cluster))
 
     def test_flatten_data_as_csv(self):
         installations_num = 100

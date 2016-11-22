@@ -59,7 +59,7 @@ class PluginsToCsvExportTest(InstStructureTest, DbTest):
         for flatten_plugin in flatten_plugins:
             self.assertIsNotNone(flatten_plugin[pos_mn_uid])
             self.assertIsNotNone(flatten_plugin[pos_cluster_id])
-            self.assertEquals(len(csv_paths), len(flatten_plugin))
+            self.assertEqual(len(csv_paths), len(flatten_plugin))
 
     def test_export_plugins(self):
         installations_num = 100
