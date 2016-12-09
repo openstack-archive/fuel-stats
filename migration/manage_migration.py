@@ -15,7 +15,6 @@
 #    under the License.
 
 import argparse
-import six
 import yaml
 
 from migration.test.test_env import configure_test_env
@@ -33,7 +32,7 @@ def handle_external_config(params):
 
             content = yaml.load(f)
             if isinstance(content, dict):
-                for k, v in six.iteritems(content):
+                for k, v in content.items():
                     setattr(config, k, v)
 
 

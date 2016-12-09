@@ -15,8 +15,6 @@
 import logging
 import os
 
-import six
-
 
 class Production(object):
     DEBUG = False
@@ -127,7 +125,7 @@ def index_filtering_rules(app):
     if not filtering_rules:
         return
 
-    for release, rules in six.iteritems(filtering_rules):
+    for release, rules in filtering_rules.items():
         if not rules:
             continue
         filtering_rules[release] = convert_rules_to_dict(rules)

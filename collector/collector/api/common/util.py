@@ -18,7 +18,6 @@ from flask import jsonify
 from functools import wraps
 import jsonschema
 import math
-import six
 from six.moves import xrange
 from sqlalchemy import and_
 from sqlalchemy import or_
@@ -185,7 +184,7 @@ def split_new_dicts_and_updated_objs(dicts, dict_to_obj_fields_mapping,
         if obj_idx in existed_objs_idx:
             # Updating existed object
             obj = existed_objs_idx[obj_idx]
-            for k, v in six.iteritems(d_copy):
+            for k, v in d_copy.items():
                 setattr(obj, k, v)
         else:
             new_dicts.append(d_copy)
