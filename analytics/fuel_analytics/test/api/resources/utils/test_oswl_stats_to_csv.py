@@ -68,7 +68,7 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
             oswls = self.generate_oswls(2, resource_type)
             flatten_resources = exporter.get_flatten_resources(
                 resource_type, oswl_keys_paths, resource_keys_paths, oswls, {})
-            self.assertTrue(isinstance(flatten_resources, types.GeneratorType))
+            self.assertIsInstance(flatten_resources, types.GeneratorType)
             for _ in flatten_resources:
                 pass
 
@@ -141,7 +141,7 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
                 # Checking export
                 result = exporter.export(resource_type, oswls,
                                          datetime.utcnow().date(), {})
-                self.assertTrue(isinstance(result, types.GeneratorType))
+                self.assertIsInstance(result, types.GeneratorType)
                 output = six.StringIO(list(result))
                 reader = csv.reader(output)
                 for _ in reader:
@@ -151,7 +151,7 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
         exporter = OswlStatsToCsv()
         for resource_type in self.RESOURCE_TYPES:
             result = exporter.export(resource_type, [], {}, None)
-            self.assertTrue(isinstance(result, types.GeneratorType))
+            self.assertIsInstance(result, types.GeneratorType)
             output = six.StringIO(list(result))
             reader = csv.reader(output)
             for _ in reader:
@@ -262,7 +262,7 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
     def test_fill_date_gaps_empty_data_is_not_failed(self):
         exporter = OswlStatsToCsv()
         oswls = exporter.fill_date_gaps([], datetime.utcnow().date())
-        self.assertTrue(isinstance(oswls, types.GeneratorType))
+        self.assertIsInstance(oswls, types.GeneratorType)
 
     def test_resource_data_on_oswl_duplication(self):
         exporter = OswlStatsToCsv()
@@ -347,7 +347,7 @@ class OswlStatsToCsvTest(OswlTest, DbTest):
                 oswls = get_oswls(resource_type)
                 result = exporter.export(resource_type, oswls,
                                          datetime.utcnow().date(), {})
-                self.assertTrue(isinstance(result, types.GeneratorType))
+                self.assertIsInstance(result, types.GeneratorType)
                 output = six.StringIO(list(result))
                 reader = csv.reader(output)
                 for _ in reader:
