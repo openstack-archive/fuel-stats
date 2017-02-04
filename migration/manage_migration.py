@@ -30,7 +30,7 @@ def handle_external_config(params):
         with open(params.config) as f:
             from migration import config
 
-            content = yaml.load(f)
+            content = yaml.safe_load(f)
             if isinstance(content, dict):
                 for k, v in content.items():
                     setattr(config, k, v)
