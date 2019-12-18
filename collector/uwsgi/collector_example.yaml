@@ -1,7 +1,0 @@
-uwsgi:
-    socket: :8081
-    # for production app use collector.api.app as module
-    module: collector.api.app_test
-    callable: app
-    protocol: http
-    env: COLLECTOR_SETTINGS=/path/to/external/config.py

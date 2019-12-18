@@ -1,4 +1,0 @@
-include *.txt
-graft static
-prune static/bower_components
-prune static/node_modules
